@@ -15,6 +15,7 @@ p=[p code_dir 'filters'         d]; %% filters load
 p=[p code_dir 'filters' S 'pms' d]; %% filter params load
 p=[p code_dir 'plots'           d]; %% plots load
 p=[p code_dir 'plots'   S 'pms' d]; %% plot params load
+p=[p code_dir 'utilities'       d]; %% plots load
 addpath(p);
 if nargout>0
     paths=p;

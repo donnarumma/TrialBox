@@ -1,5 +1,5 @@
-function   [data_out,out]=MDLpredict(data_in,par)
-% function [data_out,out]=MDLpredict(data_in,par)
+function   [data_out,out]=mdlPredict(data_in,par)
+% function [data_out,out]=mdlPredict(data_in,par)
 
 execinfo    = par.exec;
 if ~isempty(execinfo); t=tic; fprintf('Function: %s ', mfilename); end
@@ -21,14 +21,15 @@ y_pred                  = predict(mdl, data_3d);
 Accuracy                = sum(y_pred == labs)/length(labs)*100;
 Accuracy_class(1,:)     = accuracy4classes(labs,y_pred);
 
-data_out = data_in;
-nTrials     = length(data_in);
+data_out                = data_in;
+nTrials                 = length(data_in);
+xfld                    = 'time';
 for iTrial=1:nTrials
     data_out(iTrial).(OutField)          = y_pred(iTrial);
     data_out(iTrial).(SuccessField)      = y_pred(iTrial)==labs(iTrial);
-    timeField                            = data_in(iTrial).(['time' InField]);
-    data_out(iTrial).(['time' SuccessField]) = timeField(end);
-    data_out(iTrial).(['time' OutField]) = timeField(end);
+    timeField                            = data_in(iTrial).([xfld InField]);
+    data_out(iTrial).([xfld SuccessField]) = timeField(end);
+    data_out(iTrial).([xfld OutField]) = timeField(end);
 end
 
 if ~isempty(execinfo); out.exectime=toc(t); fprintf('| Time Elapsed: %.2f s\n',out.exectime); end

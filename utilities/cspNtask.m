@@ -1,4 +1,5 @@
-function W = CSP_Ntask(X,m)
+function   W = cspNtask(X,m)
+% function W = cspNtask(X,m)
 % CSP creates the projection matrices "Wi", associated to the 4 classes,
 % starting from the spectrogram matrices "Xi" separated per class.
 %

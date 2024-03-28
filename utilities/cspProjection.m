@@ -1,5 +1,5 @@
-function   V = CSPProjection(eeg, W)
-% function V = CSPProjection(eeg, W)
+function   V = cspProjection(eeg, W)
+% function V = cspProjection(eeg, W)
 
 % This function performs the decoding of spatial filtering using the CSP algorithm.
 %   INPUT:
