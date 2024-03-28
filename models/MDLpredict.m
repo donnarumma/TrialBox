@@ -1,0 +1,37 @@
+function   [data_out,out]=MDLpredict(data_in,par)
+% function [data_out,out]=MDLpredict(data_in,par)
+
+execinfo    = par.exec;
+if ~isempty(execinfo); t=tic; fprintf('Function: %s ', mfilename); end
+
+labs                    = [data_in.trialType]';
+InField                 = par.InField;
+OutField                = par.OutField;
+SuccessField            = par.SuccessField;
+% nChannels x nTimes x nTrials
+data_3d                 = cat(3,data_in.(InField));
+% nTrials x nChannels x nTimes 
+data_3d                 = permute(data_3d,[3,1,2]);  
+% nTrials x nChannels * nTimes
+data_3d                 = reshape(data_3d,size(data_3d,1),size(data_3d,2)*size(data_3d,3)); 
+
+mdl                     = par.mdl;
+%% Train 
+y_pred                  = predict(mdl, data_3d); 
+Accuracy                = sum(y_pred == labs)/length(labs)*100;
+Accuracy_class(1,:)     = accuracy4classes(labs,y_pred);
+
+data_out = data_in;
+nTrials     = length(data_in);
+for iTrial=1:nTrials
+    data_out(iTrial).(OutField)          = y_pred(iTrial);
+    data_out(iTrial).(SuccessField)      = y_pred(iTrial)==labs(iTrial);
+    timeField                            = data_in(iTrial).(['time' InField]);
+    data_out(iTrial).(['time' SuccessField]) = timeField(end);
+    data_out(iTrial).(['time' OutField]) = timeField(end);
+end
+
+if ~isempty(execinfo); out.exectime=toc(t); fprintf('| Time Elapsed: %.2f s\n',out.exectime); end
+%% output save
+out.Accuracy        = Accuracy;
+out.Accuracy_class  = Accuracy_class;
