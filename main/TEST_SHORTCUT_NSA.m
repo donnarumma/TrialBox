@@ -182,7 +182,7 @@ par.exec.funname                = {'meanData','AverageWindow','GaussianSmoother'
 [data_trials_class, out]        = run_trials(data_trials,par);
 
 % pcaProject
-par.pcaEncode.Wpca              = out.pcaModel.W;
+par.pcaEncode.Wpca              = out.pcaModel.Wpca;
 par.pcaEncode.mu                = out.pcaModel.mu;
 par.pcaEncode.explained         = out.pcaModel.explained;
 par.pcaEncode.InField           = signal_process;

@@ -1,15 +1,12 @@
 function   [data_trials, out]=pcaModel(data_trials,par)
-% function [data_trials, out]=pcaModel(dataTrials,par)
+% function [data_trials, out]=pcaModel(data_trials,par)
 
-execinfo     =par.exec;
-if ~isempty(execinfo); t=tic; end
+execinfo    =par.exec;
+if ~isempty(execinfo); t=tic; fprintf('Function: %s ',mfilename); end
 
 InField     =par.InField;
-% OutField    =par.OutField;
-
 
 X_data      =[data_trials.(InField)]; % original data are N variables  x Time T. 
-% X_test       =[data_test.(InField)];  % original data are N variables  x Time T. 
 
 % [dataTrials.(fn)] same as cat(2,dataTrials.(fn)) different from cat(3,dataTrials.(fn)) that put trials on the third dimension
 % transpose to set Xdata T x variablex, in order to perform a pca on each time step
@@ -38,26 +35,8 @@ Wpca         = Wpca(:, 1:numComponents);                          % N x K
 %     Zpca_test   = reshape(Zpca_test',numComponents,T,length(data_test));  % K x T x N trials in test
 % end
 
-% allTrialsID =sort([data_trials.trialId]);
-% data_trials =data_trials(allTrialsID);
-% allTrialsID =[data_trials.trialId];
-% % train
-% trainIds    =[data_train.trialId];
-% for iD=1:length(trainIds)
-%     ipos=trainIds(iD)==allTrialsID;
-%     data_trials(ipos).(OutField)=Zpca(:,:,iD);
-%     data_trials(ipos).(['time' OutField])=data_trials(ipos).(['time' InField]);
-% end
-% % test 
-% testIds    =[data_test.trialId];
-% for iD=1:length(testIds)
-%     ipos=testIds(iD)==allTrialsID;
-%     data_trials(ipos).(OutField)=Zpca_test(:,:,iD);
-%     data_trials(ipos).(['time' OutField])=data_trials(ipos).(['time' InField]);
-% end
-
-if ~isempty(execinfo); out.exectime=toc(t); fprintf('Function: %s | Time Elapsed: %.2f s\n',mfilename,out.exectime); end
-out.W             =Wpca;
-out.mu            =mu;
-out.explained     =explained;
-out.numComponents =numComponents;
+if ~isempty(execinfo); out.exectime=toc(t); fprintf('| Time Elapsed: %.2f s\n',out.exectime); end
+out.Wpca          = Wpca;
+out.mu            = mu;
+out.explained     = explained;
+out.numComponents = numComponents;

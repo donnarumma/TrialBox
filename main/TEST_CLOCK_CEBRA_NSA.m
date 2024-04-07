@@ -77,7 +77,6 @@ for iTrial=1:nTrials
 end
 test_directory                    = '/home/donnarumma/TESTS/CEBRA/SAPIENZA/';
 pywraps_dir                       = '/home/donnarumma/tools/TrialBox/pywraps/';
-% par.cebraCompute.script_fit     = '/home/donnarumma/tools/Cebra_for_all/cebra_codes/wrap_cebra_fit.py';
 par.cebraModel.script_fit         = [pywraps_dir 'wrap_cebra_fit.py'];
 par.cebraModel.script_input_dir   = test_directory;
 par.cebraModel.script_output_dir  = test_directory;
@@ -85,19 +84,14 @@ par.cebraModel.max_iter           = 1000;
 par.cebraModel.output_dimension   = 12;
 par.cebraModel.OutField           = 'cebra';
 disp(par.cebraModel);
-[data_trials_test,out.cebraCompute] = cebraCompute(data_trials,par.cebraModel);
-% cebra_output                        = reshape(out.cebraCompute.cebra_output, par.cebraCompute.output_dimension,nTimes,nTrials);
-% for iTrial=1:nTrials
-%     data_trials_test(iTrial).(par.cebraCompute.OutField)          = cebra_output(:,:,iTrial);
-%     data_trials_test(iTrial).(['time' par.cebraCompute.OutField]) = data_trials.(['time' par.cebraCompute.InField]);
-% end
-%%
+[data_trials_test,out.cebraModel] = cebraModel(data_trials,par.cebraModel);
 
+% cebraEncode
 par.cebraEncode                    = cebraEncodeParams();
 par.cebraEncode.InField            = signal_process;
 par.cebraEncode.script_transform   = [pywraps_dir 'wrap_cebra_transform.py'];
 par.cebraEncode.OutField           = 'cebra';
-par.cebraEncode.model_file         = out.cebraCompute.model_file;
+par.cebraEncode.model_file         = out.cebraModel.model_file;
 par.cebraEncode.script_input_dir   = test_directory;
 par.cebraEncode.script_output_dir  = test_directory;
 [data_trials,out.cebraProject]     = cebraProject(data_trials,par.cebraEncode);
@@ -223,3 +217,27 @@ par.meanData.opt                = [1,0,0];
 data_trials_means               = meanData(data_trials_dirs, par.meanData);%
 
 hfg.pcas                        = plot_EachDimVsTime(data_trials_means,par.plot_EachDimVsTime);
+
+%% plot_scatterGradient
+data_trials_conds_scatter       = data_trials_conds;
+InField                         = par.cebraModel.OutField;
+nTrials                         = length(data_trials_conds_scatter);
+for iTrial=1:nTrials
+    time    = data_trials_conds_scatter(iTrial).(['time' InField]);
+    nTimes  = length(time);
+    tType   = data_trials_conds_scatter(iTrial).trialType;
+    data_trials_conds_scatter(iTrial).repTrialType =repmat(tType,1,nTimes);
+    names   = {'Joint', 'Obs', 'Solo'}; 
+    data_trials_conds_scatter(iTrial).repTrialName=names(data_trials_conds_scatter(iTrial).repTrialType);
+end
+par.plot_scatterGradient                 = plot_scatterGradientParams();
+par.plot_scatterGradient.InField         = InField;
+
+par.plot_scatterGradient.InGradient      = ['time' InField];
+par.plot_scatterGradient.lats            = [1,2,3];              % directions to be plot     
+%par.plot_scatterGradient.lats            = [2,3,1];              % directions to be plot     
+% start gradient color for each class
+par.plot_scatterGradient.cmaps           = linspecer(3);
+par.plot_scatterGradient.cmapslight      = lightCmaps(par.plot_scatterGradient.cmaps);
+% 
+hfg.plot_scatterGradient    = plot_scatterGradient(data_trials_conds_scatter,par.plot_scatterGradient);

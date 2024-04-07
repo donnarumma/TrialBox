@@ -82,7 +82,7 @@ par.pcaModel.OutField           = signal_process;
 par.exec.funname                = {'meanData','AverageWindow','GaussianSmoother','pcaModel'};
 [data_trials_class, out]        = run_trials(data_trials,par);
 % pcaEncode
-par.pcaEncode.Wpca              = out.pcaModel.W;
+par.pcaEncode.Wpca              = out.pcaModel.Wpca;
 par.pcaEncode.mu                = out.pcaModel.mu;
 par.pcaEncode.explained         = out.pcaModel.explained;
 par.pcaEncode.InField           = signal_process;
@@ -92,7 +92,7 @@ data_trials_class               = run_trials(data_trials_class,par);
 
 %% Step 3. project trials on the pca dictionary found
 % pcaEncode
-% par.pcaEncode.Wpca              = out.pcaModel.W;
+% par.pcaEncode.Wpca              = out.pcaModel.Wpca;
 % par.pcaEncode.mu                = out.pcaModel.mu;
 % par.pcaEncode.explained         = out.pcaModel.explained;
 % par.pcaEncode.InField           = signal_process;
@@ -167,3 +167,38 @@ par.meanData.opt                = [1,0,0];
 data_trials_means               = meanData(data_trials_conds,par.meanData);%
 %
 hfg.pcas                        = plot_EachDimVsTime(data_trials_means,par.plot_EachDimVsTime);
+
+%% plot_scatterGradient
+data_trials_scatter             = data_trials;
+InField                         = par.pcaEncode.OutField;
+nTrials                         = length(data_trials_scatter);
+sel                             = 9:16; nn='Obs';% Obs
+names                           = unique({data_trials.trialNameAll});
+goodtrials                      = false(nTrials,1);
+for iTrial=1:nTrials
+    time    = data_trials_scatter(iTrial).(['time' InField]);
+    nTimes  = length(time);
+    tType   = data_trials_scatter(iTrial).trialType;
+    data_trials_scatter(iTrial).repTrialType =repmat(tType,1,nTimes);
+    data_trials_scatter(iTrial).repTrialName=names(data_trials_scatter(iTrial).repTrialType);
+    goodtrials(iTrial) = ismember(data_trials_scatter(iTrial).trialType,sel);
+end
+data_trials_scatter=data_trials_scatter(goodtrials);
+
+% cmaps                           = linspecer(24);            % 8 directions x 3 conditions
+% cmaps                           = cmaps([17:24,1:8,9:16],:);% reset color as desired 
+% cmaps                           = cmaps(sel,:);
+cmaps                           = linspecer(length(sel));
+
+par.plot_scatterGradient                 = plot_scatterGradientParams();
+par.plot_scatterGradient.InField         = InField;
+
+par.plot_scatterGradient.InGradient      = ['time' InField];
+par.plot_scatterGradient.lats            = [3,4];              % directions to be plot     
+%par.plot_scatterGradient.lats            = [2,3,1];              % directions to be plot     
+% start gradient color for each class
+par.plot_scatterGradient.cmaps           = cmaps;
+par.plot_scatterGradient.fine            = 1;
+par.plot_scatterGradient.cmapslight      = lightCmaps(par.plot_scatterGradient.cmaps);
+% 
+hfg.plot_scatterGradient                 = plot_scatterGradient(data_trials_scatter,par.plot_scatterGradient);
