@@ -38,7 +38,7 @@ uniquePoints        = nan(nClasses,1);
 for ic = 1:nClasses
     uniquePoints(ic)=length(unique(sortGradients(sortName==classes(ic))));
 end
-nColors             = mean(uniquePoints);
+nColors             = round(mean(uniquePoints));
 ulab                = cell(nClasses,1);
 gradientMaps        = cell(nClasses,1);
 for ic=1:nClasses    

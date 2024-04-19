@@ -1,12 +1,5 @@
 function   explained = pca_explained_variance(X_data,Wpca)
 % function explained = explainedVariance(X_data,par)
-
-% par.InField='encode';
-% par.OutField='decode';
-% [X_data,out]            =par.encode(X_data,par.encode);
-% [X_data_rec,out]        =par.decode(X_data,par.decode);
-% 
-
 % X_data=rand(10,20); % nChannels x nTimes
 % [Wpca, Zpca, ~, ~, explainedpca, mupca]= pca(X_data');
 mu                      = mean(X_data,2);

@@ -1,32 +1,42 @@
 function   params=cebraModelParams()
 % function params=cebraModelParams()
 
-
-
 % model_type: 
 %               hypothesis  (CEBRA behavior) 
 %               discovery   (CEBRA time) 
 %               hybrid      (CEBRA behavior+time) 
 % 
-params.model_type           = 'hypothesis';
-params.mod_arch             = 'offset10-model';
+params.exec                 = true;
+params.model_architecture   = 'offset10-model';
+params.batch_size           = 512;
+params.learning_rate        = 3e-4;
+params.temperature          = 1;
+params.output_dimension     = 3;
+params.max_iterations       = 10000;
 params.distance             = 'cosine';
 params.conditional          = 'time_delta';
-params.temperature          = 1;
 params.time_offsets         = 10;
-params.max_iter             = 1000;
-params.max_adapt_iter       = 500;
-params.batch_size           = 256;
-params.learning_rate        = 3e-4;
-params.verbose              = 'True';
-params.num_hidden_units     = 32;
-params.pad_before_transform = 'True';
 params.hybrid               = 'false';
-params.exec                 = true;
-params.script_fit           = 'wrap_cebra_fit.py';  % script to be executed in python (full path)
-params.script_input_dir     = './';                 % directory where script expects inputs
-params.script_output_dir    = './';                 % directory where script save outputs
-params.InField              ='spikes';
+params.verbose              = 'True';
+
+%params.model_type           = 'hypothesis';
+params.seed                 = 0;
+params.maxI                 = 9999;
+params.model_filename       = 'cebra_model.pkl';
+params.group_field          = 'data';
+params.neural_field         = 'neural';
+params.neural_filename      = 'neural.hd5';
+params.behavior_field       = 'behavior';
+params.behavior_filename    = 'behavior.hd5';
+
+% params.max_adapt_iter       = 500;
+% params.num_hidden_units     = 32;
+% params.pad_before_transform = 'True';
+params.script_filename      = 'cebraModel.py';  % script to be executed in python (full path)
+params.script_rundir        = './';             % directory where script expects inputs
+params.modelParams_filename = 'cebraModelParams.hd5';
+
+%params.script_output_dir    = './';             % directory where script save outputs
 %%% Una nota sui modelli che si fanno girare (e in particolare i loro
 % iperparametri)
 %Questi offrono diversi parametri...tipo
@@ -93,5 +103,3 @@ params.InField              ='spikes';
 %    campioni positivi e negativi rispetto ai campioni di riferimento
 %    Può essere cosine ed euclidean
 %%%
-
-%%%% metto dati ratto in formato Mirco

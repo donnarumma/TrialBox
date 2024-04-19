@@ -1,4 +1,4 @@
-% function TEST_GRAZ_CSP_QDA
+%% function TEST_GRAZ_CSP_QDA
 clear;
 par.data_dir                    = 'D:\D_Ausilio EEG\EEG_FITTS\Data_Graz_Extracted';
 par.data_dir                    = '~/DATA/GRAZ/';
@@ -118,3 +118,11 @@ hfg.plot_scatter(1)                 = plot_scatter(EEG_trials([EEG_trials.train]
 title('tsne train')
 hfg.plot_scatter(2)                 = plot_scatter(EEG_trials([EEG_trials.test]),par.plot_scatter);
 title('tsne test')
+
+%% pSeparability
+par.pSeparability                   = pSeparabilityParams;
+par.pSeparability.InField           = 'tsne';
+
+[pVals,pComps]                     = pSeparability(EEG_trials([EEG_trials.test]),par.pSeparability);
+
+

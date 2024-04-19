@@ -298,14 +298,14 @@ par.plot_EachDimVsTime.nCols        = 4;
 explained       =out.pcaModel.explained;
 channels        =1:out.pcaModel.numComponents;
 nChannels       =length(channels); %% number of graphs
-str             =cell(nChannels,1);
+toleg             =cell(nChannels,1);
 for ichannel=1:nChannels
-    str{ichannel} = sprintf('$$\\tilde{\\mathbf x}_{%d,t}$$',ichannel);
+    toleg{ichannel} = sprintf('$$\\tilde{\\mathbf x}_{%d,t}$$',ichannel);
     if ~isempty(explained)
-        str{ichannel} = sprintf('%s (%2.1f)',str{ichannel},explained(ichannel));
+        toleg{ichannel} = sprintf('%s (%2.1f)',toleg{ichannel},explained(ichannel));
     end
 end
-par.plot_EachDimVsTime.titles=str;
+par.plot_EachDimVsTime.titles=toleg;
 
 % mean on pca
 par.meanData                        = meanDataParams;
@@ -318,6 +318,152 @@ par.meanData.OutField               = signal_process;
 par.meanData.SE                     = 0;
 hfg.pcasVsTime                      = plot_EachDimVsTime(meanData(data_trials,par.meanData),par.plot_EachDimVsTime);
 %%
+
+%% pSeparability
+par.pSeparability                   = pSeparabilityParams;
+par.pSeparability.InField           = signal_process;
+par.pSeparability.exec              = true;
+pdata_trials                        = bootdata_trials; % data_trials
+[pVals,pComps]                      = pSeparability(pdata_trials,par.pSeparability);
+%% pvalue plot per feature
+par.plot_pValues.InField     = 'comparisons';
+par.plot_pValues.xfld        = 'time';
+par.plot_pValues.dt          = 50;
+
+hfg.pvals       = plot_pValues(pComps,par.plot_pValues);
+return
+par.InField     = 'comparisons';
+par.xfld        = 'time';
+close all;
+hfg.pvals       = figure; 
+xfld            = par.xfld;
+time            = pdata_trials(1).([xfld signal_process]);
+dt              = 50; % ms
+inds            = time>time(1)+dt & time<time(end)-dt;
+nClasses        = length(pComps);
+InField         = par.InField;
+newk            = 1:nChannels;
+nRows           = 2;
+nCols           = 2;%3;
+legplot         = 2;
+lw              = 4;
+cc              = [];    
+if legplot==2
+    hSub        = subplot(nRows+1, 1, 1);
+    set(gca,'xticklabel','');set(gca,'yticklabel','');
+    axis off;
+    newk        = indexesForSubplotsWithLegend2(nRows,nCols);
+    nRows_mod   = nRows+1;
+    nCols_mod   = nCols;
+elseif legplot==1
+    hSub    = subplot(1, nCols+1, 1);
+    set(gca,'xticklabel','');set(gca,'yticklabel','');
+    axis off;
+    newk=indexesForSubplotsWithLegend(nRows,nCols);
+    nRows_mod=nRows;
+    nCols_mod=nCols+1;
+else
+    nRows_mod=nRows;
+    nCols_mod=nCols;
+end
+selY=newk(1):nCols_mod:max(newk);
+selX=newk(end-nCols+1):newk(end);
+nComps  = nchoosek(nClasses,2);
+% cmaps   = linspecer(nComps);
+cmaps   = linspecer(nClasses+nComps+1);
+cmaps   = cmaps(nClasses+1:end,:);
+limval  = [inf,-inf];
+totit   = cell(1,nChannels);
+for ichannel=1:nChannels
+    totit{ichannel} = sprintf('$$\\tilde{\\mathbf x}_{%d,t}$$',ichannel);
+    if ~isempty(explained)
+        totit{ichannel} = sprintf('%s (%2.1f)',totit{ichannel},explained(ichannel));
+    end
+end
+for iChannel=1:nChannels
+    subplot(nRows_mod,nCols_mod,newk(iChannel))
+    hold on; box on; grid on;
+    set(gca,'fontsize',13)
+    cc=[];
+    toleg=cell(0,0);
+    indcol  = 0;
+    xline(0,'label','Decision Point','LabelVerticalAlignment','bottom','LineWidth',5)
+    yline(0.05,'LineStyle','--');
+    yline(0.1,'LineStyle','--');
+    yline(0.5,'LineStyle','--');
+    if false
+        cc(end+1)=plot(time,pVals(iChannel,:),'Color',cmaps(end,:),'LineWidth',lw);
+        trialNames = {pComps.trialName};
+        toleg{end+1}=trialNames{1};
+        for itn=2:length(trialNames)
+            toleg{end}=sprintf('%s vs %s',toleg{end},trialNames{itn});
+        end
+        % toleg{end+1}=sprintf('%s vs %s',pComps(iClass).trialName,pComps(ic).trialName);
+        limval(1)=min([limval(1);pVals(:)]);
+        limval(2)=max([limval(2);pVals(:)]);
+    else
+        for iClass=1:nClasses
+            for ic=1:nClasses
+                if ic<=iClass
+                    continue
+                else
+                    indcol=indcol+1;
+                    % col = cmaps(iClass,:)+cmaps(ic,:);
+                    % if any(col>1)
+                    %     col=col/max(col);
+                    % end
+                    % col=col*0.8;
+                    % cc(end+1)=plot(time,comp,'Color',col,'LineWidth',lw);
+                    comp        = squeeze(pComps(iClass).(InField)(iChannel,:,ic));
+                    comp        = smooth(comp);
+                    cc(end+1)   = plot(time(inds),comp(inds),'Color',cmaps(indcol,:),'LineWidth',lw);
+                    % pVals
+                    toleg{end+1}=sprintf('%s vs %s',pComps(iClass).trialName,pComps(ic).trialName);
+                    limval(1)=min([limval(1);comp(:)]);
+                    limval(2)=max([limval(2);comp(:)]);
+        
+                end
+            end
+        end
+    end
+    title(totit{iChannel},'Interpreter','latex')
+    % set(gca,'yscale','log')
+
+    if ismember(newk(iChannel),selX)
+        xlabel('time [ms]');
+    end
+    if ismember(newk(iChannel),selY)
+        % ylabel(par.ylabel,'interpreter','latex');
+        ylabel('p (log scale)')
+    end  
+    
+    yticks([0,0.01,0.05,0.1,0.5,1]);
+    % legend(cc,toleg);
+end
+for iChannel=1:nChannels
+    subplot(nRows_mod,nCols_mod,newk(iChannel))
+    hold on; box on; grid on;
+    set(gca,'yscale','log');
+    ylim(limval);
+    % 
+end
+
+if legplot>0
+  hLegend   = legend(cc,toleg);
+  set(hLegend, 'position', get(hSub, 'position'));
+  uistack(hLegend,'bottom');
+end
+if params.AB
+    feedstr=sprintf('feeder A->B');
+else 
+    feedstr=sprintf('feeder B->A');
+end
+daystr = sprintf('Day%g',params.data.day);
+sgtitle([RatName ' ' daystr ' ' feedstr]);
+p=[0,0,1500,600];
+set(hfg.pvals,'Position',p);
+
+%% plot hfg
 
 return
 %% BayesianInferenceClassificator, cumulated pca components 
@@ -357,22 +503,22 @@ par.plot_EachDimVsTime.legplot      = 2;
 explained    =out.pcaCompute.explained;
 channelSets  =par.BayesianInferenceClassification.channelSets;
 nSets        =length(channelSets); %% number of graphs
-str=cell(nSets,1);
+toleg=cell(nSets,1);
 for iSet=1:nSets
     channels     =channelSets{iSet};
     nChannels    =length(channels);
-    str{iSet}='';
+    toleg{iSet}='';
     for ichannel=1:nChannels
-        str{iSet} = sprintf('%s$${\\mathbf x}_{%d,t}$$',str{iSet},channels(ichannel));
+        toleg{iSet} = sprintf('%s$${\\mathbf x}_{%d,t}$$',toleg{iSet},channels(ichannel));
         if ichannel<nChannels
-             str{iSet} = sprintf('%s,',str{iSet});
+             toleg{iSet} = sprintf('%s,',toleg{iSet});
         end 
     end
     if ~isempty(explained)
-        str{iSet} = sprintf('%s (%2.1f)',str{iSet},sum(explained(channelSets{iSet})));
+        toleg{iSet} = sprintf('%s (%2.1f)',toleg{iSet},sum(explained(channelSets{iSet})));
     end
 end
-par.plot_EachDimVsTime.titles=str;
+par.plot_EachDimVsTime.titles=toleg;
 
 par.meanData                    = meanDataParams;
 par.meanData.ifclass            = true;
@@ -408,22 +554,22 @@ par.plot_EachDimBar.chanceline      = true;
 explained                           = out.pcaCompute.explained;
 channelSets                         = par.BayesianInferenceClassificationSeparated.channelSets;
 nSets                               = length(channelSets); %% number of graphs
-str=cell(nSets,1);
+toleg=cell(nSets,1);
 for iSet=1:nSets
     channels     =channelSets{iSet};
     nChannels    =length(channels);
-    str{iSet}='';
+    toleg{iSet}='';
     for ichannel=1:nChannels
-        str{iSet} = sprintf('%s$${\\mathbf x}_{%d,t}$$',str{iSet},channels(ichannel));
+        toleg{iSet} = sprintf('%s$${\\mathbf x}_{%d,t}$$',toleg{iSet},channels(ichannel));
         if ichannel<nChannels
-             str{iSet} = sprintf('%s,',str{iSet});
+             toleg{iSet} = sprintf('%s,',toleg{iSet});
         end 
     end
     if ~isempty(explained)
-        str{iSet} = sprintf('%s (%2.1f)',str{iSet},sum(explained(channelSets{iSet})));
+        toleg{iSet} = sprintf('%s (%2.1f)',toleg{iSet},sum(explained(channelSets{iSet})));
     end
 end
-par.plot_EachDimBar.titles          = str;
+par.plot_EachDimBar.titles          = toleg;
 
 % meanData -> get class means
 par.meanData                    = meanDataParams;
@@ -462,22 +608,22 @@ par.plot_EachDimBar.chanceline      = true;
 explained    =out.pcaCompute.explained;
 channelSets  =par.BayesianInferenceClassificationSeparated.channelSets;
 nSets        =length(channelSets); %% number of graphs
-str=cell(nSets,1);
+toleg=cell(nSets,1);
 for iSet=1:nSets
     channels     =channelSets{iSet};
     nChannels    =length(channels);
-    str{iSet}='';
+    toleg{iSet}='';
     for ichannel=1:nChannels
-        str{iSet} = sprintf('%s$${\\mathbf x}_{%d,t}$$',str{iSet},channels(ichannel));
+        toleg{iSet} = sprintf('%s$${\\mathbf x}_{%d,t}$$',toleg{iSet},channels(ichannel));
         if ichannel<nChannels
-             str{iSet} = sprintf('%s,',str{iSet});
+             toleg{iSet} = sprintf('%s,',toleg{iSet});
         end 
     end
     if ~isempty(explained)
-        str{iSet} = sprintf('%s (%2.1f)',str{iSet},sum(explained(channelSets{iSet})));
+        toleg{iSet} = sprintf('%s (%2.1f)',toleg{iSet},sum(explained(channelSets{iSet})));
     end
 end
-par.plot_EachDimBar.titles=str;
+par.plot_EachDimBar.titles=toleg;
 
 % meanData -> get class means
 par.meanData                    = meanDataParams;
