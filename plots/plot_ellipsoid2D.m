@@ -1,17 +1,16 @@
-function   hfig=plot_ellipsoid2D(seq,selected,indsT,cmaps,par)
-% function hfig=plot_ellipsoid2D(seq,selected,indsT,cmaps,par)
+function   h=plot_ellipsoid2D(seq,selected,indsT,cmaps,par)
+% function h=plot_ellipsoid2D(seq,selected,indsT,cmaps,par)
 % 2D basis
-default_params  = CI_computeParams;
-try
-    recopyFields(par,default_params);
-catch
-    par   = default_params;
-end
-try
-    xspec = par.InField;
-catch
-    xspec ='xorth';
-end
+execinfo=par.exec;
+if ~isempty(execinfo); t=tic; fprintf('Function: %s ',mfilename); end
+if isempty(par.hfig) || ~isvalid(par.hfig)
+    hfig    =figure;
+    par.hfig=hfig;
+else
+    hfig    =par.hfig;
+end 
+xspec = par.InField;
+
 try
     xtkl    = seq.(['time' (xspec)]);
 catch
@@ -19,7 +18,7 @@ catch
 end
 pc      =[1,0; ...
           0,1];
-hfig=figure; hold on; box on; grid on; %axis('equal');
+hold on; box on; grid on; %axis('equal');
 axlab='x';
 str1 = sprintf('$$\\tilde{\\mathbf %s}_{%d,t}$$', axlab, 1);
 str2 = sprintf('$$\\tilde{\\mathbf %s}_{%d,t}$$', axlab, 2);
@@ -50,7 +49,7 @@ for it=1:length(indsT)
         all_labels(it,isel) = unique(labnames);
         [mm,ss,~]=CI_compute(X0,par);
   
-        xy=mean(X0); t   = linspace(0,2*pi,30); data = pc*[ss(1)*cos(t);ss(2)*sin(t)];
+        xy=mean(X0); timefield   = linspace(0,2*pi,30); data = pc*[ss(1)*cos(timefield);ss(2)*sin(timefield)];
         try
             he(it,isel)=plot3(xtkl(indT)*ones(size(data(1,:))),xy(1)+data(1,:),xy(2)+data(2,:),'color',cmaps(sel,:),'linewidth',3);
         catch
@@ -70,3 +69,7 @@ set(hfig,'Position',p);
 
 legend(h(1,:),all_labels(1,:),'Location','Best');
 view(-10,40)
+if nargout>0
+    h=hfig;
+end
+if ~isempty(execinfo); out.exectime=toc(t); fprintf('| Time Elapsed: %.2f s\n',out.exectime); end

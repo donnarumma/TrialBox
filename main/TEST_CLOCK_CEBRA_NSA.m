@@ -1,12 +1,22 @@
-% function TEST_CLOCK_CEBRA_NSA
-% PCA Clock, see
+function par=TEST_CLOCK_CEBRA_NSA(ifplot,irng)
+% see PCA Clock, 
 % Pezzulo, G., Donnarumma, F., Ferrari-Toniolo, S., Cisek, P., & Battaglia-Mayer, A. (2022). 
 % Shared population-level dynamics in monkey premotor cortex during solo action, joint action and action observation. 
 % Progress in Neurobiology, 210, 102214.
-% /home/donnarumma/TESTS/CEBRA/SAPIENZA/cebra20240420080115/cebra_model.pkl
+% alternate approach in CEBRA
+% clear;
+try 
+    irng;
+catch
+    irng=10;
+end
+try
+    ifplot;
+catch
+    ifplot                          = true;             
+end
 
-clear;
-par.irng                        = 10;                  % for reproducibility
+par.irng                        = irng;   % for reproducibility
 binWidth                        = 20;
 kernSD                          = 30;
 rng(par.irng);
@@ -71,36 +81,46 @@ par.exec.funname                = {'AverageWindow','GaussianSmoother'};
 [data_trials, out2]             = run_trials(data_trials,par);
 
 %% Step 2. perform cebra model
-par.cebraModel                  = cebraModelParams();
-par.cebraModel.InField          = signal_process;
-nTimes                          = length(data_trials(1).(['time'  par.cebraModel.InField])); 
-for iTrial=1:nTrials
-    data_trials(iTrial).behavior= data_trials(iTrial).trialType*ones(1,nTimes);
-end
-strdate                            = datetime('now', 'Format', 'yyyyMMddHHmmss');
-script_rundir                      = ['/tmp/cebra' sprintf('%s',strdate) '/'];
-mkdir(script_rundir);
-model_dir                          = ['/home/donnarumma/TESTS/CEBRA/SAPIENZA/cebra' sprintf('%s',strdate) '/'];
-mkdir(model_dir);
-cebra_codes_dir                    = '~/tools/TrialBox/pywraps/';
-par.cebraModel                     = cebraModelParams;
-% path to python scripts
-par.cebraModel.script_filename     = [cebra_codes_dir 'cebraModel.py'];
-% path to hd5 files
-par.cebraModel.script_rundir       = script_rundir;
-par.cebraModel.model_filename      = [model_dir 'cebra_model.pkl'];
-% other parameteres
-par.cebraModel.max_iterations      = 10000;
-par.cebraModel.output_dimension    = 8;
-disp(par.cebraModel);
-[~,out.cebraModel]                 = cebraModel(data_trials,par.cebraModel);
+cebra_codes_dir                     = '~/tools/TrialBox/pywraps/'; 
+reload                              = true;
+model_name                          = 'cebra_model.pkl'; 
+if reload
+    % model_dir     = '/TESTS/CEBRA/SAPIENZA/cebra20240420080115/'; output_dimension = 3;
+    model_dir       = '/TESTS/CEBRA/SAPIENZA/cebra20240420083547/'; output_dimension = 8;
 
+    model_filename  = [model_dir, model_name];
+else
+    par.cebraModel                      = cebraModelParams();
+    par.cebraModel.seed                 = par.irng;
+    nTimes                              = length(data_trials(1).(['time'  signal_process])); 
+    for iTrial=1:nTrials
+        data_trials(iTrial).behavior    = data_trials(iTrial).trialType*ones(1,nTimes);
+    end
+    strdate                             = datetime('now', 'Format', 'yyyyMMddHHmmss');
+    script_rundir                       = ['/tmp/cebra' sprintf('%s',strdate) '/'];
+    mkdir(script_rundir);
+    model_dir                           = ['/home/donnarumma/TESTS/CEBRA/SAPIENZA/cebra' sprintf('%s',strdate) '/'];
+    mkdir(model_dir);
+    par.cebraModel                      = cebraModelParams;
+    % path to python scripts
+    par.cebraModel.script_filename      = [cebra_codes_dir 'cebraModel.py'];
+    % path to hd5 files
+    par.cebraModel.script_rundir        = script_rundir;
+    par.cebraModel.model_filename       = [model_dir model_name];
+    % other parameteres
+    par.cebraModel.max_iterations       = 10000;
+    par.cebraModel.output_dimension     = output_dimension;
+    disp(par.cebraModel);
+    [~,out.cebraModel]                  = cebraModel(data_trials,par.cebraModel);
+    model_filename                      = par.cebraModel.model_filename;
+    output_dimension                    = par.cebraModel.output_dimension;
+end
 %% Step 3. cebraEncode -> project data on the manifold
 strdate                             = datetime('now', 'Format', 'yyyyMMddHHmmss');
 script_rundir                       = ['/tmp/cebra' sprintf('%s',strdate) '/'];
 mkdir(script_rundir);
 par.cebraEncode                     = cebraEncodeParams();
-par.cebraEncode.model_filename      = par.cebraModel.model_filename;
+par.cebraEncode.model_filename      = model_filename;
 par.cebraEncode.script_rundir       = script_rundir;
 par.cebraEncode.script_filename     = [cebra_codes_dir 'cebraEncode.py'];
 disp(par.cebraEncode)
@@ -151,6 +171,7 @@ cmaps                           = cmaps([2,1,3],:);         % color map for join
 
 % plot_EachDimVsTime
 par.plot_EachDimVsTime              = plot_EachDimVsTimeParams;
+par.plot_EachDimVsTime.hfig         = figure('visible',ifplot);
 par.plot_EachDimVsTime.cmaps        = cmaps;
 par.plot_EachDimVsTime.cmapslight   = lightCmaps(par.plot_EachDimVsTime.cmaps);
 par.plot_EachDimVsTime.InField      = par.cebraEncode.manifold_field;  % take manifold projection to show;
@@ -160,7 +181,7 @@ par.plot_EachDimVsTime.nCols        = 4;
 par.plot_EachDimVsTime.legplot      = 2;
 % GRAPH SUBPLOT TITLES
 explained                           = [];%out.pcaCompute.explained;
-channels                            = 1:par.cebraModel.output_dimension;
+channels                            = 1:output_dimension;
 nChannels                           = length(channels); %% number of graphs
 str                                 = cell(nChannels,1);
 for ichannel=1:nChannels
@@ -198,6 +219,7 @@ cmaps                           = linspecer(nConditions_m); %
 
 % plot_EachDimVsTime
 par.plot_EachDimVsTime              = plot_EachDimVsTimeParams;
+par.plot_EachDimVsTime.hfig         = figure('visible',ifplot);
 par.plot_EachDimVsTime.cmaps        = cmaps;
 par.plot_EachDimVsTime.cmapslight   = lightCmaps(par.plot_EachDimVsTime.cmaps);
 par.plot_EachDimVsTime.InField      = par.cebraEncode.manifold_field;  % take manifold projection to show;
@@ -207,7 +229,7 @@ par.plot_EachDimVsTime.nCols        = 4;
 par.plot_EachDimVsTime.legplot      = 2;
 % GRAPH SUBPLOT TITLES
 explained                           = [];%out.pcaCompute.explained;
-channels                            = 1:par.cebraModel.output_dimension;
+channels                            = 1:output_dimension;
 nChannels                           = length(channels); %% number of graphs
 str                                 = cell(nChannels,1);
 for ichannel=1:nChannels
@@ -242,14 +264,23 @@ for iTrial=1:nTrials
     names   = {'Joint', 'Obs', 'Solo'}; 
     data_trials_conds_scatter(iTrial).repTrialName=names(data_trials_conds_scatter(iTrial).repTrialType);
 end
-par.plot_scatterGradient                 = plot_scatterGradientParams();
-par.plot_scatterGradient.InField         = InField;
+par.plot_scatterGradient                = plot_scatterGradientParams();
+par.plot_scatterGradient.hfig           = figure('visible',ifplot);
+par.plot_scatterGradient.InField        = InField;
 
-par.plot_scatterGradient.InGradient      = ['time' InField];
-par.plot_scatterGradient.lats            = [1,2,3];              % directions to be plot     
+par.plot_scatterGradient.InGradient     = ['time' InField];
+par.plot_scatterGradient.lats           = [1,2,3];              % directions to be plot     
 %par.plot_scatterGradient.lats            = [2,3,1];              % directions to be plot     
 % start gradient color for each class
 par.plot_scatterGradient.cmaps           = linspecer(3);
 par.plot_scatterGradient.cmapslight      = lightCmaps(par.plot_scatterGradient.cmaps);
 % 
 hfg.plot_scatterGradient    = plot_scatterGradient(data_trials_conds_scatter,par.plot_scatterGradient);
+
+%% print hfg plots - if not ifplot, save fig results
+if ~ifplot
+    par.hfigPrint               = hfigPrintParams();
+    par.hfigPrint.pdf_file      = [model_dir mfilename];
+    par.hfigPrint.save_dir      = model_dir; 
+    hfigPrint(hfg,par.hfigPrint)
+end
