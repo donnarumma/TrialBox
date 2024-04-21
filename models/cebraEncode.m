@@ -69,7 +69,7 @@ for iTrial = 1:nTrials
     data_trials(iTrial).(manifold_field)    = manifold(:,bStart:bEnd); 
     bStart                                  = bEnd + 1;             % initial index of next trial
 
-    data_trials(iTrial).([xfld neural_field]) = data_trials.([xfld neural_field]);
+    data_trials(iTrial).([xfld manifold_field]) = data_trials.([xfld neural_field]);
 end
 
 if ~isempty(execinfo); out.exectime=toc(t); fprintf('| Time Elapsed: %.2f s\n',out.exectime); end

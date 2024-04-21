@@ -3,6 +3,8 @@
 % Pezzulo, G., Donnarumma, F., Ferrari-Toniolo, S., Cisek, P., & Battaglia-Mayer, A. (2022). 
 % Shared population-level dynamics in monkey premotor cortex during solo action, joint action and action observation. 
 % Progress in Neurobiology, 210, 102214.
+% /home/donnarumma/TESTS/CEBRA/SAPIENZA/cebra20240420080115/cebra_model.pkl
+
 clear;
 par.irng                        = 10;                  % for reproducibility
 binWidth                        = 20;
@@ -30,7 +32,7 @@ end
 
 %% Step 1. prepare data
 signal_name                     = 'spikes';       % data savead are in 'spikes' field
-signal_process                  = 'y';            % data processed are in 'y' field
+signal_process                  = 'neural';       % data processed are in 'y' field
 % SmoothWindow (moving window smoothing)
 par.SmoothWindow                = SmoothWindowParams;
 par.SmoothWindow.InField        = signal_name;
@@ -68,48 +70,57 @@ par.GaussianSmoother.stepSize   = binWidth;     % time between 2 consecutive dat
 par.exec.funname                = {'AverageWindow','GaussianSmoother'};
 [data_trials, out2]             = run_trials(data_trials,par);
 
-%% Step 2. perform cebra
+%% Step 2. perform cebra model
 par.cebraModel                  = cebraModelParams();
 par.cebraModel.InField          = signal_process;
 nTimes                          = length(data_trials(1).(['time'  par.cebraModel.InField])); 
 for iTrial=1:nTrials
-    data_trials(iTrial).labels  = data_trials(iTrial).trialType*ones(1,nTimes);
+    data_trials(iTrial).behavior= data_trials(iTrial).trialType*ones(1,nTimes);
 end
-test_directory                    = '/home/donnarumma/TESTS/CEBRA/SAPIENZA/';
-pywraps_dir                       = '/home/donnarumma/tools/TrialBox/pywraps/';
-par.cebraModel.script_fit         = [pywraps_dir 'wrap_cebra_fit.py'];
-par.cebraModel.script_input_dir   = test_directory;
-par.cebraModel.script_output_dir  = test_directory;
-par.cebraModel.max_iter           = 1000;
-par.cebraModel.output_dimension   = 12;
-par.cebraModel.OutField           = 'cebra';
+strdate                            = datetime('now', 'Format', 'yyyyMMddHHmmss');
+script_rundir                      = ['/tmp/cebra' sprintf('%s',strdate) '/'];
+mkdir(script_rundir);
+model_dir                          = ['/home/donnarumma/TESTS/CEBRA/SAPIENZA/cebra' sprintf('%s',strdate) '/'];
+mkdir(model_dir);
+cebra_codes_dir                    = '~/tools/TrialBox/pywraps/';
+par.cebraModel                     = cebraModelParams;
+% path to python scripts
+par.cebraModel.script_filename     = [cebra_codes_dir 'cebraModel.py'];
+% path to hd5 files
+par.cebraModel.script_rundir       = script_rundir;
+par.cebraModel.model_filename      = [model_dir 'cebra_model.pkl'];
+% other parameteres
+par.cebraModel.max_iterations      = 10000;
+par.cebraModel.output_dimension    = 8;
 disp(par.cebraModel);
-[data_trials_test,out.cebraModel] = cebraModel(data_trials,par.cebraModel);
+[~,out.cebraModel]                 = cebraModel(data_trials,par.cebraModel);
 
-% cebraEncode
-par.cebraEncode                    = cebraEncodeParams();
-par.cebraEncode.InField            = signal_process;
-par.cebraEncode.script_transform   = [pywraps_dir 'wrap_cebra_transform.py'];
-par.cebraEncode.OutField           = 'cebra';
-par.cebraEncode.model_file         = out.cebraModel.model_file;
-par.cebraEncode.script_input_dir   = test_directory;
-par.cebraEncode.script_output_dir  = test_directory;
-[data_trials,out.cebraProject]     = cebraProject(data_trials,par.cebraEncode);
+%% Step 3. cebraEncode -> project data on the manifold
+strdate                             = datetime('now', 'Format', 'yyyyMMddHHmmss');
+script_rundir                       = ['/tmp/cebra' sprintf('%s',strdate) '/'];
+mkdir(script_rundir);
+par.cebraEncode                     = cebraEncodeParams();
+par.cebraEncode.model_filename      = par.cebraModel.model_filename;
+par.cebraEncode.script_rundir       = script_rundir;
+par.cebraEncode.script_filename     = [cebra_codes_dir 'cebraEncode.py'];
+disp(par.cebraEncode)
+data_trials                         = cebraEncode(data_trials,par.cebraEncode);
+
 % Some plots
 %% plot_trajectory2D
 % meanData
 par.meanData                    = meanDataParams;
 par.meanData.ifclass            = true;
 par.meanData.trialTypes         = [data_trials.trialType];
-par.meanData.InField            = par.cebraModel.OutField;
-par.meanData.OutField           = par.cebraModel.OutField;
+par.meanData.InField            = par.cebraEncode.manifold_field;
+par.meanData.OutField           = par.cebraEncode.manifold_field;
 par.meanData.P                  = 80;
 par.meanData.opt                = [0,0,1];
 data_trials_means               = meanData(data_trials, par.meanData);%
 
 cmaps                           = linspecer(24);            % 8 directions x 3 conditions
 cmaps                           = cmaps([17:24,1:8,9:16],:);% reset color as desired 
-timeField                       = data_trials(1).(['time' par.cebraModel.OutField]);
+timeField                       = data_trials(1).(['time' par.cebraEncode.manifold_field]);
 [~,i0]                          = min(abs(timeField));      % select   0  ms % TargetOn
 istart                          = find(timeField>=-80,1);   % select -80  ms 
 iend                            = find(timeField>=250,1);   % select 250  ms
@@ -120,7 +131,7 @@ par.plot_trajectory2D.axlab     = 'x';
 par.plot_trajectory2D.cmaps     = cmaps;
 par.plot_trajectory2D.cmapslight= lightCmaps(par.plot_trajectory2D.cmaps);
 par.plot_trajectory2D.explained = [];
-par.plot_trajectory2D.InField   = par.cebraModel.OutField;  % take pca projections to show
+par.plot_trajectory2D.InField   = par.cebraEncode.manifold_field;  % take manifold projections to show
 par.plot_trajectory2D.istart    = istart;
 par.plot_trajectory2D.center    = i0;
 par.plot_trajectory2D.iend      = iend;
@@ -142,7 +153,7 @@ cmaps                           = cmaps([2,1,3],:);         % color map for join
 par.plot_EachDimVsTime              = plot_EachDimVsTimeParams;
 par.plot_EachDimVsTime.cmaps        = cmaps;
 par.plot_EachDimVsTime.cmapslight   = lightCmaps(par.plot_EachDimVsTime.cmaps);
-par.plot_EachDimVsTime.InField      = par.cebraModel.OutField;  % take pca projection to show;
+par.plot_EachDimVsTime.InField      = par.cebraEncode.manifold_field;  % take manifold projection to show;
 par.plot_EachDimVsTime.ylabel       = '$pca$';
 par.plot_EachDimVsTime.keep         = 1:nConditions_m;
 par.plot_EachDimVsTime.nCols        = 4;
@@ -163,8 +174,8 @@ par.plot_EachDimVsTime.titles   = str;
 par.meanData                    = meanDataParams;
 par.meanData.ifclass            = true;
 par.meanData.trialTypes         = [data_trials_conds.trialType];
-par.meanData.InField            = par.cebraModel.OutField;
-par.meanData.OutField           = par.cebraModel.OutField;
+par.meanData.InField            = par.cebraEncode.manifold_field;
+par.meanData.OutField           = par.cebraEncode.manifold_field;
 par.meanData.P                  = 68;
 par.meanData.opt                = [1,0,0];
 data_trials_means               = meanData(data_trials_conds, par.meanData);%
@@ -189,8 +200,8 @@ cmaps                           = linspecer(nConditions_m); %
 par.plot_EachDimVsTime              = plot_EachDimVsTimeParams;
 par.plot_EachDimVsTime.cmaps        = cmaps;
 par.plot_EachDimVsTime.cmapslight   = lightCmaps(par.plot_EachDimVsTime.cmaps);
-par.plot_EachDimVsTime.InField      = par.cebraModel.OutField;  % take pca projection to show;
-par.plot_EachDimVsTime.ylabel       = '$pca$';
+par.plot_EachDimVsTime.InField      = par.cebraEncode.manifold_field;  % take manifold projection to show;
+par.plot_EachDimVsTime.ylabel       = '$cebra$';
 par.plot_EachDimVsTime.keep         = 1:nConditions_m;
 par.plot_EachDimVsTime.nCols        = 4;
 par.plot_EachDimVsTime.legplot      = 2;
@@ -210,8 +221,8 @@ par.plot_EachDimVsTime.titles   = str;
 par.meanData                    = meanDataParams;
 par.meanData.ifclass            = true;
 par.meanData.trialTypes         = [data_trials_dirs.trialType];
-par.meanData.InField            = par.cebraModel.OutField;
-par.meanData.OutField           = par.cebraModel.OutField;
+par.meanData.InField            = par.cebraEncode.manifold_field;
+par.meanData.OutField           = par.cebraEncode.manifold_field;
 par.meanData.P                  = 68;
 par.meanData.opt                = [1,0,0];
 data_trials_means               = meanData(data_trials_dirs, par.meanData);%
@@ -220,13 +231,14 @@ hfg.pcas                        = plot_EachDimVsTime(data_trials_means,par.plot_
 
 %% plot_scatterGradient
 data_trials_conds_scatter       = data_trials_conds;
-InField                         = par.cebraModel.OutField;
+InField                         = par.cebraEncode.manifold_field;
 nTrials                         = length(data_trials_conds_scatter);
 for iTrial=1:nTrials
     time    = data_trials_conds_scatter(iTrial).(['time' InField]);
     nTimes  = length(time);
     tType   = data_trials_conds_scatter(iTrial).trialType;
     data_trials_conds_scatter(iTrial).repTrialType =repmat(tType,1,nTimes);
+    data_trials_conds_scatter(iTrial).behavior     =repmat(tType,1,nTimes);
     names   = {'Joint', 'Obs', 'Solo'}; 
     data_trials_conds_scatter(iTrial).repTrialName=names(data_trials_conds_scatter(iTrial).repTrialType);
 end

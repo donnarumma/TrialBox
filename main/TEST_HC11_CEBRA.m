@@ -70,6 +70,6 @@ par.plot_scatterGradient.cmapslight = [[1.0,0.0,1.0]; ...  % left  start from ma
 % end gradient color for each class
 par.plot_scatterGradient.cmaps      = [[0.0,1.0,1.0]; ...  % left  end in cyan
                                             [0.0,0.5,0.4]];     % right end in green
-par.plot_scatterGradinnt.label      = 'cm';
+par.plot_scatterGradinnt.label      = 'm';
 hfg.plot_scatterGradient            = plot_scatterGradient(data_trials,par.plot_scatterGradient);
 title('cebra','interpreter','none')
