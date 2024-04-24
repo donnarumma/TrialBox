@@ -6,6 +6,7 @@ par.numIterations   = 100;
 par.InField         = 'y';
 par.OutField        = 'y';
 par.SuccessField    = 'success';
+par.ProbField       = 'prob'
 try
     fnames=fieldnames(parSource);
     for in=1:length(fnames)
