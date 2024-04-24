@@ -1,5 +1,6 @@
 %% function TEST_GRAZ_CSP_QDA
 clear;
+ifplot                          = false;
 par.data_dir                    = 'D:\D_Ausilio EEG\EEG_FITTS\Data_Graz_Extracted';
 par.data_dir                    = '~/DATA/GRAZ/';
 par.irng                        = 10;                  % for reproducibility
@@ -68,61 +69,84 @@ cmaps                           = linspecer(length(unique([EEG_trials.trialType]
 par.plot_AccuracyBars           = plot_AccuracyBarsParams;
 par.plot_AccuracyBars.cmaps     = cmaps;
 
-hfg.AllComponentsAccuracyBars   = plot_AccuracyBars(EEG_trials([EEG_trials.train]),par.plot_AccuracyBars);
+par.plot_AccuracyBars.hfig      = figure('visible',ifplot);
+hfg.AccuracyBarsTrain           = plot_AccuracyBars(EEG_trials([EEG_trials.train]),par.plot_AccuracyBars);
 sgtitle('Train')
-hfg.AllComponentsAccuracyBars   = plot_AccuracyBars(EEG_trials([EEG_trials.test]),par.plot_AccuracyBars);
+par.plot_AccuracyBars.hfig      = figure('visible',ifplot);
+hfg.AccuracyBarsTest            = plot_AccuracyBars(EEG_trials([EEG_trials.test]),par.plot_AccuracyBars);
 sgtitle('Test')
 
 
-%% plot Accuracy on Filterbank-CSP
-% plot_EachDimBar
-par.plot_EachDimBar             = plot_EachDimBarParams;
-par.plot_EachDimBar.novariance  = false;
-par.plot_EachDimBar.addbar      = false;
-par.plot_EachDimBar.cmaps       = cmaps;
-par.plot_EachDimBar.legplot     = 1;
-par.plot_EachDimBar.InField     = 'accuracy';
-par.plot_EachDimBar.novariance  = true;
-par.plot_EachDimBar.keep        = 1:4;
-% par.plot_EachDimBar.nCols     = 1;
-par.plot_EachDimBar.ylabel      = '$acc$';
-par.plot_EachDimBar.YLIM        = [0-0.01,1+0.01];
-par.plot_EachDimBar.evaltime    = 1;
-par.plot_EachDimBar.chanceline  = true;
-
-data_trials                         = EEG_trials([EEG_trials.test]);
-% meanData -> get mean con classes
-par.meanData                        = meanDataParams;
-par.meanData.trialTypes             = [data_trials.trialType];
-par.meanData.opt                    = [0,0,1]; % mean
-par.meanData.InField                = 'success';
-par.meanData.OutField               = 'accuracy';
-class_acc_trials                    = meanData(data_trials,par.meanData);
-% meanData -> get global mean
-par.meanData                        = meanDataParams;
-par.meanData.opt                    = [0,0,1]; % mean
-par.meanData.trialTypes             = true(size([data_trials.trialType]));
-par.meanData.InField                = 'success';
-par.meanData.OutField               = 'accuracy';
-acc_trials                          = meanData(data_trials,par.meanData);   
-par.plot_EachDimBar.addbar          = acc_trials;
-par.plot_EachDimBar.titles{1}       = 'ACCURACY';
-hfg.plot_EachDimBar                 = plot_EachDimBar(class_acc_trials,par.plot_EachDimBar);
+% %% plot Accuracy on Filterbank-CSP
+% % plot_EachDimBar
+% par.plot_EachDimBar             = plot_EachDimBarParams;
+% par.plot_EachDimBar.hfig        = figure('visible',ifplot);
+% par.plot_EachDimBar.novariance  = false;
+% par.plot_EachDimBar.addbar      = false;
+% par.plot_EachDimBar.cmaps       = cmaps;
+% par.plot_EachDimBar.legplot     = 1;
+% par.plot_EachDimBar.InField     = 'accuracy';
+% par.plot_EachDimBar.novariance  = true;
+% par.plot_EachDimBar.keep        = 1:4;
+% % par.plot_EachDimBar.nCols     = 1;
+% par.plot_EachDimBar.ylabel      = '$acc$';
+% par.plot_EachDimBar.YLIM        = [0-0.01,1+0.01];
+% par.plot_EachDimBar.evaltime    = 1;
+% par.plot_EachDimBar.chanceline  = true;
+% 
+% data_trials                         = EEG_trials([EEG_trials.test]);
+% % meanData -> get mean con classes
+% par.meanData                        = meanDataParams;
+% par.meanData.trialTypes             = [data_trials.trialType];
+% par.meanData.opt                    = [0,0,1]; % mean
+% par.meanData.InField                = 'success';
+% par.meanData.OutField               = 'accuracy';
+% class_acc_trials                    = meanData(data_trials,par.meanData);
+% % meanData -> get global mean
+% par.meanData                        = meanDataParams;
+% par.meanData.opt                    = [0,0,1]; % mean
+% par.meanData.trialTypes             = true(size([data_trials.trialType]));
+% par.meanData.InField                = 'success';
+% par.meanData.OutField               = 'accuracy';
+% acc_trials                          = meanData(data_trials,par.meanData);   
+% par.plot_EachDimBar.addbar          = acc_trials;
+% par.plot_EachDimBar.titles{1}       = 'ACCURACY';
+% hfg.plot_EachDimBar                 = plot_EachDimBar(class_acc_trials,par.plot_EachDimBar);
 
 %% plot CSP_tsne
 data_trials                         = EEG_trials([EEG_trials.train]);
 par.plot_scatter                    = plot_scatterParams;
 par.plot_scatter.InField            = 'tsne';
 par.plot_scatter.cmaps              = linspecer(length(unique([data_trials.trialType])));
-hfg.plot_scatter(1)                 = plot_scatter(EEG_trials([EEG_trials.train]),par.plot_scatter);
+par.plot_scatter.hfig               = figure('visible',ifplot);
+hfg.tnseScatterTrain                = plot_scatter(EEG_trials([EEG_trials.train]),par.plot_scatter);
 title('tsne train')
-hfg.plot_scatter(2)                 = plot_scatter(EEG_trials([EEG_trials.test]),par.plot_scatter);
+par.plot_scatter.hfig               = figure('visible',ifplot);
+hfg.tnseScatterTest                 = plot_scatter(EEG_trials([EEG_trials.test]),par.plot_scatter);
 title('tsne test')
 
 %% pSeparability
 par.pSeparability                   = pSeparabilityParams;
-par.pSeparability.InField           = 'tsne';
+par.pSeparability.InField           = par.tsneModel.OutField;
+par.pSeparability.OutField          = 'comparisons';
+par.pSeparability.exec              = true;
+[pVals,pClasses]                    = pSeparability(EEG_trials([EEG_trials.test]),par.pSeparability);
 
-[pVals,pComps]                     = pSeparability(EEG_trials([EEG_trials.test]),par.pSeparability);
+%% pvalue plot per feature
+par.plot_pValues                    = plot_pValuesParams;
+par.plot_pValues.InField            = par.pSeparability.OutField;
+par.plot_pValues.hfig               = figure('visible',ifplot);
+par.plot_pValues.nRows              = 1;
+par.plot_pValues.decisions          = [];
+hfg.pvals                           = plot_pValues(pClasses,par.plot_pValues);
+% sgtitle(hfg.pvals,[RatName ' ' daystr ' ' feedstr]);
 
 
+%% save hfg
+if ~ifplot
+    save_dir                    = '/TESTS/GRAZ/NSA/';
+    par.hfigPrint               = hfigPrintParams();
+    par.hfigPrint.pdf_file      = [save_dir mfilename '.pdf'];
+    par.hfigPrint.save_dir      = save_dir; 
+    hfigPrint(hfg,par.hfigPrint)
+end

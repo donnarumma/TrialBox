@@ -32,9 +32,10 @@ Wpca                   =par.Wpca;
 [~,nComponents]        =size(Wpca);
 explain                =cumsum(explained);
 
-
-fprintf('Components: %g - Explained Variance on Data %g%%\n',nComponents,explain(nComponents));
-
+try
+    fprintf('Components: %g - Explained Variance on Data %g%%\n',nComponents,explain(nComponents));
+catch
+end
 Wpca=Wpca(:, 1:nComponents);                           % nChannels x nComponents
 
 Zpca    = X_data' * Wpca;                              % nTimes*nTrials x nComponents

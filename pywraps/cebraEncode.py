@@ -25,7 +25,7 @@ def main(modelParams_filename):
     # encode new data with model fitted
     manifold     = cebra_model.transform(neural_data)
     
-    # save data in 
+    # save data in manifold_filename 
     with h5py.File(manifold_filename, 'w') as out_hdf:
         group = out_hdf.create_group(group_field)
         group.create_dataset(manifold_field, data=manifold, compression='gzip', compression_opts=9)

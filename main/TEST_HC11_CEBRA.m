@@ -38,7 +38,7 @@ par.cebraModel.script_filename      = [cebra_codes_dir 'cebraModel.py'];
 par.cebraModel.script_rundir        = script_rundir;
 par.cebraModel.model_filename       = [script_rundir 'cebra_model.pkl'];
 % other parameteres
-par.cebraModel.max_iterations       = 10000;
+par.cebraModel.max_iterations       = 100;
 par.cebraModel.output_dimension     = 3;
 disp(par.cebraModel);
 [~,out.cebraModel]                  = cebraModel(data_trials,par.cebraModel);

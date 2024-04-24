@@ -10,6 +10,11 @@ neural_field            = params.neural_field;
 manifold_field          = params.manifold_field;
 xfld                    = params.xfld;
 
+% https://stackoverflow.com/questions/21624653/python-created-hdf5-dataset-transposed-in-matlab
+% note: same hdf5 file result transposed 
+% in matlab: nFeatures x nTimes
+% in python:    nTimes x nFeatures 
+
 neural                  = [data_trials.(neural_field)];    % nChannels x nTimes*nTrials
 % create file of inputs
 neural_filename         = [script_rundir params.neural_filename];
@@ -58,6 +63,9 @@ disp(message);
 
 % load output result
 fprintf('Loading %s\n',manifold_filename)
+% note: same hdf5 file result transposed 
+% in matlab:    nComponents x nTimes*nTrials
+% in python: nTimes*nTrials x nComponents
 manifold                                    = h5read(manifold_filename, ['/' group_field '/' manifold_field]);
 
 % put manifold in data_trials

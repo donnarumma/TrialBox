@@ -356,7 +356,7 @@ daystr = sprintf('Day%g',params.data.day);
 sgtitle(hfg.pvals,[RatName ' ' daystr ' ' feedstr]);
 %% plot hfg
 if ~ifplot
-    save_dir                    = ['/TESTS/DARTMOUTH/SHORTCUT_TASK/NSA/' description '/'];
+    save_dir                    = '/TESTS/GRAZ/BINARY/';
     par.hfigPrint               = hfigPrintParams();
     par.hfigPrint.pdf_file      = [save_dir mfilename '.pdf'];
     par.hfigPrint.save_dir      = save_dir; 

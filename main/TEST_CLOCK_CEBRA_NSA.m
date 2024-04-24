@@ -13,9 +13,11 @@ end
 try
     ifplot;
 catch
-    ifplot                          = true;             
+    ifplot                      = true;             
 end
-
+reload                          = false;
+max_iterations                  = 10000;
+output_dimension                = 3;
 par.irng                        = irng;   % for reproducibility
 binWidth                        = 20;
 kernSD                          = 30;
@@ -82,7 +84,6 @@ par.exec.funname                = {'AverageWindow','GaussianSmoother'};
 
 %% Step 2. perform cebra model
 cebra_codes_dir                     = '~/tools/TrialBox/pywraps/'; 
-reload                              = true;
 model_name                          = 'cebra_model.pkl'; 
 if reload
     % model_dir     = '/TESTS/CEBRA/SAPIENZA/cebra20240420080115/'; output_dimension = 3;
@@ -101,14 +102,13 @@ else
     mkdir(script_rundir);
     model_dir                           = ['/home/donnarumma/TESTS/CEBRA/SAPIENZA/cebra' sprintf('%s',strdate) '/'];
     mkdir(model_dir);
-    par.cebraModel                      = cebraModelParams;
     % path to python scripts
     par.cebraModel.script_filename      = [cebra_codes_dir 'cebraModel.py'];
     % path to hd5 files
     par.cebraModel.script_rundir        = script_rundir;
     par.cebraModel.model_filename       = [model_dir model_name];
     % other parameteres
-    par.cebraModel.max_iterations       = 10000;
+    par.cebraModel.max_iterations       = max_iterations;
     par.cebraModel.output_dimension     = output_dimension;
     disp(par.cebraModel);
     [~,out.cebraModel]                  = cebraModel(data_trials,par.cebraModel);

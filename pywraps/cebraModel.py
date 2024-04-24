@@ -52,7 +52,7 @@ def main(modelParams_filename):
     # load neural 
     with h5py.File(neural_filename, 'r') as hdf:
         neural_data    = hdf[group_field + '/' +  neural_field][:]
-
+   
     # fit model
     cebra_model = CEBRA(**model_params)
     cebra_model.fit(neural_data,behavior_data)

@@ -6,14 +6,14 @@ if ~isempty(execinfo); t=tic; fprintf('Function: %s ',mfilename); end
 
 InField     =par.InField;
 
-X_data      =[data_trials.(InField)]; % original data are nChannels x nTimes 
+X_data      =[data_trials.(InField)]; % original data are nChannels x nTimes*nTrials 
 
 % [dataTrials.(fn)] same as cat(2,dataTrials.(fn)) different from cat(3,dataTrials.(fn)) that put trials on the third dimension
 % transpose to set Xdata T x variablex, in order to perform a pca on each time step
 % [Wpca, Zpca, ~, ~, explained, mu]
 % do pca on the transpose (nTimes x nChannels)
-% Wpca: nChannels x nComponents
-% Zpca: nTimes x nComponents
+% Wpca:      nChannels x nComponents
+% Zpca: nTimes*nTrials x nComponents
 [Wpca, ~, ~, ~, explained] = pca(X_data'); 
 % Xdata Number of repetitions x number of variables (e.g. neurons). Thus mu=mean(Xdata,1);
 % Zpca vectors the reduction space. Wpca coefficents

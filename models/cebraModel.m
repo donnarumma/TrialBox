@@ -12,12 +12,18 @@ behavior_field      = params.behavior_field;
 neural              = [data_trials.(neural_field)];    % nChannels x nTimes*nTrials
 behavior            = [data_trials.(behavior_field)];  % nFeatures x nTimes*nTrials
 
+% https://stackoverflow.com/questions/21624653/python-created-hdf5-dataset-transposed-in-matlab
+% note: same hdf5 file result transposed 
+% in matlab: Channels x nTimes
+% in python:   nTimes x nChannels 
 neural_filename     = [script_rundir params.neural_filename];
 fprintf('Saving %s\n',neural_filename)
 params.neural_filename= neural_filename;
 h5create(neural_filename,['/' group_field '/' neural_field], size(neural));
 h5write (neural_filename,['/' group_field '/' neural_field], neural);
 
+% in matlab: nFeatures x nTimes
+% in python:    nTimes x nFeatures 
 behavior_filename       = [script_rundir params.behavior_filename];
 fprintf('Saving %s\n',behavior_filename)
 params.behavior_filename= behavior_filename;

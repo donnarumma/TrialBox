@@ -15,7 +15,7 @@ nRows           = par.nRows;
 time            = p_classes(1).([xfld InField]);
 dt              = par.dt;
 % dt              = 50; % ms
-inds            = time>time(1)+dt & time<time(end)-dt;
+inds            = time>=time(1)+dt & time<=time(end)-dt;
 nClasses        = length(p_classes);
 nChannels       = size(p_classes(1).(InField),1);
 explained       = par.explained;
@@ -62,7 +62,10 @@ for iChannel=1:nChannels
     cc=[];
     toleg=cell(0,0);
     indcol  = 0;
-    xline(0,'label','Decision Point','LabelVerticalAlignment','bottom','LineWidth',5)
+    for idp=1:length(par.decisions)
+        % xline(0,'label','Decision Point','LabelVerticalAlignment','bottom','LineWidth',5);
+        xline(par.decisions(idp),'label',par.decisionsN{idp},'LabelVerticalAlignment','bottom','LineWidth',5);
+    end
     yline(0.05,'LineStyle','--');
     yline(0.1,'LineStyle','--');
     yline(0.5,'LineStyle','--');
@@ -91,7 +94,11 @@ for iChannel=1:nChannels
                     % cc(end+1)=plot(time,comp,'Color',col,'LineWidth',lw);
                     comp        = squeeze(p_classes(iClass).(InField)(iChannel,:,ic));
                     comp        = smooth(comp);
-                    cc(end+1)   = plot(time(inds),comp(inds),'Color',cmaps(indcol,:),'LineWidth',lw);
+                    plfunc      = str2func('plot'); fcolor = 'Color'; xval=time(inds);
+                    if length(inds)==1
+                        plfunc=str2func('bar');     fcolor='FaceColor'; xval=indcol;
+                    end
+                    cc(end+1)   = plfunc(xval,comp(inds),fcolor,cmaps(indcol,:),'LineWidth',lw);
                     % pVals
                     toleg{end+1}=sprintf('%s vs %s',p_classes(iClass).trialName,p_classes(ic).trialName);
                     limval(1)=min([limval(1);comp(:)]);
@@ -105,7 +112,11 @@ for iChannel=1:nChannels
     % set(gca,'yscale','log')
 
     if ismember(newk(iChannel),selX)
-        xlabel('time [ms]');
+        if length(time(inds))==1
+            xlabel ('Model Comparison')
+        else
+            xlabel('time [ms]');
+        end
     end
     if ismember(newk(iChannel),selY)
         % ylabel(par.ylabel,'interpreter','latex');
@@ -120,6 +131,10 @@ for iChannel=1:nChannels
     hold on; box on; grid on;
     set(gca,'yscale','log');
     ylim(limval);
+    if length(time(inds))==1
+        DX  = 0.5;
+        xlim([1-DX,indcol+DX]);
+    end
     % 
 end
 
