@@ -1,12 +1,12 @@
-function   par = mdlPredictParams(parSource)
-% function par = mdlPredictParams(parSource)
+function   par = miModelParams(parSource)
+% function par = miModelParams(parSource)
 par.exec            = true;
-par.kfold           = 4;
-par.numIterations   = 100;
+par.m               = 2;
+par.k               = 4;
 par.InField         = 'y';
 par.OutField        = 'y';
-par.SuccessField    = 'success';
-par.ProbField       = 'prob';
+par.csp_all         = false;
+par.xfld        = 'time';
 try
     fnames=fieldnames(parSource);
     for in=1:length(fnames)
