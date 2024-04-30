@@ -1,4 +1,4 @@
-function [Result,Result_class] = createStructResult(res,par)
+function [ResultKappa,ResultAcc,ResultAcc_class] = createStructResult(res,par)
 
 subj = par.subj;
 file = par.file;
@@ -17,79 +17,110 @@ try m = par.m;
 catch
     m=0;
 end
-train_m = nan(length(res),1);
-train_class = nan(length(res),length(res(1).train.Accuracy_class));
-test_m = nan(length(res),1);
-test_class = nan(length(res),length(res(1).test.Accuracy_class));
+
+% KappaValue
+train_kappa_m = nan(length(res),1);
+test_kappa_m = nan(length(res),1);
 for i=1:length(res)
-    train_m(i) = res(i).train.Accuracy;
-    train_class(i,:) = res(i).train.Accuracy_class;
-    test_m(i) = res(i).test.Accuracy;
-    test_class(i,:) = res(i).test.Accuracy_class;
+    train_kappa_m(i) = res(i).train.kappaValue;
+    test_kappa_m(i) = res(i).test.kappaValue;
 end
 
-mean_class_train = mean(train_class,1);
-std_class_train = std(train_class,0,1);
-mean_class_test = mean(test_class,1);
-std_class_test = std(test_class,0,1);
-
-
-Result.date = datetime('now');
-Result_class.Method = method;
-Result.subj = subj;
-Result.file = file;
-Result.train_name = train_name;
-Result.train_start = tr1;
-Result.train_stop = tr2;
-Result.train_Acc_mean = mean(train_m);
-Result.train_Acc_std = std(train_m);
-Result.test_name = test_name;
-Result.test_start = ts1;
-Result.test_stop = ts2;
-Result.test_Acc_mean = mean(test_m);
-Result.test_Acc_std = std(test_m);
-Result.m = m;
+ResultKappa.date = datetime('now');
+ResultKappa.method = method;
+ResultKappa.subj = subj;
+ResultKappa.file = file;
+ResultKappa.train_name = train_name;
+ResultKappa.train_start = tr1;
+ResultKappa.train_stop = tr2;
+ResultKappa.train_Acc_mean = mean(train_kappa_m);
+ResultKappa.train_Acc_std = std(train_kappa_m);
+ResultKappa.test_name = test_name;
+ResultKappa.test_start = ts1;
+ResultKappa.test_stop = ts2;
+ResultKappa.test_Acc_mean = mean(test_kappa_m);
+ResultKappa.test_Acc_std = std(test_kappa_m);
+ResultKappa.m = m;
 for ncl=1:length(class)
     class_name = sprintf('Class%d',ncl);
-    Result.(class_name) = class{ncl};
+    ResultKappa.(class_name) = class{ncl};
 end
-Result.irng = par.irng;
+ResultKappa.irng = par.irng;
+
+% Accuracy
+train_acc_m = nan(length(res),1);
+train_acc_class = nan(length(res),length(res(1).train.Accuracy_class));
+test_acc_m = nan(length(res),1);
+test_acc_class = nan(length(res),length(res(1).test.Accuracy_class));
+for i=1:length(res)
+    train_acc_m(i) = res(i).train.Accuracy;
+    train_acc_class(i,:) = res(i).train.Accuracy_class;
+    test_acc_m(i) = res(i).test.Accuracy;
+    test_acc_class(i,:) = res(i).test.Accuracy_class;
+end
+
+mean_class_train_acc = mean(train_acc_class,1);
+std_class_train_acc = std(train_acc_class,0,1);
+mean_class_test_acc = mean(test_acc_class,1);
+std_class_test_acc = std(test_acc_class,0,1);
+
+
+ResultAcc.date = datetime('now');
+ResultAcc_class.Method = method;
+ResultAcc.subj = subj;
+ResultAcc.file = file;
+ResultAcc.train_name = train_name;
+ResultAcc.train_start = tr1;
+ResultAcc.train_stop = tr2;
+ResultAcc.train_Acc_mean = mean(train_acc_m);
+ResultAcc.train_Acc_std = std(train_acc_m);
+ResultAcc.test_name = test_name;
+ResultAcc.test_start = ts1;
+ResultAcc.test_stop = ts2;
+ResultAcc.test_Acc_mean = mean(test_acc_m);
+ResultAcc.test_Acc_std = std(test_acc_m);
+ResultAcc.m = m;
+for ncl=1:length(class)
+    class_name = sprintf('Class%d',ncl);
+    ResultAcc.(class_name) = class{ncl};
+end
+ResultAcc.irng = par.irng;
 
 % Result for class
-train_cl_mean = cell(length(mean_class_train),1);
-train_cl_std = cell(length(mean_class_train),1);
-for i=1:length(mean_class_train)
+train_cl_mean = cell(length(mean_class_train_acc),1);
+train_cl_std = cell(length(mean_class_train_acc),1);
+for i=1:length(mean_class_train_acc)
     train_cl_mean{i} = strcat(sprintf('train_cl%d',i),'_mean');
     train_cl_std{i} = strcat(sprintf('train_cl%d',i),'_std');
 end
-test_cl_mean = cell(length(mean_class_test),1);
-test_cl_std = cell(length(mean_class_test),1);
-for i=1:length(mean_class_test)
+test_cl_mean = cell(length(mean_class_test_acc),1);
+test_cl_std = cell(length(mean_class_test_acc),1);
+for i=1:length(mean_class_test_acc)
     test_cl_mean{i} = strcat(sprintf('test_cl%d',i),'_mean');
     test_cl_std{i} = strcat(sprintf('test_cl%d',i),'_std');
 end
 
-Result_class.date = datetime('now');
-Result_class.Method = method;
-Result_class.subj = subj;
-Result_class.file = file;
-Result_class.train_name = train_name;
-Result_class.train_start = tr1;
-Result_class.train_stop = tr2;
+ResultAcc_class.date = datetime('now');
+ResultAcc_class.Method = method;
+ResultAcc_class.subj = subj;
+ResultAcc_class.file = file;
+ResultAcc_class.train_name = train_name;
+ResultAcc_class.train_start = tr1;
+ResultAcc_class.train_stop = tr2;
 for itr =1:length(train_cl_mean)
-    Result_class.(train_cl_mean{itr}) = mean_class_train(itr);
-    Result_class.(train_cl_std{itr}) = std_class_train(itr);
+    ResultAcc_class.(train_cl_mean{itr}) = mean_class_train_acc(itr);
+    ResultAcc_class.(train_cl_std{itr}) = std_class_train_acc(itr);
 end
-Result_class.test_name = test_name;
-Result_class.test_start = ts1;
-Result_class.test_stop = ts2;
+ResultAcc_class.test_name = test_name;
+ResultAcc_class.test_start = ts1;
+ResultAcc_class.test_stop = ts2;
 for its=1:length(test_cl_mean)
-    Result_class.(test_cl_mean{its}) = mean_class_test(its);
-    Result_class.(test_cl_std{its}) = std_class_test(its);
+    ResultAcc_class.(test_cl_mean{its}) = mean_class_test_acc(its);
+    ResultAcc_class.(test_cl_std{its}) = std_class_test_acc(its);
 end
-Result_class.m = m;
+ResultAcc_class.m = m;
 for ncl=1:length(class)
     class_name = sprintf('Class%d',ncl);
-    Result_class.(class_name) = class{ncl};
+    ResultAcc_class.(class_name) = class{ncl};
 end
-Result_class.irng = par.irng;
+ResultAcc_class.irng = par.irng;

@@ -19,6 +19,11 @@ data_3d                 = reshape(data_3d,size(data_3d,1),size(data_3d,2)*size(d
 mdl                     = par.mdl;
 %% Predict 
 [y_pred,probs]          = predict(mdl, data_3d); % nTrials x nClasses
+% Confusion matrix
+Cmatrxix = confusionmat(labs, y_pred);
+% kappa value
+kappaValue = kappaModel(Cmatrxix);
+
 Accuracy                = sum(y_pred == labs)/length(labs)*100;
 Accuracy_class(1,:)     = accuracy4classes(labs,y_pred);
 
@@ -37,5 +42,6 @@ end
 
 if ~isempty(execinfo); out.exectime=toc(t); fprintf('| Time Elapsed: %.2f s\n',out.exectime); end
 %% output save
+out.kappaValue      = kappaValue;
 out.Accuracy        = Accuracy;
 out.Accuracy_class  = Accuracy_class;

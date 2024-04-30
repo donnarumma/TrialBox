@@ -1,5 +1,9 @@
 % This is a function to extract Graz data for each subject
-function [EEG_trial,fsample] = extractGraz(indsub,signal_name)
+function [EEG_trial,fsample] = extractGraz(indsub,par)
+
+
+InField                         = par.InField ;
+signal_name                     = par.signal_name;
 
 par.getGrazEEG.data_dir         = getDataGraz;
 par.getGrazEEG.exec             = true;
@@ -13,4 +17,4 @@ par.GRAZarrangeTrials.it1      = -4;
 par.GRAZarrangeTrials.it2      = 4;
 par.GRAZarrangeTrials.fsample  = fsample;
 par.GRAZarrangeTrials.exec     = true;
-EEG_trial                      = GRAZarrangeTrials(EEG_raw.EEG_train,par.GRAZarrangeTrials);
+EEG_trial                      = GRAZarrangeTrials(EEG_raw.(strcat('EEG_',InField)),par.GRAZarrangeTrials);

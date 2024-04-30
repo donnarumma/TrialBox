@@ -6,6 +6,6 @@ function   [data_dir]=getDataGraz()
 if contains(name, 'Ubuntu')
     data_dir = '~/DATA/GRAZ/BCICIV_2a_gdf/';
 else
-    data_dir = 'D:\D_Ausilio EEG\EEG_FITTS\Data_Graz_Extracted\Extracted_Data\PaperInterval';
+    data_dir = 'D:\D_Ausilio EEG\EEG_FITTS\Data_Graz_Extracted\Extracted_Data\Data_Paper_Interval';
 end
 end

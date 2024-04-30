@@ -18,11 +18,13 @@ par.irng = 10;
 rng(par.irng);
 
 indsub = 9;
-%% Extract and Arrange Data
 signal_name                     = 'eeg';
 signal_process                  = 'CSP';
-[EEG_trials,fsample] = extractGraz(indsub,signal_name);
 
+%% Extract and Arrange Data
+par.extractGraz.signal_name                  = signal_name;
+par.extractGraz.InField                      = 'train';
+[EEG_trials,fsample] = extractGraz(indsub,par.extractGraz);
 
 StartClass = unique([EEG_trials.trialType]);
 % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
@@ -56,17 +58,16 @@ cvp = cvpartition(labs,'kfold',kfold,'Stratify',true);
 resQDA          = struct();
 resKNN          = struct();
 resNBPW         = struct();
-res_kappaQDA    = struct();
-res_kappaKNN    = struct();
 res_kappaNBPW   = struct();
 
-outQDA  = struct();
-outKNN  = struct();
+outQDA          = struct();
+outKNN          = struct();
 
-LabpredictQDA = struct();
-LabpredictKNN = struct();
-LabpredictNBPW = struct();
-Label_train = struct();
+LabpredictQDA   = struct();
+LabpredictKNN   = struct();
+LabpredictNBPW  = struct();
+Label_train     = struct();
+
 for i=1:kfold
     indices = training(cvp,i);
     test = (indices == 0);
@@ -185,13 +186,6 @@ for i=1:kfold
     % KappaValue on Test NBPW
     Cmatrxix_test = confusionmat([EEG_test.trialType]', pred_test);
     res_kappaNBPW(i).test.kappaValue  = kappaModel(Cmatrxix_test);
-
-    % KappaValue on QDA and KNN Train and Test
-    [EEG_train,res_kappaQDA(i).train]            = predictKAPPA(EEG_train,par.mdlPredict);
-    [EEG_test,res_kappaQDA(i).test]              = predictKAPPA(EEG_test,par.mdlPredict);
-
-    [EEG_train,res_kappaKNN(i).train]            = predictKAPPA(EEG_train,par.mdlPredict);
-    [EEG_test,res_kappaKNN(i).test]              = predictKAPPA(EEG_test,par.mdlPredict);
 end
 %% Accuracy and Kappa
 label_train = struct2cell(Label_train(:))'; % convert struct in mat
@@ -212,7 +206,6 @@ accuracyKNN_class = accuracy4classes(label_train,predictKNN_train);
 
 AccuracyNBPW = sum(predictNBPW_train == label_train)/length(label_train)*100;
 accuracyNBPW_class = accuracy4classes(label_train,predictNBPW_train);
-
 
 CmatrxixQDA_train = confusionmat(label_train, predictQDA_train);
 kappaQDA = kappaModel(CmatrxixQDA_train);
@@ -239,96 +232,72 @@ params.createStructResult.class      = findclass(EEG_train,StartClass);
 params.createStructResult.irng       = par.irng;
 params.createStructResult.method     = signal_process;
 
-% QDA Acc
-resQDA_ACC.train.Accuracy = AccuracyQDA;
-resQDA_ACC.train.Accuracy_class = accuracyQDA_class;
-resQDA_ACC.test.Accuracy = NaN;
-resQDA_ACC.test.Accuracy_class = NaN;
+% QDA save result
+resultQDA.train.Accuracy = AccuracyQDA;
+resultQDA.train.Accuracy_class = accuracyQDA_class;
+resultQDA.test.Accuracy = NaN;
+resultQDA.test.Accuracy_class = NaN;
+resultQDA.train.kappaValue = kappaQDA;
+resultQDA.test.kappaValue = NaN;
 
-[ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resQDA_ACC,params.createStructResult);
+[ResultQDA_Kappa,ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resultQDA,params.createStructResult);
 
-%% Update Tab Result
+% Update Tab Result
 params.updateTab.dir        = 'D:\TrialBox\Results_excel\Graz_dataset';
 params.updateTab.name       = 'Graz_CrossVal_OnTrain';
 params.updateTab.sheetnames = 'QDA';
 
 updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
 
+params.updateTab.sheetnames = 'KappaQDA';
+updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
+
 params.updateTab.name     = 'Graz_CrossVal_OnTrain_class';
+params.updateTab.sheetnames = 'QDA';
 updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
-% KNN Acc
-resKNN_ACC.train.Accuracy = AccuracyKNN;
-resKNN_ACC.train.Accuracy_class = accuracyKNN_class;
-resKNN_ACC.test.Accuracy = NaN;
-resKNN_ACC.test.Accuracy_class = NaN;
+% KNN save result
+resultKNN.train.Accuracy = AccuracyKNN;
+resultKNN.train.Accuracy_class = accuracyKNN_class;
+resultKNN.test.Accuracy = NaN;
+resultKNN.test.Accuracy_class = NaN;
+resultKNN.train.kappaValue = kappaKNN;
+resultKNN.test.kappaValue = NaN;
 
-[ResultKNN_Acc,ResultKNN_class_Acc] = createStructResult(resKNN_ACC,params.createStructResult);
+[ResultKNN_Kappa,ResultKNN_Acc,ResultKNN_class_Acc] = createStructResult(resultKNN,params.createStructResult);
 
 %% Update Tab Result
 params.updateTab.dir        = 'D:\TrialBox\Results_excel\Graz_dataset';
 params.updateTab.name       = 'Graz_CrossVal_OnTrain';
 params.updateTab.sheetnames = 'KNN';
-
 updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
+params.updateTab.sheetnames = 'KappaKNN';
+updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
+
 params.updateTab.name     = 'Graz_CrossVal_OnTrain_class';
+params.updateTab.sheetnames = 'KNN';
 updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
 % NBPW Acc
-resNBPW_ACC.train.Accuracy = AccuracyNBPW;
-resNBPW_ACC.train.Accuracy_class = accuracyNBPW_class;
-resNBPW_ACC.test.Accuracy = 0;
-resNBPW_ACC.test.Accuracy_class = 0;
+resultNBPW.train.Accuracy = AccuracyNBPW;
+resultNBPW.train.Accuracy_class = accuracyNBPW_class;
+resultNBPW.test.Accuracy = NaN;
+resultNBPW.test.Accuracy_class = NaN;
+resultNBPW.train.kappaValue = kappaNBPW;
+resultNBPW.test.kappaValue = NaN;
 
-[ResultNBPW_Acc,ResultNBPW_class_Acc] = createStructResult(resNBPW_ACC,params.createStructResult);
+[ResultNBPW_Kappa,ResultNBPW_Acc,ResultNBPW_class_Acc] = createStructResult(resultNBPW,params.createStructResult);
 
 %% Update Tab Result
 params.updateTab.dir        = 'D:\TrialBox\Results_excel\Graz_dataset';
 params.updateTab.name       = 'Graz_CrossVal_OnTrain';
 params.updateTab.sheetnames = 'NBPW';
-
 updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
-params.updateTab.name     = 'Graz_CrossVal_OnTrain_class';
-updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
-
-% QDA Kappa Acc
-res_kappaQDA_Acc.train.kappaValue = kappaQDA;
-res_kappaQDA_Acc.test.kappaValue = 0;
-
-Result_kappaQDAAcc = createKAPPAStructResult(res_kappaQDA_Acc,params.createStructResult);
-
-%% Update Tab Result
-params.updateTab.dir        = 'D:\TrialBox\Results_excel\Graz_dataset';
-params.updateTab.name       = 'Graz_CrossVal_OnTrain';
-params.updateTab.sheetnames = 'KappaQDA';
-
-updated_Result_tableK_QDAACC = updateTab(Result_kappaQDAAcc,params.updateTab);
-
-% KNN Kappa Acc
-res_kappaKNN_Acc.train.kappaValue = kappaKNN;
-res_kappaKNN_Acc.test.kappaValue = 0;
-
-Result_kappaKNNAcc = createKAPPAStructResult(res_kappaKNN_Acc,params.createStructResult);
-
-%% Update Tab Result
-params.updateTab.dir        = 'D:\TrialBox\Results_excel\Graz_dataset';
-params.updateTab.name       = 'Graz_CrossVal_OnTrain';
-params.updateTab.sheetnames = 'KappaKNN';
-
-updated_Result_tableK_KNNACC = updateTab(Result_kappaKNNAcc,params.updateTab);
-
-
-% NBPW Kappa Acc
-res_kappaNBPW_Acc.train.kappaValue = kappaNBPW;
-res_kappaNBPW_Acc.test.kappaValue = 0;
-
-Result_kappaNBPWAcc = createKAPPAStructResult(res_kappaNBPW_Acc,params.createStructResult);
-
-%% Update Tab Result
-params.updateTab.dir        = 'D:\TrialBox\Results_excel\Graz_dataset';
-params.updateTab.name       = 'Graz_CrossVal_OnTrain';
 params.updateTab.sheetnames = 'KappaNBPW';
+updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-updated_Result_tableK_NBPWACC = updateTab(Result_kappaNBPWAcc,params.updateTab);
+params.updateTab.name     = 'Graz_CrossVal_OnTrain_class';
+params.updateTab.sheetnames = 'NBPW';
+updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
