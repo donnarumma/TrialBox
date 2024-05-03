@@ -49,7 +49,7 @@ for indsub=9
     par.exec.funname ={'TimeSelect','FilterBankCompute'};
     EEG_train =run_trials(EEG_train,par);
 
-    %% Extract and Arrange Data
+    %% Extract and Arrange Test Data
     par.extractGraz.signal_name                  = signal_name;
     par.extractGraz.InField                      = 'test';
     [EEG_test,fsample] = extractGraz(indsub,par.extractGraz);
