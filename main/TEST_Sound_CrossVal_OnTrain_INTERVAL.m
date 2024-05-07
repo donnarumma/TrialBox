@@ -1,4 +1,4 @@
-% TEST_Sound_CrossVal_OnTrain.m
+% TEST_Sound_CrossVal_OnTrain_INTERVAL.m
 
 
 % Specifics:
@@ -82,7 +82,7 @@ for i=1:kfold
     par.BootStrapData.OutField      = signal_name;
     EEG_train                       = BootStrapData(EEG_train,par.BootStrapData);
     EEG_train = EEG_train';
-
+    
     EEG_test = EEG_trials(test);
     Label_train(i).Iter = [EEG_test.trialType]';
     %% Step 2. perform CSP

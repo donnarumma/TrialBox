@@ -1,24 +1,31 @@
-%% function TEST_GRAZ_CSP_QDA
+%% function TEST_GRAZ_CSP_PCA
 clear;
 ifplot                          = false;
-par.data_dir                    = 'D:\D_Ausilio EEG\EEG_FITTS\Data_Graz_Extracted';
-% par.data_dir                    = '~/DATA/GRAZ/';
+
 par.irng                        = 10;                  % for reproducibility
 rng(par.irng);
+addpath(genpath('D:\D_Ausilio EEG\EEG_FITTS\NSA_FITTS'))
+addpath(genpath('D:\D_Ausilio EEG\NSA'))
 %% Step 0. Load raw data and arrange trials
-par.subject                     = 8;
-% fsample                         = 250; % Hertz
-% EEG_trials                      = arrangeGrazTrials(par);
-
+indsubject                     = 8;
 signal_name                     = 'eeg';
 signal_process                  = 'CSP';
 
 par.extractGraz.signal_name     = signal_name;
 par.extractGraz.InField         = 'train';
-[EEG_trials,fsample]            = extractGraz(par.subject,par.extractGraz);
+[EEG_trials,fsample]            = extractGraz(indsubject,par.extractGraz);
 
 %% Step 1. perform Filterbank-CSP and tsne
+% Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
+par.TimeSelect               = TimeSelectParams;
+par.TimeSelect.t1            = 0; % in s from ZeroEvent time
+par.TimeSelect.t2            = 4; % in s from ZeroEvent time
+par.TimeSelect.InField       = signal_name;
+par.TimeSelect.OutField      = signal_name;
+par.TimeSelect.dt            = 1;
 
+itr1 = par.TimeSelect.t1;
+itr2 = par.TimeSelect.t2;
 % Filter Bank
 par.FilterBankCompute           = FilterBankComputeParams();
 par.FilterBankCompute.InField   = signal_name;
@@ -34,7 +41,7 @@ par.cspModel.OutField           = signal_process;
 par.dataSplit                   = dataSplitParams;
 par.dataSplit.TrainPercentage   = 70;
 % execute functions
-par.exec.funname                = {'FilterBankCompute','dataSplit'} ;
+par.exec.funname                = {'TimeSelect','FilterBankCompute','dataSplit'} ;
 EEG_trials                      = run_trials(EEG_trials,par);
 % cspModel
 [~,out.cspModel]                = cspModel(EEG_trials([EEG_trials.train]),par.cspModel);
@@ -151,7 +158,8 @@ hfg.pvals                           = plot_pValues(pClasses,par.plot_pValues);
 
 %% save hfg
 if ~ifplot
-    save_dir                    = '/TESTS/GRAZ/NSA/';
+    save_dir                    = 'D:\TrialBox_Results_excel\NSA\Graz\';
+    save_dir                    = strcat(save_dir,datestr(datetime('now'), 'dd_mm_yy_HH_MM'),'\');
     par.hfigPrint               = hfigPrintParams();
     par.hfigPrint.pdf_file      = [save_dir mfilename '.pdf'];
     par.hfigPrint.save_dir      = save_dir; 

@@ -68,7 +68,7 @@ ltxfilename=sprintf('%s.tex',filename);
 if ~isfolder(ltx_dir)
     mkdir(ltx_dir);
 end
-fullpathltxfilename = sprintf('%s%s',ltx_dir,ltxfilename);
+fullpathltxfilename = sprintf('~%s%s',ltx_dir,ltxfilename);
 ltxfileid           = fopen(fullpathltxfilename,'w');
 fprintf('Compiling %s\n',fullpathltxfilename)
 fprintf(ltxfileid,'%s',s);
