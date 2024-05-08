@@ -7,7 +7,7 @@ rng(par.irng);
 addpath(genpath('D:\D_Ausilio EEG\EEG_FITTS\NSA_FITTS'))
 addpath(genpath('D:\D_Ausilio EEG\NSA'))
 %% Step 0. Load raw data and arrange trials
-indsubject                     = 8;
+indsubject                      = 6;
 signal_name                     = 'eeg';
 signal_process                  = 'CSP';
 

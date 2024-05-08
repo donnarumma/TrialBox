@@ -29,7 +29,8 @@ par.extractGraz.InField         = 'train';
 StartClass = unique([EEG_trials.trialType]);
 
 %% Parameters List
-attenuation = 0:10:50;
+
+attenuation = 0:10:40;
 TypeFilter = {'Chebishev','Butterworth'};
 FilterBank = {'One','EEGbands','Nine'};
 m = 2:6;

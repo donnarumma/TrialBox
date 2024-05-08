@@ -52,7 +52,7 @@ for indsub = 1:9
 
     %% Extract and Arrange TEST Data
 
-    Dt = [0.5 4];     % Interval of evaluation (Motor Imagery)
+    Dt = [0 4];     % Interval of evaluation (Motor Imagery)
     TW = 2;         % time window
     dt = 1;         %
 

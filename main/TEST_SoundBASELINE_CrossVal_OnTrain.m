@@ -1,13 +1,13 @@
-% TEST_FITTS_CrossVal_OnTrain.m
+% TEST_SoundBASELINE_CrossVal_OnTrain.m
 
 
 % Specifics:
 % label indexes
-% label indexes
-% 1:    Small-Left
-% 2:    Small-Right
-% 3:      Big-Left
-% 4:      Big-Right
+% 1: COHERENT ENGLISH
+% 2: COHERENT ITALIAN
+% 3: INCOHERENT ENGLISH
+% 4: INCOHERENT ITALIAN
+% 5: SCUMBLED
 
 clear; close all;
 
@@ -15,52 +15,44 @@ par.irng = 10;
 rng(par.irng);
 
 indsub = 9;
-signal_name                     = 'eeg';
+signal_name                     = 'eeg_baseline';
 signal_process                  = 'CSP';
 
 %% Extract and Arrange Data
-par.extractFITTS.signal_name    = signal_name;
-par.extractFITTS.dir            = 'epotarget';
-[EEG_trials,fsample]            = extractFITTS(indsub,par.extractFITTS);
-% 
-% % NB. if dir = epogo Aligne is necessary
-% % Align trials
-% par.alignTrials.events          = 'TargetOFF';
-% par.alignTrials.InField         = signal_name;
-% par.alignTrials.exec            = true;
-% EEG_trials                      = alignTrials(EEG_trials,par.alignTrials);
+par.extractSound.signal_name    = signal_name;
+par.extractSound.InField        = 'train';
+par.extractSound.it_end         = 1;
+[EEG_trials,fsample]            = extractSound(indsub,par.extractSound);
 
-itint = time_event(EEG_trials,'GO');
+% remapTypes
+par.remapTypes           = remapTypesParams();
+par.remapTypes.selection = {1,2};
 
 StartClass = unique([EEG_trials.trialType]);
-% Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
+% Time Interpolation and selection Trials 
 par.TimeSelect               = TimeSelectParams;
-% par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
-% par.TimeSelect.t2            = round(itint,2); % in s from ZeroEvent time
-par.TimeSelect.t1            = 0.40; % in s from ZeroEvent time
-par.TimeSelect.t2            = 0.90; % in s from ZeroEvent time
+par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
+par.TimeSelect.t2            = 1; % in s from ZeroEvent time
 par.TimeSelect.InField       = signal_name;
 par.TimeSelect.OutField      = signal_name;
-par.TimeSelect.dt            = 1;
 
 itr1 = par.TimeSelect.t1;
 itr2 = par.TimeSelect.t2;
 
 % Filter Bank
-par.FilterBankCompute               = FilterBankComputeParams();
-par.FilterBankCompute.InField       = signal_name;
-par.FilterBankCompute.OutField      = signal_name;
-% par.FilterBankCompute.attenuation   = 10;
-par.FilterBankCompute.FilterBank    = 'Nine';
-par.FilterBankCompute.fsample       = fsample;
+par.FilterBankCompute            = FilterBankComputeParams();
+par.FilterBankCompute.InField    = signal_name;
+par.FilterBankCompute.OutField   = signal_name;
+par.FilterBankCompute.FilterBank = 'Nine';
+par.FilterBankCompute.fsample    = fsample;
 
-par.exec.funname ={'TimeSelect','FilterBankCompute'};
-% par.exec.funname ={'TimeSelect'};
+% par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute'};
+par.exec.funname ={'remapTypes','FilterBankCompute'};
 EEG_trials =run_trials(EEG_trials,par);
 
 
 % kfold-CrossValidation on the Train dataset
-kfold = 5;
+kfold = 3;
 labs = [EEG_trials.trialType]'; %true labels
 cvp = cvpartition(labs,'kfold',kfold,'Stratify',true);
 
@@ -82,12 +74,21 @@ for i=1:kfold
     test = (indices == 0);
     train = ~test;
     EEG_train = EEG_trials(train);
+  
+    % Bootstrap
+    par.BootStrapData               = BootStrapDataParams;
+    par.BootStrapData.N             = 100;
+    par.BootStrapData.InField       = signal_name;
+    par.BootStrapData.OutField      = signal_name;
+    EEG_train                       = BootStrapData(EEG_train,par.BootStrapData);
+    EEG_train = EEG_train';
+
     EEG_test = EEG_trials(test);
     Label_train(i).Iter = [EEG_test.trialType]';
     %% Step 2. perform CSP
     % CSP Dictionary evaluation on train
     par.cspModel                  = cspModelParams;
-    par.cspModel.m                = 14;
+    par.cspModel.m                = 2;
     par.cspModel.InField          = signal_name;
     par.cspModel.OutField         = signal_process;
 
@@ -125,7 +126,7 @@ for i=1:kfold
     % qdaModel
     par.qdaModel                      = qdaModelParams;
     par.qdaModel.InField              = 'CSP';
-    par.qdaModel.numIterations        = 300;
+    par.qdaModel.numIterations        = 100;
     par.qdaModel.kfold                = 5;
     [~, outQDA(i).Iter]               = qdaModel(EEG_train,par.qdaModel);
 
@@ -143,7 +144,7 @@ for i=1:kfold
     % knnModel
     par.knnModel                      = knnModelParams;
     par.knnModel.InField              = 'CSP';
-    par.knnModel.numIterations        = 300;
+    par.knnModel.numIterations        = 100;
     par.knnModel.kfold                = 5;
     [~, outKNN(i).Iter]             = knnModel(EEG_train,par.knnModel);
 
@@ -228,11 +229,11 @@ kappaNBPW= kappaModel(CmatrxixNBPW_train);
 %% create Tab Result
 params.createStructResult.subj       = indsub;
 params.createStructResult.method     = 'CSP';
-params.createStructResult.file       = 'FittsEpogo';
-params.createStructResult.train_name = 'Fittstrain';
+params.createStructResult.file       = 'BaselineSound';
+params.createStructResult.train_name = 'Strain';
 params.createStructResult.train_tr1  = itr1;
 params.createStructResult.train_tr2  = itr2;
-params.createStructResult.test_name  = 'Fittstrain';
+params.createStructResult.test_name  = 'Strain';
 params.createStructResult.test_ts1   = itr1;
 params.createStructResult.test_ts2   = itr2;
 params.createStructResult.m          = par.cspModel.m;
@@ -251,8 +252,8 @@ resultQDA.test.kappaValue = NaN;
 [ResultQDA_Kappa,ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resultQDA,params.createStructResult);
 
 % Update Tab Result
-params.updateTab.dir        = 'D:\TrialBox_Results_excel\Fitts_dataset';
-params.updateTab.name       = 'Fitts_CrossVal_OnTrain';
+params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
+params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain';
 params.updateTab.sheetnames = 'QDA';
 
 updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -260,7 +261,7 @@ updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
 params.updateTab.sheetnames = 'KappaQDA';
 updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-params.updateTab.name     = 'Fitts_CrossVal_OnTrain_class';
+params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_class';
 params.updateTab.sheetnames = 'QDA';
 updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -275,15 +276,15 @@ resultKNN.test.kappaValue = NaN;
 [ResultKNN_Kappa,ResultKNN_Acc,ResultKNN_class_Acc] = createStructResult(resultKNN,params.createStructResult);
 
 %% Update Tab Result
-params.updateTab.dir        = 'D:\TrialBox_Results_excel\Fitts_dataset';
-params.updateTab.name       = 'Fitts_CrossVal_OnTrain';
+params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
+params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain';
 params.updateTab.sheetnames = 'KNN';
 updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
 params.updateTab.sheetnames = 'KappaKNN';
 updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-params.updateTab.name     = 'Fitts_CrossVal_OnTrain_class';
+params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_class';
 params.updateTab.sheetnames = 'KNN';
 updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -298,14 +299,14 @@ resultNBPW.test.kappaValue = NaN;
 [ResultNBPW_Kappa,ResultNBPW_Acc,ResultNBPW_class_Acc] = createStructResult(resultNBPW,params.createStructResult);
 
 %% Update Tab Result
-params.updateTab.dir        = 'D:\TrialBox_Results_excel\Fitts_dataset';
-params.updateTab.name       = 'Fitts_CrossVal_OnTrain';
+params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
+params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain';
 params.updateTab.sheetnames = 'NBPW';
 updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
 params.updateTab.sheetnames = 'KappaNBPW';
 updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-params.updateTab.name     = 'Fitts_CrossVal_OnTrain_class';
+params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_class';
 params.updateTab.sheetnames = 'NBPW';
 updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);

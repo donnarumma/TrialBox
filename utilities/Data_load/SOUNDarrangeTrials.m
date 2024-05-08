@@ -8,8 +8,8 @@ OutField      = par.OutField;
 
 fs          = data_raw.fsample;
 N_Trials    = length(data_raw.eeg_sound);
-it1         = par.it_in*fs;
-it2         = it1 + par.it_sum * fs-1;
+it1         = par.it_start*fs;
+it2         = it1 + par.it_end * fs-1;
 
 trialNames  ={'Eng Coher','Ita Coher','Eng Incoher','Ita Incoher','Scrum Inchoer'};
 % dataTrials     =repmat(struct('trialId',[],fname,[],'time',[],'trialType',[],'T',[]),N_Trials,1);

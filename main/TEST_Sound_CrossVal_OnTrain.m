@@ -21,6 +21,7 @@ signal_process                  = 'CSP';
 %% Extract and Arrange Data
 par.extractSound.signal_name    = signal_name;
 par.extractSound.InField        = 'train';
+par.extractSound.it_end         = 2;
 [EEG_trials,fsample]            = extractSound(indsub,par.extractSound);
 
 % remapTypes
@@ -28,13 +29,12 @@ par.remapTypes           = remapTypesParams();
 par.remapTypes.selection = {1,2};
 
 StartClass = unique([EEG_trials.trialType]);
-% Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
+% Time Interpolation and selection Trials 
 par.TimeSelect               = TimeSelectParams;
 par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
 par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
 par.TimeSelect.InField       = signal_name;
 par.TimeSelect.OutField      = signal_name;
-par.TimeSelect.dt            = 1;
 
 itr1 = par.TimeSelect.t1;
 itr2 = par.TimeSelect.t2;
@@ -43,11 +43,11 @@ itr2 = par.TimeSelect.t2;
 par.FilterBankCompute            = FilterBankComputeParams();
 par.FilterBankCompute.InField    = signal_name;
 par.FilterBankCompute.OutField   = signal_name;
-par.FilterBankCompute.attenuation = 10;
 par.FilterBankCompute.FilterBank = 'Nine';
 par.FilterBankCompute.fsample    = fsample;
 
 par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute'};
+% par.exec.funname ={'remapTypes','FilterBankCompute'};
 EEG_trials =run_trials(EEG_trials,par);
 
 
