@@ -6,7 +6,6 @@ OPTIONS             = par.OPTIONS;
 save_dir            = par.save_dir;
 sub_dir             = par.sub_dir;
 pdf_file            = par.pdf_file;
-
 SEP                 = filesep;
 PDF_dir             = [];   
 
@@ -39,7 +38,11 @@ for ifld = 1:length(nfields)
 end
 if  ~isempty(PDF_dir) & ~isempty(pdf_file)
     %% compile latex in a temporary directory
-    texparams   = latexCompile_ImageDirectoryParams();
+    texparams           = latexCompile_ImageDirectoryParams();
+    texparams.wm        = par.wm;
+    if ~isempty(par.ltx_dir)
+        texparams.ltx_dir   = par.ltx_dir;
+    end
     [~,outnf]   = latexCompile_ImageDirectory(PDF_dir,texparams);
     %% rename and move compiled pdf file
     fprintf('Compiled %s\n',pdf_file)

@@ -47,21 +47,18 @@ end
 s=sprintf('%s\\end{document}\n',s);
 
 %% save tex file
-% susbstitute char '/' (or filesep) with '_'
-nts=strsplit(source_dir,SEP);
-rem=[];
-for i=1:length(nts)
-    if strcmp(nts{i},'.') | strcmp(nts{i},'..') | isempty(nts{i})
-        rem(end+1)=i;
-    end
+% susbstitute unallowed chars with '_'
+unallowed = {SEP '/' '\' '~'};
+filename = source_dir;
+for iu=1:length(unallowed)
+    filename = strrep(filename,unallowed{iu},'_');
 end
-nts(rem)=[];
-filename='';
-for i=1:length(nts)
-    filename=[filename nts{i}];
-    if i<length(nts)
-        filename=[filename '_'];
-    end
+% avoid start and end with '_'
+if strcmp(filename(1),'_')
+    filename=filename(2:end);
+end
+if strcmp(filename(end),'_')
+    filename=filename(1:end-1);
 end
 ltxfilename=sprintf('%s.tex',filename);
 % save latex file in a temporary directory

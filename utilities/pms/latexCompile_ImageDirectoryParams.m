@@ -5,7 +5,7 @@ par.exec        = true;
 par.wm          = 200;
 par.nSubfigures = 1;
 par.file_type   ='pdf';
-par.ltx_dir     = [SEP 'tmp' SEP num2str(randi(10^6,1,1)) SEP];
+par.ltx_dir     = [tempdir SEP num2str(randi(10^6,1,1)) SEP];
 par.pdf_dir     = ['.' SEP];
 try
     fnames=fieldnames(parSource);

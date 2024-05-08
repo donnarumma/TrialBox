@@ -13,7 +13,7 @@ neural              = [data_trials.(neural_field)];    % nChannels x nTimes*nTri
 behavior            = [data_trials.(behavior_field)];  % nFeatures x nTimes*nTrials
 
 % https://stackoverflow.com/questions/21624653/python-created-hdf5-dataset-transposed-in-matlab
-% note: same hdf5 file result transposed 
+% note: same hd5 file results transposed 
 % in matlab: Channels x nTimes
 % in python:   nTimes x nChannels 
 neural_filename     = [script_rundir params.neural_filename];

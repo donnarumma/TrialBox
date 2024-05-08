@@ -6,6 +6,8 @@ par.save_dir    = ['.' SEP];
 par.sub_dir     = true; 
 par.OPTIONS     = {'PDF','FIG'}; % e.g. par.OPTIONS = {'EPS','PNG','PDF','FIG'};
 par.pdf_file    = [];
+par.ltx_dir     = [];
+par.wm          = 200;
 try
     fnames=fieldnames(parSource);
     for in=1:length(fnames)

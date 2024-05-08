@@ -17,6 +17,7 @@ p=[p code_dir 'plots'             d]; %% plots load
 p=[p code_dir 'plots'     S 'pms' d]; %% plot params load
 p=[p code_dir 'utilities'         d]; %% plots load
 p=[p code_dir 'utilities' S 'pms' d]; %% plots load
+p=[p code_dir 'datasets'          d]; %% data load
 addpath(p);
 if nargout>0
     paths=p;

@@ -5,6 +5,7 @@ par.ifclass     = true; % true  save output in data_trials     and original in o
                         % false save output in out.data_trials and original data_trials
 par.InField     = 'y';
 par.OutField    = 'y';
+par.TimeLagged  = 0;
 par.P           = 95;      % Confidence interval 68 (1 std)- 95 (2 std)- 99.7 (3 std)
 par.N           = 10000;   % number of bootstrap samples
 % par.opt=[1,0,0];  % BOOTSTRAP
