@@ -14,6 +14,7 @@ evaltime                            = par.evaltime;
 SuccessField='success';
 if isempty(evaltime)
     evaltime=data_trials_prob_plot(1).(['time' SuccessField]);
+    evaltime=evaltime(end);
 end
 explained                           = par.explained;
 channelSets                         = par.channelSets;

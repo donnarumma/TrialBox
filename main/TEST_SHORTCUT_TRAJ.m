@@ -1,17 +1,28 @@
-% function TEST_SHORTCUT_NSA_TRAJ()
+function par = TEST_SHORTCUT_TRAJ(ifplot,root_dir,AB,RatName,irng)
+% function TEST_SHORTCUT_TRAJ(ifplot)
 % SHORTCUT DECISION, for methods see DPCA  
 % Pezzulo, G., Donnarumma, F., Ferrari-Toniolo, S., Cisek, P., & Battaglia-Mayer, A. (2022). 
 % Shared population-level dynamics in monkey premotor cortex during solo action, joint action and action observation. 
 % Progress in Neurobiology, 210, 102214.
 %%
-clear;
-par.irng                        = 10;                  % for reproducibility
+% clear;
+if ~exist('irng','var')
+    irng    = 10;
+end
+par.irng                        = irng;  % for reproducibility
 rng(par.irng);
+if ~exist('ifplot','var')
+    ifplot  = true;
+end
+if ~exist('AB','var')
+    AB      = true;    % trials AB or BA;
+end
+if ~exist('RatName','var')
+    % RatName ='Rat067'; % subject
+    RatName ='Rat066'; % subject
+    % RatName ='Rat068'; % subject
+end
 %% Step 0. Load data in raw format 
-% RatName              ='Rat067'; % subject
-RatName              ='Rat066'; % subject
-AB                   = true;    % trials AB or BA;
-% RatName              ='Rat068'; % subject
 runs=11;             % selected options (see params);
 [S_cell,params]      = RatNSA_main(RatName,runs);
 
@@ -27,8 +38,8 @@ iDecision            = params.iDecision;
 prolong              = params.prolong;
 condPerTrial         = Trials.Traj_labels(Trials.ABlabels==params.AB,:);
 
-conditions           = unique(condPerTrial);
-NConditions          = length(conditions);
+% conditions           = unique(condPerTrial);
+% NConditions          = length(conditions);
 NeuronLabels         = Data.Spikes.label;
 NNeurons             = length(NeuronLabels);
 Tasklabels           = Trials.labels;
@@ -64,8 +75,13 @@ description          = sprintf('%s_day%g_ph%g_D%g_%s_Q%g_b%ga%g_KRN%g',ratname, 
                                                                     gap_after,                                                                                      ...
                                                                     kernSD);
 disp(description);
-runIdx              = params.runIdx;
-dat_name            = description;
+if ~exist('root_dir','var')
+    root_dir = '';
+end
+save_dir          = [root_dir description filesep];
+
+% runIdx              = params.runIdx;
+% dat_name            = description;
 interval            = Data.T(Traj_Decision(:,[1,3]));
 exclude_trials      = ~(abs(1000*diff(interval')-endTR)<exp(-10));
 nTrials             = sum(~exclude_trials);
@@ -84,9 +100,9 @@ Spikes               = struct;
 Spikes.label         = NeuronLabels;
 Spikes.interval      = interval;
 % extraction params
-freq_interval_in_bins=20;                           % freq on 20 bins
+% freq_interval_in_bins=20;                           % freq on 20 bins
 dt_in_s              = 1/1000;                      % 1ms bin
-Treset               = -gap_before;                 % trial zero time  
+% Treset               = -gap_before;                 % trial zero time  
 
 Spikes.t             = cell(nTrials,NNeurons);
 Spikes.interval(exclude_trials,:)=[];
@@ -117,13 +133,21 @@ for it=1:nTrials
     data_trials(it).([xfld 'spikes'])   = -gap_before:(dt_in_s*1000):gap_after; %ms
 end
 
+%% plot 2D reference
+params.plots.hfig           = figure('visible',ifplot);
+hfg.linearised2Dreference   = params.plots.linearised2Dreference(S_cell.Data,S_cell.Encoder,params.plots);
+
 %% Plot Summary Trial Conditions
-hfg.TrialConditions=plot_TrialConditions(data_trials,params.plots);
+hfig                = figure('visible',ifplot);
+params.plots.hfig   = hfig;
+hfg.TrialConditions = plot_TrialConditions(data_trials,params.plots);
 sgtitle(strrep(description,'_',' '),'fontsize',16);
 
 %% Plot Trial Trajectories
 for iTrial=1:nTrials
     itraj               = goodTrials(iTrial);
+    hfig                = figure('visible',ifplot);
+    params.plots.hfig   = hfig;
     hfg.(['TrialTrajectory' num2str(iTrial)])=params.plots.TrialTrajectory(Data,Trials,[itraj,0],params.plots); % 0 overplot the decision points
 end
 
@@ -135,7 +159,7 @@ params.decoder.t_intervals_overlap      = 0.005;
 
 for iTrial=1:nTrials
     itraj               = goodTrials(iTrial);
-    hfig                = figure('visible',1);
+    hfig                = figure('visible',ifplot);
     hfg.(['SpikeOrderedsvsMotorDecodedTraj' num2str(iTrial)]) = hfig;
     params.plots.hfig   = hfig;        
     plot_SpikeOrderedsvsMotorDecoded(Data,Encoder,Trials,[itraj,idp,prolong],params.decoder,params.plots);
@@ -146,4 +170,13 @@ for iTrial=1:nTrials
     set(hfig, 'PaperPositionMode','auto');
     set(hfig, 'PaperPositionMode','auto');
     sgtitle(lab)
+end
+
+%% plot hfg
+if ~ifplot
+    par.hfigPrint               = hfigPrintParams();
+    par.hfigPrint.pdf_file      = [root_dir mfilename '_' description '.pdf'];
+    par.hfigPrint.wm            = 170;
+    par.hfigPrint.save_dir      = save_dir; 
+    hfigPrint(hfg,par.hfigPrint)
 end

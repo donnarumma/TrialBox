@@ -11,13 +11,14 @@ end
 InField         = par.InField;
 xfld            = par.xfld;
 nCols           = par.nCols;
-nRows           = par.nRows;
+% nRows           = par.nRows;
 time            = p_classes(1).([xfld InField]);
 dt              = par.dt;
 % dt              = 50; % ms
 inds            = time>=time(1)+dt & time<=time(end)-dt;
 nClasses        = length(p_classes);
 nChannels       = size(p_classes(1).(InField),1);
+nRows           = ceil(nChannels / nCols);
 explained       = par.explained;
 newk            = 1:nChannels;
 legplot         = 2;

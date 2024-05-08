@@ -28,6 +28,18 @@ for icl=1:nClasses
     iclstart = iclend+1;
     iclend   = nBootSamples*(icl);
     icls = iclstart:iclend;
+    if par.TimeLagged
+        % add lagged trials
+        tmpdat  = dat;        
+        for ilag    = 1:par.TimeLagged
+            adddat  = tmpdat;
+            adddat(:,1:(end-ilag),:)=tmpdat(:,(1+ilag):end,:);
+            dat     = cat(3,dat,adddat);
+            adddat  = tmpdat;        
+            adddat(:,(1+ilag):end,:)=tmpdat(:,1:(end-ilag),:);
+            dat     = cat(3,dat,adddat);
+        end
+    end
 
     for iChannel = 1:nChannels      
         if nTimes==1

@@ -105,10 +105,10 @@ for iKeep=1:length(keep)
     ends{ik}     =['end '    labels{ik}];
     centers{ik}  =['center ' labels{ik}];
 end
-labinds=[labinds,[out.hp0{:}],[out.hpe{:}],[out.hpc{:}]];
-labels =[labels(keep),starts,ends,centers];
-
-legend(labinds,labels);
+labinds =[labinds,[out.hp0{:}],[out.hpe{:}],[out.hpc{:}]];
+labels  =[labels(keep),starts,ends,centers];
+goods   = isvalid(labinds);
+legend(labinds(goods),labels(goods));
 try
     ff=explained(dimsToPlot);
     d=sprintf('%3.0f',sum(ff));
