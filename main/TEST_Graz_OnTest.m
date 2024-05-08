@@ -16,7 +16,7 @@ clear; close all;
 
 par.irng = 10;
 rng(par.irng);
-for indsub=9
+for indsub=1:9
 
     signal_name                     = 'eeg';
     signal_process                  = 'CSP';
@@ -198,7 +198,7 @@ for indsub=9
     % QDA Accuracy save
     [ResultQDA_kappa,ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resQDA,params.createStructResult);
     % Update Tab Result
-    params.updateTab.dir                = 'D:\TrialBox\Results_excel\Graz_dataset';
+    params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
     params.updateTab.name               = 'Graz_OnTest';
     params.updateTab.sheetnames         = 'QDA';
     updated_Result_tableAccQDA          = updateTab(ResultQDA_Acc,params.updateTab);
@@ -213,7 +213,7 @@ for indsub=9
     % KNN Accuracy save
     [ResultKNN_kappa,ResultKNN_Acc,ResultKNN_class_Acc] = createStructResult(resKNN,params.createStructResult);
     % Update Tab Result
-    params.updateTab.dir                = 'D:\TrialBox\Results_excel\Graz_dataset';
+    params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
     params.updateTab.name               = 'Graz_OnTest';
     params.updateTab.sheetnames         = 'KNN';
     updated_Result_tableAccKNN          = updateTab(ResultKNN_Acc,params.updateTab);
@@ -228,7 +228,7 @@ for indsub=9
     % NBPW Accuracy save
     [ResultNBPW_kappa,ResultNBPW_Acc,ResultNBPW_class_Acc] = createStructResult(resNBPW,params.createStructResult);
     % Update Tab Result
-    params.updateTab.dir                = 'D:\TrialBox\Results_excel\Graz_dataset';
+    params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
     params.updateTab.name               = 'Graz_OnTest';
     params.updateTab.sheetnames         = 'NBPW';
     updated_Result_tableAccNBPW         = updateTab(ResultNBPW_Acc,params.updateTab);
