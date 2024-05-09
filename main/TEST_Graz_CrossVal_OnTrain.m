@@ -16,8 +16,9 @@ clear; close all;
 
 par.irng = 10;
 rng(par.irng);
-
-for indsub=1:9
+subs        = 1:9;
+subs        =2;
+for indsub=subs
 
     signal_name                     = 'eeg';
     signal_process                  = 'CSP';
@@ -36,9 +37,91 @@ for indsub=1:9
     par.TimeSelect.OutField      = signal_name;
     par.TimeSelect.dt            = 1;
 
-    itr1 = par.TimeSelect.t1;
-    itr2 = par.TimeSelect.t2;
+    itr1                         = par.TimeSelect.t1;
+    itr2                         = par.TimeSelect.t2;
 
+    EEG_trials                   = TimeSelect(EEG_trials,par.TimeSelect);
+    %% NSA with pca
+
+    % Smooth for dpca processing. Compute dpca - CISEK pca
+    nsa_process                     = 'dpca';        % data processed are in 'y' field
+    binWidth                        = 20;
+    kernSD                          = 30;
+    % SmoothWindow (moving window smoothing)
+    par.SmoothWindow                = SmoothWindowParams;
+    par.SmoothWindow.InField        = signal_name;
+    par.SmoothWindow.OutField       = nsa_process;
+    par.SmoothWindow.binWidth       = binWidth;
+    % removeInactives (0 mean channels removal)
+    par.removeInactive              = removeInactiveParams;
+    par.removeInactive.InField      = nsa_process;
+    par.removeInactive.OutField     = nsa_process;
+    % function to be execute
+    par.exec.funname                = {'SmoothWindow','removeInactive'};
+    data_trials                     = run_trials(EEG_trials,par);
+    
+    % perform pca on trials averaged on conditions 
+    % meanData
+    par.meanData                    = meanDataParams;
+    par.meanData.InField            = nsa_process;
+    par.meanData.OutField           = nsa_process;
+    % AverageWindow 
+    par.AverageWindow               = AverageWindowParams;
+    par.AverageWindow.InField       = nsa_process;
+    par.AverageWindow.OutField      = nsa_process;
+    par.AverageWindow.binWidth      = binWidth;
+    % GaussianSmoother (kernel smoothing)
+    par.GaussianSmoother            = GaussianSmootherParams;
+    par.GaussianSmoother.InField    = nsa_process;
+    par.GaussianSmoother.OutField   = nsa_process;
+    par.GaussianSmoother.kernSD     = kernSD;       % standard deviation of Gaussian kernel, in msec
+    par.GaussianSmoother.stepSize   = binWidth;     % time between 2 consecutive datapoints, in msec
+    % pcaModel
+    par.pcaModel                    = pcaModelParams();
+    par.pcaModel.numComponents      = 0;
+    par.pcaModel.perc               = 95;
+    par.pcaModel.InField            = nsa_process;
+    par.pcaModel.OutField           = nsa_process;
+    %%%%%%%%%%%%% nsa_pca 2-Stage Engine Churchland : kernel smooth + pca -> %%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%% 'AverageWindow','GaussianSmoother','pcaModel'            %%%%%%%%%%%%%%%%%%
+    par.exec.funname                = {'meanData','AverageWindow','GaussianSmoother','pcaModel'};
+    [~, out]                        = run_trials(data_trials,par);
+    
+    % pcaProject
+    par.pcaEncode.Wpca              = out.pcaModel.Wpca;
+    par.pcaEncode.mu                = out.pcaModel.mu;
+    par.pcaEncode.explained         = out.pcaModel.explained;
+    par.pcaEncode.InField           = nsa_process;
+    par.pcaEncode.OutField          = nsa_process;
+    
+    par.exec.funname                = {'AverageWindow','GaussianSmoother','pcaEncode'};
+    data_trials                     = run_trials(data_trials,par);
+
+    % pSeparability
+    par.pSeparability                   = pSeparabilityParams;
+    par.pSeparability.InField           = nsa_process;
+    par.pSeparability.OutField          = 'comparisons';
+    % pdata_trials                        = bootdata_trials; % data_trials
+    [pVals,pClasses]                    = pSeparability(data_trials,par.pSeparability);
+    
+    % pvalue plot per feature
+    ifplot                              = true;
+    par.plot_pValues                    = plot_pValuesParams;
+    par.plot_pValues.InField            = par.pSeparability.OutField;
+    par.plot_pValues.xfld               = 'time';
+    par.plot_pValues.dt                 = 0.1;
+    par.plot_pValues.nRows              = 1;
+    par.plot_pValues.nCols              = out.pcaModel.numComponents;
+    par.plot_pValues.explained          = out.pcaModel.explained;
+    par.plot_pValues.decisionsN         = {'START'};
+    titlestr                            = ['Subject ' num2str(indsub)];
+    par.plot_pValues.hfig               = figure('visible',ifplot);
+    hfg.pClasses                        = plot_pValues(pClasses,par.plot_pValues);
+    sgtitle(hfg.pClasses,titlestr);
+    par.plot_pValues.hfig               = figure('visible',ifplot);
+    hfg.pvals                           = plot_pValues(pVals,par.plot_pValues);
+    sgtitle(hfg.pvals,titlestr);
+    
     % Filter Bank
     par.FilterBankCompute            = FilterBankComputeParams();
     par.FilterBankCompute.InField    = signal_name;
@@ -47,7 +130,8 @@ for indsub=1:9
     par.FilterBankCompute.FilterBank = 'Nine';
     par.FilterBankCompute.fsample    = fsample;
 
-    par.exec.funname ={'TimeSelect','FilterBankCompute'};
+    par.exec.funname ={'FilterBankCompute'};
+    % par.exec.funname ={'TimeSelect','FilterBankCompute'};
     EEG_trials =run_trials(EEG_trials,par);
 
 

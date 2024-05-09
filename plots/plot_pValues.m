@@ -44,10 +44,18 @@ else
 end
 selY=newk(1):nCols_mod:max(newk);
 selX=newk(end-nCols+1):newk(end);
-nComps  = nchoosek(nClasses,2);
+if nClasses>1
+    nComps  = nchoosek(nClasses,2);
+else
+    nComps = 1;
+end
 % cmaps   = linspecer(nComps);
-cmaps   = linspecer(nClasses+nComps+1);
-cmaps   = cmaps(nClasses+1:end,:);
+if nClasses==1
+    cmaps   = 0.2*ones(1,3);
+else
+    cmaps   = linspecer(nClasses+nComps+1);
+    cmaps   = cmaps(nClasses+1:end,:);
+end
 limval  = [inf,-inf];
 totit   = cell(1,nChannels);
 for ichannel=1:nChannels
@@ -83,7 +91,7 @@ for iChannel=1:nChannels
     else
         for iClass=1:nClasses
             for ic=1:nClasses
-                if ic<=iClass
+                if ic<=iClass & nClasses > 1
                     continue
                 else
                     indcol=indcol+1;
