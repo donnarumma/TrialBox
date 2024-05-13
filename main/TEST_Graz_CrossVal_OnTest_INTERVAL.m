@@ -211,6 +211,7 @@ for indsub = 1:9
     params.createStructInterval.class      = findclass(EEG_train,StartClass);
     params.createStructInterval.irng       = par.irng;
     params.createStructInterval.method     = signal_process;
+    params.createStructResult.Filter       = par.FilterBankCompute.FilterBank;
 
     % QDA Accuracy save
     [ResultQDA_kappa,ResultQDA_Acc]     = createStructInterval(ResultQDA,params.createStructInterval);

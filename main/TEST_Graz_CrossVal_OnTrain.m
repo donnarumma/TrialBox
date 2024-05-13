@@ -1,4 +1,4 @@
-% TEST_Graz_CrossVal_OnTrain.m
+% TEST_Graz_CrossVal_OnTrain_DPCA.m
 
 % Dataset eeegplanetion: "Leeb, R., Brunner, C., Müller-Putz, G., Schlögl, A., & Pfurtscheller, G. J. G. U. O. T. (2008). BCI Competition 2008–Graz data set B.
 %       Graz University of Technology, Austria, 16, 1-6."
@@ -17,7 +17,7 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 subs        = 1:9;
-subs        =2;
+subs        =9;
 for indsub=subs
 
     signal_name                     = 'eeg';
@@ -316,6 +316,7 @@ for indsub=subs
     params.createStructResult.class      = findclass(EEG_train,StartClass);
     params.createStructResult.irng       = par.irng;
     params.createStructResult.method     = signal_process;
+    params.createStructResult.Filter     = par.FilterBankCompute.FilterBank;
 
     % QDA save result
     resultQDA.train.Accuracy = AccuracyQDA;
@@ -329,7 +330,7 @@ for indsub=subs
 
     % Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_CrossVal_OnTrain';
+    params.updateTab.name       = 'Graz_CrossVal_OnTrain_DPCA';
     params.updateTab.sheetnames = 'QDA';
 
     updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -337,7 +338,7 @@ for indsub=subs
     params.updateTab.sheetnames = 'KappaQDA';
     updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_CrossVal_OnTrain_class';
+    params.updateTab.name     = 'Graz_CrossVal_OnTrain_DPCA_class';
     params.updateTab.sheetnames = 'QDA';
     updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -353,14 +354,14 @@ for indsub=subs
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_CrossVal_OnTrain';
+    params.updateTab.name       = 'Graz_CrossVal_OnTrain_DPCA';
     params.updateTab.sheetnames = 'KNN';
     updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaKNN';
     updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_CrossVal_OnTrain_class';
+    params.updateTab.name     = 'Graz_CrossVal_OnTrain_DPCA_class';
     params.updateTab.sheetnames = 'KNN';
     updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -376,14 +377,14 @@ for indsub=subs
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_CrossVal_OnTrain';
+    params.updateTab.name       = 'Graz_CrossVal_OnTrain_DPCA';
     params.updateTab.sheetnames = 'NBPW';
     updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaNBPW';
     updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_CrossVal_OnTrain_class';
+    params.updateTab.name     = 'Graz_CrossVal_OnTrain_DPCA_class';
     params.updateTab.sheetnames = 'NBPW';
     updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
 end

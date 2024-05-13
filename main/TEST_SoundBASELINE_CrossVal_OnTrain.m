@@ -14,299 +14,302 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-indsub = 9;
-signal_name                     = 'eeg_baseline';
-signal_process                  = 'CSP';
+for indsub=1:22
 
-%% Extract and Arrange Data
-par.extractSound.signal_name    = signal_name;
-par.extractSound.InField        = 'train';
-par.extractSound.it_end         = 1;
-[EEG_trials,fsample]            = extractSound(indsub,par.extractSound);
+    signal_name                     = 'eeg_baseline';
+    signal_process                  = 'CSP';
 
-% remapTypes
-par.remapTypes           = remapTypesParams();
-par.remapTypes.selection = {1,2};
+    %% Extract and Arrange Data
+    par.extractSound.signal_name    = signal_name;
+    par.extractSound.InField        = 'train';
+    par.extractSound.it_end         = 1;
+    [EEG_trials,fsample]            = extractSound(indsub,par.extractSound);
 
-StartClass = unique([EEG_trials.trialType]);
-% Time Interpolation and selection Trials 
-par.TimeSelect               = TimeSelectParams;
-par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
-par.TimeSelect.t2            = 1; % in s from ZeroEvent time
-par.TimeSelect.InField       = signal_name;
-par.TimeSelect.OutField      = signal_name;
+    % remapTypes
+    par.remapTypes           = remapTypesParams();
+    par.remapTypes.selection = {1,2};
 
-itr1 = par.TimeSelect.t1;
-itr2 = par.TimeSelect.t2;
+    StartClass = unique([EEG_trials.trialType]);
+    % Time Interpolation and selection Trials
+    par.TimeSelect               = TimeSelectParams;
+    par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 1; % in s from ZeroEvent time
+    par.TimeSelect.InField       = signal_name;
+    par.TimeSelect.OutField      = signal_name;
 
-% Filter Bank
-par.FilterBankCompute            = FilterBankComputeParams();
-par.FilterBankCompute.InField    = signal_name;
-par.FilterBankCompute.OutField   = signal_name;
-par.FilterBankCompute.FilterBank = 'Nine';
-par.FilterBankCompute.fsample    = fsample;
+    itr1 = par.TimeSelect.t1;
+    itr2 = par.TimeSelect.t2;
 
-% par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute'};
-par.exec.funname ={'remapTypes','FilterBankCompute'};
-EEG_trials =run_trials(EEG_trials,par);
+    % Filter Bank
+    par.FilterBankCompute            = FilterBankComputeParams();
+    par.FilterBankCompute.InField    = signal_name;
+    par.FilterBankCompute.OutField   = signal_name;
+    par.FilterBankCompute.FilterBank = 'One';
+    par.FilterBankCompute.fsample    = fsample;
+
+    par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute'};
+    % par.exec.funname ={'remapTypes','FilterBankCompute'};
+    EEG_trials =run_trials(EEG_trials,par);
 
 
-% kfold-CrossValidation on the Train dataset
-kfold = 3;
-labs = [EEG_trials.trialType]'; %true labels
-cvp = cvpartition(labs,'kfold',kfold,'Stratify',true);
+    % kfold-CrossValidation on the Train dataset
+    kfold = 3;
+    labs = [EEG_trials.trialType]'; %true labels
+    cvp = cvpartition(labs,'kfold',kfold,'Stratify',true);
 
-resQDA          = struct();
-resKNN          = struct();
-resNBPW         = struct();
-res_kappaNBPW   = struct();
+    resQDA          = struct();
+    resKNN          = struct();
+    resNBPW         = struct();
+    res_kappaNBPW   = struct();
 
-outQDA          = struct();
-outKNN          = struct();
+    outQDA          = struct();
+    outKNN          = struct();
 
-LabpredictQDA   = struct();
-LabpredictKNN   = struct();
-LabpredictNBPW  = struct();
-Label_train     = struct();
+    LabpredictQDA   = struct();
+    LabpredictKNN   = struct();
+    LabpredictNBPW  = struct();
+    Label_train     = struct();
 
-for i=1:kfold
-    indices = training(cvp,i);
-    test = (indices == 0);
-    train = ~test;
-    EEG_train = EEG_trials(train);
-  
-    % Bootstrap
-    par.BootStrapData               = BootStrapDataParams;
-    par.BootStrapData.N             = 100;
-    par.BootStrapData.InField       = signal_name;
-    par.BootStrapData.OutField      = signal_name;
-    EEG_train                       = BootStrapData(EEG_train,par.BootStrapData);
-    EEG_train = EEG_train';
+    for i=1:kfold
+        indices = training(cvp,i);
+        test = (indices == 0);
+        train = ~test;
+        EEG_train = EEG_trials(train);
 
-    EEG_test = EEG_trials(test);
-    Label_train(i).Iter = [EEG_test.trialType]';
-    %% Step 2. perform CSP
-    % CSP Dictionary evaluation on train
-    par.cspModel                  = cspModelParams;
-    par.cspModel.m                = 2;
-    par.cspModel.InField          = signal_name;
-    par.cspModel.OutField         = signal_process;
+        % Bootstrap
+        par.BootStrapData               = BootStrapDataParams;
+        par.BootStrapData.N             = 100;
+        par.BootStrapData.InField       = signal_name;
+        par.BootStrapData.OutField      = signal_name;
+        EEG_train                       = BootStrapData(EEG_train,par.BootStrapData);
+        EEG_train = EEG_train';
 
-    [~,out.cspModel] = cspModel(EEG_train,par.cspModel);
+        EEG_test = EEG_trials(test);
+        Label_train(i).Iter = [EEG_test.trialType]';
+        %% Step 2. perform CSP
+        % CSP Dictionary evaluation on train
+        par.cspModel                  = cspModelParams;
+        par.cspModel.m                = 2;
+        par.cspModel.InField          = signal_name;
+        par.cspModel.OutField         = signal_process;
 
-    % CSP Encode on train and test data
-    par.cspEncode                  = cspEncodeParams;
-    par.cspEncode.InField          = signal_name;
-    par.cspEncode.OutField         = signal_process;
-    par.cspEncode.W                = out.cspModel.W;
+        [~,out.cspModel] = cspModel(EEG_train,par.cspModel);
 
-    par.exec.funname ={'cspEncode'};
-    EEG_train = run_trials(EEG_train,par);
-    EEG_test = run_trials(EEG_test,par);
+        % CSP Encode on train and test data
+        par.cspEncode                  = cspEncodeParams;
+        par.cspEncode.InField          = signal_name;
+        par.cspEncode.OutField         = signal_process;
+        par.cspEncode.W                = out.cspModel.W;
 
-    % Mutual Information
-    par.miModel               = miModelParams;
-    par.miModel.InField       = signal_process;
+        par.exec.funname ={'cspEncode'};
+        EEG_train = run_trials(EEG_train,par);
+        EEG_test = run_trials(EEG_test,par);
 
-    [~, out.miModel]=miModel(EEG_train,par.miModel);
+        % Mutual Information
+        par.miModel               = miModelParams;
+        par.miModel.InField       = signal_process;
 
-    par.miEncode               = miEncodeParams;
-    par.miEncode.InField       = signal_process;
-    par.miEncode.OutField      = signal_process;
-    par.miEncode.IndMI         = out.miModel.IndMI;
+        [~, out.miModel]=miModel(EEG_train,par.miModel);
 
-    par.exec.funname ={'miEncode'};
-    [EEG_train, out]=run_trials(EEG_train,par);
-    V_train = out.miEncode.V;
-    [EEG_test, out]=run_trials(EEG_test,par);
-    V_test = out.miEncode.V;
+        par.miEncode               = miEncodeParams;
+        par.miEncode.InField       = signal_process;
+        par.miEncode.OutField      = signal_process;
+        par.miEncode.IndMI         = out.miModel.IndMI;
 
-    %% Step 3. Model Classification on CSP
+        par.exec.funname ={'miEncode'};
+        [EEG_train, out]=run_trials(EEG_train,par);
+        V_train = out.miEncode.V;
+        [EEG_test, out]=run_trials(EEG_test,par);
+        V_test = out.miEncode.V;
 
-    % qdaModel
-    par.qdaModel                      = qdaModelParams;
-    par.qdaModel.InField              = 'CSP';
-    par.qdaModel.numIterations        = 100;
-    par.qdaModel.kfold                = 5;
-    [~, outQDA(i).Iter]               = qdaModel(EEG_train,par.qdaModel);
+        %% Step 3. Model Classification on CSP
 
-    % predictQDA
-    par.mdlPredict                  = mdlPredictParams;
-    par.mdlPredict.InField          = 'CSP';
-    par.mdlPredict.OutField         = 'QDApred';
-    par.mdlPredict.ProbField        = 'QDAProb';
-    par.mdlPredict.mdl              = outQDA(i).Iter.mdl;
-    [EEG_train,resQDA(i).train]     = mdlPredict(EEG_train,par.mdlPredict);
-    [EEG_test,resQDA(i).test]       = mdlPredict(EEG_test,par.mdlPredict);
+        % qdaModel
+        par.qdaModel                      = qdaModelParams;
+        par.qdaModel.InField              = 'CSP';
+        par.qdaModel.numIterations        = 100;
+        par.qdaModel.kfold                = 5;
+        [~, outQDA(i).Iter]               = qdaModel(EEG_train,par.qdaModel);
 
-    LabpredictQDA(i).Iter = [EEG_test.QDApred]';
+        % predictQDA
+        par.mdlPredict                  = mdlPredictParams;
+        par.mdlPredict.InField          = 'CSP';
+        par.mdlPredict.OutField         = 'QDApred';
+        par.mdlPredict.ProbField        = 'QDAProb';
+        par.mdlPredict.mdl              = outQDA(i).Iter.mdl;
+        [EEG_train,resQDA(i).train]     = mdlPredict(EEG_train,par.mdlPredict);
+        [EEG_test,resQDA(i).test]       = mdlPredict(EEG_test,par.mdlPredict);
 
-    % knnModel
-    par.knnModel                      = knnModelParams;
-    par.knnModel.InField              = 'CSP';
-    par.knnModel.numIterations        = 100;
-    par.knnModel.kfold                = 5;
-    [~, outKNN(i).Iter]             = knnModel(EEG_train,par.knnModel);
+        LabpredictQDA(i).Iter = [EEG_test.QDApred]';
 
-    % predictKNN
-    par.mdlPredict                  = mdlPredictParams;
-    par.mdlPredict.InField          = 'CSP';
-    par.mdlPredict.OutField         = 'KNNpred';
-    par.mdlPredict.ProbField        = 'KNNProb';
-    par.mdlPredict.mdl              = outKNN(i).Iter.mdl;
-    [EEG_train,resKNN(i).train]     = mdlPredict(EEG_train,par.mdlPredict);
-    [EEG_test,resKNN(i).test]       = mdlPredict(EEG_test,par.mdlPredict);
+        % knnModel
+        par.knnModel                      = knnModelParams;
+        par.knnModel.InField              = 'CSP';
+        par.knnModel.numIterations        = 100;
+        par.knnModel.kfold                = 5;
+        [~, outKNN(i).Iter]             = knnModel(EEG_train,par.knnModel);
 
-    LabpredictKNN(i).Iter = [EEG_test.KNNpred]';
+        % predictKNN
+        par.mdlPredict                  = mdlPredictParams;
+        par.mdlPredict.InField          = 'CSP';
+        par.mdlPredict.OutField         = 'KNNpred';
+        par.mdlPredict.ProbField        = 'KNNProb';
+        par.mdlPredict.mdl              = outKNN(i).Iter.mdl;
+        [EEG_train,resKNN(i).train]     = mdlPredict(EEG_train,par.mdlPredict);
+        [EEG_test,resKNN(i).test]       = mdlPredict(EEG_test,par.mdlPredict);
 
-    % fitNBPW
-    par.fitNBPW                     = fitNBPWParams;
-    par.fitNBPW.labs_train          = [EEG_train.trialType]';
-    par.fitNBPW.labs_test           = [EEG_train.trialType]';
-    [pred_train,outNBPW.train]      = fitNBPW(V_train,V_train,par.fitNBPW);
+        LabpredictKNN(i).Iter = [EEG_test.KNNpred]';
 
-    par.fitNBPW                 = fitNBPWParams;
-    par.fitNBPW.labs_train      = [EEG_train.trialType]';
-    par.fitNBPW.labs_test       = [EEG_test.trialType]';
-    [pred_test,outNBPW.test]    = fitNBPW(V_train,V_test,par.fitNBPW);
+        % fitNBPW
+        par.fitNBPW                     = fitNBPWParams;
+        par.fitNBPW.labs_train          = [EEG_train.trialType]';
+        par.fitNBPW.labs_test           = [EEG_train.trialType]';
+        [pred_train,outNBPW.train]      = fitNBPW(V_train,V_train,par.fitNBPW);
 
-    % predictNBPW Train
-    par.predictNBPW                  = predictNBPWParams;
-    par.predictNBPW.InField          = 'CSP';
-    par.predictNBPW.OutField         = 'NBPWpred';
-    par.predictNBPW.labs_pred        = pred_train;
+        par.fitNBPW                 = fitNBPWParams;
+        par.fitNBPW.labs_train      = [EEG_train.trialType]';
+        par.fitNBPW.labs_test       = [EEG_test.trialType]';
+        [pred_test,outNBPW.test]    = fitNBPW(V_train,V_test,par.fitNBPW);
 
-    [EEG_train,resNBPW(i).train]     = predictNBPW(EEG_train,par.predictNBPW);
+        % predictNBPW Train
+        par.predictNBPW                  = predictNBPWParams;
+        par.predictNBPW.InField          = 'CSP';
+        par.predictNBPW.OutField         = 'NBPWpred';
+        par.predictNBPW.labs_pred        = pred_train;
 
-    % KappaValue on Train NBPW
-    Cmatrxix_train = confusionmat([EEG_train.trialType]', pred_train);
-    res_kappaNBPW(i).train.kappaValue  = kappaModel(Cmatrxix_train);
+        [EEG_train,resNBPW(i).train]     = predictNBPW(EEG_train,par.predictNBPW);
 
-    % predictNBPW Test
-    par.predictNBPW                  = predictNBPWParams;
-    par.predictNBPW.InField          = 'CSP';
-    par.predictNBPW.OutField         = 'NBPWpred';
-    par.predictNBPW.labs_pred        = pred_test;
+        % KappaValue on Train NBPW
+        Cmatrxix_train = confusionmat([EEG_train.trialType]', pred_train);
+        res_kappaNBPW(i).train.kappaValue  = kappaModel(Cmatrxix_train);
 
-    [EEG_test,resNBPW(i).test]       = predictNBPW(EEG_test,par.predictNBPW);
+        % predictNBPW Test
+        par.predictNBPW                  = predictNBPWParams;
+        par.predictNBPW.InField          = 'CSP';
+        par.predictNBPW.OutField         = 'NBPWpred';
+        par.predictNBPW.labs_pred        = pred_test;
 
-    LabpredictNBPW(i).Iter = [EEG_test.NBPWpred]';
+        [EEG_test,resNBPW(i).test]       = predictNBPW(EEG_test,par.predictNBPW);
 
-    % KappaValue on Test NBPW
-    Cmatrxix_test = confusionmat([EEG_test.trialType]', pred_test);
-    res_kappaNBPW(i).test.kappaValue  = kappaModel(Cmatrxix_test);
+        LabpredictNBPW(i).Iter = [EEG_test.NBPWpred]';
+
+        % KappaValue on Test NBPW
+        Cmatrxix_test = confusionmat([EEG_test.trialType]', pred_test);
+        res_kappaNBPW(i).test.kappaValue  = kappaModel(Cmatrxix_test);
+    end
+    %% Accuracy and Kappa
+    label_train = struct2cell(Label_train(:))'; % convert struct in mat
+    label_train = cell2mat(label_train);
+
+    predictQDA_train = struct2cell(LabpredictQDA(:))';
+    predictQDA_train = cell2mat(predictQDA_train);
+    predictKNN_train = struct2cell(LabpredictKNN(:))';
+    predictKNN_train = cell2mat(predictKNN_train);
+    predictNBPW_train = struct2cell(LabpredictNBPW(:))';
+    predictNBPW_train = cell2mat(predictNBPW_train);
+
+    AccuracyQDA = sum(predictQDA_train == label_train)/length(label_train)*100;
+    accuracyQDA_class = accuracy4classes(label_train,predictQDA_train);
+
+    AccuracyKNN = sum(predictKNN_train == label_train)/length(label_train)*100;
+    accuracyKNN_class = accuracy4classes(label_train,predictKNN_train);
+
+    AccuracyNBPW = sum(predictNBPW_train == label_train)/length(label_train)*100;
+    accuracyNBPW_class = accuracy4classes(label_train,predictNBPW_train);
+
+    CmatrxixQDA_train = confusionmat(label_train, predictQDA_train);
+    kappaQDA = kappaModel(CmatrxixQDA_train);
+
+    CmatrxixKNN_train = confusionmat(label_train, predictKNN_train);
+    kappaKNN = kappaModel(CmatrxixKNN_train);
+
+    CmatrxixNBPW_train = confusionmat(label_train, predictNBPW_train);
+    kappaNBPW= kappaModel(CmatrxixNBPW_train);
+
+    % Save Result
+    %% create Tab Result
+    params.createStructResult.subj       = indsub;
+    params.createStructResult.method     = 'CSP';
+    params.createStructResult.file       = 'BaselineSound';
+    params.createStructResult.train_name = 'Strain';
+    params.createStructResult.train_tr1  = itr1;
+    params.createStructResult.train_tr2  = itr2;
+    params.createStructResult.test_name  = 'Strain';
+    params.createStructResult.test_ts1   = itr1;
+    params.createStructResult.test_ts2   = itr2;
+    params.createStructResult.m          = par.cspModel.m;
+    params.createStructResult.class      = findclass(EEG_train,StartClass);
+    params.createStructResult.irng       = par.irng;
+    params.createStructResult.method     = signal_process;
+    params.createStructResult.Filter     = par.FilterBankCompute.FilterBank;
+
+    % QDA save result
+    resultQDA.train.Accuracy = AccuracyQDA;
+    resultQDA.train.Accuracy_class = accuracyQDA_class;
+    resultQDA.test.Accuracy = NaN;
+    resultQDA.test.Accuracy_class = NaN;
+    resultQDA.train.kappaValue = kappaQDA;
+    resultQDA.test.kappaValue = NaN;
+
+    [ResultQDA_Kappa,ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resultQDA,params.createStructResult);
+
+    % Update Tab Result
+    params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
+    params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain';
+    params.updateTab.sheetnames = 'QDA';
+
+    updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
+
+    params.updateTab.sheetnames = 'KappaQDA';
+    updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
+
+    params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_class';
+    params.updateTab.sheetnames = 'QDA';
+    updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
+
+    % KNN save result
+    resultKNN.train.Accuracy = AccuracyKNN;
+    resultKNN.train.Accuracy_class = accuracyKNN_class;
+    resultKNN.test.Accuracy = NaN;
+    resultKNN.test.Accuracy_class = NaN;
+    resultKNN.train.kappaValue = kappaKNN;
+    resultKNN.test.kappaValue = NaN;
+
+    [ResultKNN_Kappa,ResultKNN_Acc,ResultKNN_class_Acc] = createStructResult(resultKNN,params.createStructResult);
+
+    %% Update Tab Result
+    params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
+    params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain';
+    params.updateTab.sheetnames = 'KNN';
+    updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
+
+    params.updateTab.sheetnames = 'KappaKNN';
+    updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
+
+    params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_class';
+    params.updateTab.sheetnames = 'KNN';
+    updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
+
+    % NBPW Acc
+    resultNBPW.train.Accuracy = AccuracyNBPW;
+    resultNBPW.train.Accuracy_class = accuracyNBPW_class;
+    resultNBPW.test.Accuracy = NaN;
+    resultNBPW.test.Accuracy_class = NaN;
+    resultNBPW.train.kappaValue = kappaNBPW;
+    resultNBPW.test.kappaValue = NaN;
+
+    [ResultNBPW_Kappa,ResultNBPW_Acc,ResultNBPW_class_Acc] = createStructResult(resultNBPW,params.createStructResult);
+
+    %% Update Tab Result
+    params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
+    params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain';
+    params.updateTab.sheetnames = 'NBPW';
+    updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
+
+    params.updateTab.sheetnames = 'KappaNBPW';
+    updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
+
+    params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_class';
+    params.updateTab.sheetnames = 'NBPW';
+    updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
 end
-%% Accuracy and Kappa
-label_train = struct2cell(Label_train(:))'; % convert struct in mat
-label_train = cell2mat(label_train);
-
-predictQDA_train = struct2cell(LabpredictQDA(:))';
-predictQDA_train = cell2mat(predictQDA_train);
-predictKNN_train = struct2cell(LabpredictKNN(:))';
-predictKNN_train = cell2mat(predictKNN_train);
-predictNBPW_train = struct2cell(LabpredictNBPW(:))';
-predictNBPW_train = cell2mat(predictNBPW_train);
-
-AccuracyQDA = sum(predictQDA_train == label_train)/length(label_train)*100;
-accuracyQDA_class = accuracy4classes(label_train,predictQDA_train);
-
-AccuracyKNN = sum(predictKNN_train == label_train)/length(label_train)*100;
-accuracyKNN_class = accuracy4classes(label_train,predictKNN_train);
-
-AccuracyNBPW = sum(predictNBPW_train == label_train)/length(label_train)*100;
-accuracyNBPW_class = accuracy4classes(label_train,predictNBPW_train);
-
-CmatrxixQDA_train = confusionmat(label_train, predictQDA_train);
-kappaQDA = kappaModel(CmatrxixQDA_train);
-
-CmatrxixKNN_train = confusionmat(label_train, predictKNN_train);
-kappaKNN = kappaModel(CmatrxixKNN_train);
-
-CmatrxixNBPW_train = confusionmat(label_train, predictNBPW_train);
-kappaNBPW= kappaModel(CmatrxixNBPW_train);
-
-% Save Result
-%% create Tab Result
-params.createStructResult.subj       = indsub;
-params.createStructResult.method     = 'CSP';
-params.createStructResult.file       = 'BaselineSound';
-params.createStructResult.train_name = 'Strain';
-params.createStructResult.train_tr1  = itr1;
-params.createStructResult.train_tr2  = itr2;
-params.createStructResult.test_name  = 'Strain';
-params.createStructResult.test_ts1   = itr1;
-params.createStructResult.test_ts2   = itr2;
-params.createStructResult.m          = par.cspModel.m;
-params.createStructResult.class      = findclass(EEG_train,StartClass);
-params.createStructResult.irng       = par.irng;
-params.createStructResult.method     = signal_process;
-
-% QDA save result
-resultQDA.train.Accuracy = AccuracyQDA;
-resultQDA.train.Accuracy_class = accuracyQDA_class;
-resultQDA.test.Accuracy = NaN;
-resultQDA.test.Accuracy_class = NaN;
-resultQDA.train.kappaValue = kappaQDA;
-resultQDA.test.kappaValue = NaN;
-
-[ResultQDA_Kappa,ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resultQDA,params.createStructResult);
-
-% Update Tab Result
-params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain';
-params.updateTab.sheetnames = 'QDA';
-
-updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
-
-params.updateTab.sheetnames = 'KappaQDA';
-updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
-
-params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_class';
-params.updateTab.sheetnames = 'QDA';
-updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
-
-% KNN save result
-resultKNN.train.Accuracy = AccuracyKNN;
-resultKNN.train.Accuracy_class = accuracyKNN_class;
-resultKNN.test.Accuracy = NaN;
-resultKNN.test.Accuracy_class = NaN;
-resultKNN.train.kappaValue = kappaKNN;
-resultKNN.test.kappaValue = NaN;
-
-[ResultKNN_Kappa,ResultKNN_Acc,ResultKNN_class_Acc] = createStructResult(resultKNN,params.createStructResult);
-
-%% Update Tab Result
-params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain';
-params.updateTab.sheetnames = 'KNN';
-updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
-
-params.updateTab.sheetnames = 'KappaKNN';
-updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
-
-params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_class';
-params.updateTab.sheetnames = 'KNN';
-updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
-
-% NBPW Acc
-resultNBPW.train.Accuracy = AccuracyNBPW;
-resultNBPW.train.Accuracy_class = accuracyNBPW_class;
-resultNBPW.test.Accuracy = NaN;
-resultNBPW.test.Accuracy_class = NaN;
-resultNBPW.train.kappaValue = kappaNBPW;
-resultNBPW.test.kappaValue = NaN;
-
-[ResultNBPW_Kappa,ResultNBPW_Acc,ResultNBPW_class_Acc] = createStructResult(resultNBPW,params.createStructResult);
-
-%% Update Tab Result
-params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain';
-params.updateTab.sheetnames = 'NBPW';
-updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
-
-params.updateTab.sheetnames = 'KappaNBPW';
-updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
-
-params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_class';
-params.updateTab.sheetnames = 'NBPW';
-updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);

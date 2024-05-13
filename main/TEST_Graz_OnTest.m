@@ -16,7 +16,7 @@ clear; close all;
 
 par.irng = 10;
 rng(par.irng);
-for indsub=1:9
+for indsub=2
 
     signal_name                     = 'eeg';
     signal_process                  = 'CSP';
@@ -29,7 +29,7 @@ for indsub=1:9
     StartClass = unique([EEG_train.trialType]);
     % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
+    par.TimeSelect.t1            = 1.7; % in s from ZeroEvent time
     par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
@@ -42,7 +42,7 @@ for indsub=1:9
     par.FilterBankCompute            = FilterBankComputeParams();
     par.FilterBankCompute.InField    = signal_name;
     par.FilterBankCompute.OutField   = signal_name;
-    par.FilterBankCompute.attenuation = 10;
+    par.FilterBankCompute.attenuation = 20;
     par.FilterBankCompute.FilterBank = 'Nine';
     par.FilterBankCompute.fsample    = fsample;
 
@@ -69,7 +69,7 @@ for indsub=1:9
     par.FilterBankCompute            = FilterBankComputeParams();
     par.FilterBankCompute.InField    = signal_name;
     par.FilterBankCompute.OutField   = signal_name;
-    par.FilterBankCompute.attenuation = 10;
+    par.FilterBankCompute.attenuation = 20;
     par.FilterBankCompute.FilterBank = 'Nine';
     par.FilterBankCompute.fsample    = fsample;
 
@@ -194,6 +194,7 @@ for indsub=1:9
     params.createStructResult.class      = findclass(EEG_train,StartClass);
     params.createStructResult.irng       = par.irng;
     params.createStructResult.method     = signal_process;
+    params.createStructResult.Filter     = par.FilterBankCompute.FilterBank;
 
     % QDA Accuracy save
     [ResultQDA_kappa,ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resQDA,params.createStructResult);

@@ -169,6 +169,7 @@ params.createStructResult.test_ts2   = itr2;
 params.createStructResult.class      = findclass(EEG_train,StartClass);
 params.createStructResult.irng       = par.irng;
 params.createStructResult.method     = signal_process;
+params.createStructResult.Filter     = par.FilterBankCompute.FilterBank;
 
 % QDA save result
 resultQDA.train.Accuracy = AccuracyQDA;

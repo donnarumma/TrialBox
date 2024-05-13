@@ -46,6 +46,7 @@ for ncl=1:length(class)
     ResultKappa.(class_name) = class{ncl};
 end
 ResultKappa.irng = par.irng;
+ResultKappa.Filter = par.Filter;
 
 % Accuracy
 train_acc_m = nan(length(res),1);
@@ -85,6 +86,7 @@ for ncl=1:length(class)
     ResultAcc.(class_name) = class{ncl};
 end
 ResultAcc.irng = par.irng;
+ResultAcc.Filter = par.Filter;
 
 % Result for class
 train_cl_mean = cell(length(mean_class_train_acc),1);
@@ -124,3 +126,4 @@ for ncl=1:length(class)
     ResultAcc_class.(class_name) = class{ncl};
 end
 ResultAcc_class.irng = par.irng;
+ResultAcc_class.Filter = par.Filter;

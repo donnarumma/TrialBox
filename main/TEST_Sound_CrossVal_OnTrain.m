@@ -43,7 +43,7 @@ itr2 = par.TimeSelect.t2;
 par.FilterBankCompute            = FilterBankComputeParams();
 par.FilterBankCompute.InField    = signal_name;
 par.FilterBankCompute.OutField   = signal_name;
-par.FilterBankCompute.FilterBank = 'Nine';
+par.FilterBankCompute.FilterBank = 'One';
 par.FilterBankCompute.fsample    = fsample;
 
 par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute'};
@@ -240,6 +240,7 @@ params.createStructResult.m          = par.cspModel.m;
 params.createStructResult.class      = findclass(EEG_train,StartClass);
 params.createStructResult.irng       = par.irng;
 params.createStructResult.method     = signal_process;
+params.createStructResult.Filter     = par.FilterBankCompute.FilterBank;
 
 % QDA save result
 resultQDA.train.Accuracy = AccuracyQDA;

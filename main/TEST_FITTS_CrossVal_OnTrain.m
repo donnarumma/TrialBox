@@ -1,4 +1,4 @@
-% TEST_FITTS_CrossVal_OnTrain.m
+% TEST_Fitts_CrossVal_OnTrain_TargOFF.m
 
 
 % Specifics:
@@ -35,13 +35,12 @@ itint = time_event(EEG_trials,'GO');
 StartClass = unique([EEG_trials.trialType]);
 % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
 par.TimeSelect               = TimeSelectParams;
-% par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
-% par.TimeSelect.t2            = round(itint,2); % in s from ZeroEvent time
-par.TimeSelect.t1            = 0.40; % in s from ZeroEvent time
-par.TimeSelect.t2            = 0.90; % in s from ZeroEvent time
+par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
+par.TimeSelect.t2            = round(itint,2); % in s from ZeroEvent time
+% par.TimeSelect.t1            = 0.40; % in s from ZeroEvent time
+% par.TimeSelect.t2            = 0.90; % in s from ZeroEvent time
 par.TimeSelect.InField       = signal_name;
 par.TimeSelect.OutField      = signal_name;
-par.TimeSelect.dt            = 1;
 
 itr1 = par.TimeSelect.t1;
 itr2 = par.TimeSelect.t2;
@@ -51,11 +50,11 @@ par.FilterBankCompute               = FilterBankComputeParams();
 par.FilterBankCompute.InField       = signal_name;
 par.FilterBankCompute.OutField      = signal_name;
 % par.FilterBankCompute.attenuation   = 10;
-par.FilterBankCompute.FilterBank    = 'Nine';
+par.FilterBankCompute.FilterBank    = 'NO';
 par.FilterBankCompute.fsample       = fsample;
 
-par.exec.funname ={'TimeSelect','FilterBankCompute'};
-% par.exec.funname ={'TimeSelect'};
+% par.exec.funname ={'TimeSelect','FilterBankCompute'};
+par.exec.funname ={'TimeSelect'};
 EEG_trials =run_trials(EEG_trials,par);
 
 
@@ -125,7 +124,7 @@ for i=1:kfold
     % qdaModel
     par.qdaModel                      = qdaModelParams;
     par.qdaModel.InField              = 'CSP';
-    par.qdaModel.numIterations        = 300;
+    par.qdaModel.numIterations        = 100;
     par.qdaModel.kfold                = 5;
     [~, outQDA(i).Iter]               = qdaModel(EEG_train,par.qdaModel);
 
@@ -143,7 +142,7 @@ for i=1:kfold
     % knnModel
     par.knnModel                      = knnModelParams;
     par.knnModel.InField              = 'CSP';
-    par.knnModel.numIterations        = 300;
+    par.knnModel.numIterations        = 100;
     par.knnModel.kfold                = 5;
     [~, outKNN(i).Iter]             = knnModel(EEG_train,par.knnModel);
 
@@ -228,17 +227,19 @@ kappaNBPW= kappaModel(CmatrxixNBPW_train);
 %% create Tab Result
 params.createStructResult.subj       = indsub;
 params.createStructResult.method     = 'CSP';
-params.createStructResult.file       = 'FittsEpogo';
-params.createStructResult.train_name = 'Fittstrain';
+params.createStructResult.file       = 'FittsEpotarget';
+params.createStructResult.train_name = 'FittsTargOFF';
 params.createStructResult.train_tr1  = itr1;
 params.createStructResult.train_tr2  = itr2;
-params.createStructResult.test_name  = 'Fittstrain';
+params.createStructResult.test_name  = 'FittsTargOFF';
 params.createStructResult.test_ts1   = itr1;
 params.createStructResult.test_ts2   = itr2;
 params.createStructResult.m          = par.cspModel.m;
 params.createStructResult.class      = findclass(EEG_train,StartClass);
 params.createStructResult.irng       = par.irng;
 params.createStructResult.method     = signal_process;
+params.createStructResult.Filter     = par.FilterBankCompute.FilterBank;
+
 
 % QDA save result
 resultQDA.train.Accuracy = AccuracyQDA;
@@ -252,7 +253,7 @@ resultQDA.test.kappaValue = NaN;
 
 % Update Tab Result
 params.updateTab.dir        = 'D:\TrialBox_Results_excel\Fitts_dataset';
-params.updateTab.name       = 'Fitts_CrossVal_OnTrain';
+params.updateTab.name       = 'Fitts_CrossVal_OnTrain_TargOFF';
 params.updateTab.sheetnames = 'QDA';
 
 updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -260,7 +261,7 @@ updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
 params.updateTab.sheetnames = 'KappaQDA';
 updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-params.updateTab.name     = 'Fitts_CrossVal_OnTrain_class';
+params.updateTab.name     = 'Fitts_CrossVal_OnTrain_TargOFF_class';
 params.updateTab.sheetnames = 'QDA';
 updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -276,14 +277,14 @@ resultKNN.test.kappaValue = NaN;
 
 %% Update Tab Result
 params.updateTab.dir        = 'D:\TrialBox_Results_excel\Fitts_dataset';
-params.updateTab.name       = 'Fitts_CrossVal_OnTrain';
+params.updateTab.name       = 'Fitts_CrossVal_OnTrain_TargOFF';
 params.updateTab.sheetnames = 'KNN';
 updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
 params.updateTab.sheetnames = 'KappaKNN';
 updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-params.updateTab.name     = 'Fitts_CrossVal_OnTrain_class';
+params.updateTab.name     = 'Fitts_CrossVal_OnTrain_TargOFF_class';
 params.updateTab.sheetnames = 'KNN';
 updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -299,13 +300,13 @@ resultNBPW.test.kappaValue = NaN;
 
 %% Update Tab Result
 params.updateTab.dir        = 'D:\TrialBox_Results_excel\Fitts_dataset';
-params.updateTab.name       = 'Fitts_CrossVal_OnTrain';
+params.updateTab.name       = 'Fitts_CrossVal_OnTrain_TargOFF';
 params.updateTab.sheetnames = 'NBPW';
 updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
 params.updateTab.sheetnames = 'KappaNBPW';
 updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-params.updateTab.name     = 'Fitts_CrossVal_OnTrain_class';
+params.updateTab.name     = 'Fitts_CrossVal_OnTrain_TargOFF_class';
 params.updateTab.sheetnames = 'NBPW';
 updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
