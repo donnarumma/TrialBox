@@ -8,7 +8,10 @@ InField     =par.InField;
 
 X_data      =[data_trials.(InField)]; % original data are nChannels x nTimes*nTrials 
 
-% [dataTrials.(fn)] same as cat(2,dataTrials.(fn)) different from cat(3,dataTrials.(fn)) that put trials on the third dimension
+% [dataTrials.(fn)] same as cat(2,dataTrials.(fn)) -> nChannels x nTimes*nTrials
+% different from cat(3,dataTrials.(fn)) that put trials on the third dimension,
+% i.e. nChannels x nTimes x nTrials 
+
 % transpose to set Xdata T x variablex, in order to perform a pca on each time step
 % [Wpca, Zpca, ~, ~, explained, mu]
 % do pca on the transpose (nTimes x nChannels)

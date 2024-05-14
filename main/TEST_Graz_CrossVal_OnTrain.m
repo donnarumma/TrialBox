@@ -17,7 +17,7 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 subs        = 1:9;
-subs        =2;
+subs        =3;
 for indsub=subs
 
     signal_name                     = 'eeg';
