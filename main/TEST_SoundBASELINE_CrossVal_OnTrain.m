@@ -11,11 +11,14 @@
 
 clear; close all;
 
-par.irng = 10;
-rng(par.irng);
+% par.irng = 10;
+% rng(par.irng);
 
-for indsub=1:22
+for irng=1:10
+    par.irng = irng;
+    rng(par.irng);
 
+    indsub=9;
     signal_name                     = 'eeg_baseline';
     signal_process                  = 'CSP';
 

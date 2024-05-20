@@ -1,4 +1,4 @@
-% TEST_Sound_CrossVal_OnTrain.m
+% TEST_Sound_MultiEpoch.m
 
 
 % Specifics:
@@ -13,11 +13,10 @@ clear; close all;
 
 % par.irng = 10;
 % rng(par.irng);
-
 for irng=1:10
     par.irng = irng;
     rng(par.irng);
-    indsub = 3;
+    indsub = 9;
     signal_name                     = 'eeg_sound';
     signal_process                  = 'CSP';
 
@@ -34,8 +33,8 @@ for irng=1:10
     StartClass = unique([EEG_trials.trialType]);
     % Time Interpolation and selection Trials
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
-    par.TimeSelect.t2            = 2.7; % in s from ZeroEvent time
+    par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 2.0; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
 
@@ -49,10 +48,20 @@ for irng=1:10
     par.FilterBankCompute.FilterBank = 'One';
     par.FilterBankCompute.fsample    = fsample;
 
-    par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute'};
-    % par.exec.funname ={'remapTypes','FilterBankCompute'};
-    EEG_trials =run_trials(EEG_trials,par);
+    %% epochCompute
+    par.epochCompute                    = epochComputeParams();
+    par.epochCompute.InField            = signal_name;
+    par.epochCompute.OutField           = signal_name;
+    par.epochCompute.fample             = fsample;
+    par.epochCompute.t_epoch            = 1; % duration of a single intervals in s
+    par.epochCompute.overlap_percent    = 50; % in percentage
 
+
+    % par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute','eeg_overlap'};
+    par.exec.funname ={'remapTypes','FilterBankCompute','epochCompute'};
+    [EEG_trials,out.epochCompute] =run_trials(EEG_trials,par);
+    itr1 = round(out.epochCompute.epochCompute.time_intervals(:,1),2);
+    itr2 = round(out.epochCompute.epochCompute.time_intervals(:,2),2);
 
     % kfold-CrossValidation on the Train dataset
     kfold = 3;
@@ -76,7 +85,12 @@ for irng=1:10
         indices = training(cvp,i);
         test = (indices == 0);
         train = ~test;
-        EEG_train = EEG_trials(train);
+        EEG_train = repmat(EEG_trials(train),2,1);
+        E_train = cat(1,EEG_trials(train).(signal_name));
+        for iTrial=1:length(EEG_train)
+            EEG_train(iTrial).trialId = iTrial;
+            EEG_train(iTrial).(signal_name) = squeeze(E_train(iTrial,:,:,:));
+        end
 
         % Bootstrap
         par.BootStrapData               = BootStrapDataParams;
@@ -86,7 +100,13 @@ for irng=1:10
         EEG_train                       = BootStrapData(EEG_train,par.BootStrapData);
         EEG_train = EEG_train';
 
-        EEG_test = EEG_trials(test);
+
+        EEG_test = repmat(EEG_trials(test),2,1);
+        E_test = cat(1,EEG_trials(test).(signal_name));
+        for iTrial=1:length(EEG_test)
+            EEG_test(iTrial).trialId = iTrial;
+            EEG_test(iTrial).(signal_name) = squeeze(E_test(iTrial,:,:,:));
+        end
         Label_train(i).Iter = [EEG_test.trialType]';
         %% Step 2. perform CSP
         % CSP Dictionary evaluation on train
@@ -257,7 +277,7 @@ for irng=1:10
 
     % Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-    params.updateTab.name       = 'Sound_CrossVal_OnTrain';
+    params.updateTab.name       = 'Sound_MultiEpoch';
     params.updateTab.sheetnames = 'QDA';
 
     updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -265,7 +285,7 @@ for irng=1:10
     params.updateTab.sheetnames = 'KappaQDA';
     updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Sound_CrossVal_OnTrain_class';
+    params.updateTab.name     = 'Sound_MultiEpoch_class';
     params.updateTab.sheetnames = 'QDA';
     updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -281,14 +301,14 @@ for irng=1:10
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-    params.updateTab.name       = 'Sound_CrossVal_OnTrain';
+    params.updateTab.name       = 'Sound_MultiEpoch';
     params.updateTab.sheetnames = 'KNN';
     updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaKNN';
     updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Sound_CrossVal_OnTrain_class';
+    params.updateTab.name     = 'Sound_MultiEpoch_class';
     params.updateTab.sheetnames = 'KNN';
     updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -304,14 +324,14 @@ for irng=1:10
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-    params.updateTab.name       = 'Sound_CrossVal_OnTrain';
+    params.updateTab.name       = 'Sound_MultiEpoch';
     params.updateTab.sheetnames = 'NBPW';
     updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaNBPW';
     updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Sound_CrossVal_OnTrain_class';
+    params.updateTab.name     = 'Sound_MultiEpoch_class';
     params.updateTab.sheetnames = 'NBPW';
     updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
 end

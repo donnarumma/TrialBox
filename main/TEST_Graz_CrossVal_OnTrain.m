@@ -17,7 +17,7 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 subs        = 1:9;
-subs        =9;
+subs        =2;
 for indsub=subs
 
     signal_name                     = 'eeg';
@@ -31,8 +31,8 @@ for indsub=subs
     StartClass = unique([EEG_trials.trialType]);
     % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
-    par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
+    par.TimeSelect.t1            = 1.06-0.25; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 1.06+0.25; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
     par.TimeSelect.dt            = 1;
@@ -388,3 +388,10 @@ for indsub=subs
     params.updateTab.sheetnames = 'NBPW';
     updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
 end
+cQDA = confusionmat([EEG_trials.trialType]',predictQDA_train);
+cKNN = confusionmat([EEG_trials.trialType]',predictKNN_train);
+cNBPW = confusionmat([EEG_trials.trialType]',predictNBPW_train);
+
+confErrorQDA = confusionError(cQDA);
+confErrorKNN = confusionError(cKNN);
+confErrorNBPW = confusionError(cNBPW);

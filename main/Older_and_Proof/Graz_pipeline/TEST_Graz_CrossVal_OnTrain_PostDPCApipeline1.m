@@ -1,4 +1,4 @@
-% TEST_Graz_CrossVal_PostDPCA_OnTrain_PostDPCA_provaPCA.m
+% TEST_Graz_CrossVal_PostDPCA_OnTrain_PostDPCApipeline1.m
 
 % Dataset eeegplanetion: "Leeb, R., Brunner, C., Müller-Putz, G., Schlögl, A., & Pfurtscheller, G. J. G. U. O. T. (2008). BCI Competition 2008–Graz data set B.
 %       Graz University of Technology, Austria, 16, 1-6."
@@ -17,7 +17,7 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-indsub = 2;
+indsub = 1;
 signal_name                     = 'eeg';
 signal_process                  = 'CSP';
 
@@ -48,65 +48,21 @@ par.FilterBankCompute.FilterBank = 'Nine';
 par.FilterBankCompute.fsample    = fsample;
 
 par.exec.funname ={'TimeSelect','FilterBankCompute'};
-EEG_trials =run_trials(EEG_trials,par);
+EEG_trials1 =run_trials(EEG_trials,par);
 
-dpca_start = 1.7; 
-dpca_stop = 2.5;
+par.TimeSelect.t1            = 1.4; % in s from ZeroEvent time
+par.TimeSelect.t2            = 1.6; % in s from ZeroEvent time
+EEG_trials2 = run_trials(EEG_trials,par);
 
-    %% NSA with pca
-    % Smooth for dpca processing. Compute dpca - CISEK pca
-    nsa_process                     = 'dpca';        % data processed are in 'y' field
-    binWidth                        = 20;
-    kernSD                          = 30;
-    % SmoothWindow (moving window smoothing)
-    par.SmoothWindow                = SmoothWindowParams;
-    par.SmoothWindow.InField        = signal_name;
-    par.SmoothWindow.OutField       = nsa_process;
-    par.SmoothWindow.binWidth       = binWidth;
-    % removeInactives (0 mean channels removal)
-    par.removeInactive              = removeInactiveParams;
-    par.removeInactive.InField      = nsa_process;
-    par.removeInactive.OutField     = nsa_process;
-    % function to be execute
-    par.exec.funname                = {'SmoothWindow','removeInactive'};
-    data_trials                     = run_trials(EEG_trials,par);
-    
-    % perform pca on trials averaged on conditions 
-    % meanData
-    par.meanData                    = meanDataParams;
-    par.meanData.InField            = nsa_process;
-    par.meanData.OutField           = nsa_process;
-    % AverageWindow 
-    par.AverageWindow               = AverageWindowParams;
-    par.AverageWindow.InField       = nsa_process;
-    par.AverageWindow.OutField      = nsa_process;
-    par.AverageWindow.binWidth      = binWidth;
-    % GaussianSmoother (kernel smoothing)
-    par.GaussianSmoother            = GaussianSmootherParams;
-    par.GaussianSmoother.InField    = nsa_process;
-    par.GaussianSmoother.OutField   = nsa_process;
-    par.GaussianSmoother.kernSD     = kernSD;       % standard deviation of Gaussian kernel, in msec
-    par.GaussianSmoother.stepSize   = binWidth;     % time between 2 consecutive datapoints, in msec
-    % pcaModel
-    par.pcaModel                    = pcaModelParams();
-    par.pcaModel.numComponents      = 0;
-    par.pcaModel.perc               = 95;
-    par.pcaModel.InField            = nsa_process;
-    par.pcaModel.OutField           = nsa_process;
-    %%%%%%%%%%%%% nsa_pca 2-Stage Engine Churchland : kernel smooth + pca -> %%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%% 'AverageWindow','GaussianSmoother','pcaModel'            %%%%%%%%%%%%%%%%%%
-    par.exec.funname                = {'meanData','AverageWindow','GaussianSmoother','pcaModel'};
-    [~, out]                        = run_trials(data_trials,par);
-    
-    % pcaProject
-    par.pcaEncode.Wpca              = out.pcaModel.Wpca;
-    par.pcaEncode.mu                = out.pcaModel.mu;
-    par.pcaEncode.explained         = out.pcaModel.explained;
-    par.pcaEncode.InField           = nsa_process;
-    par.pcaEncode.OutField          = nsa_process;
-    
-    par.exec.funname                = {'AverageWindow','GaussianSmoother','pcaEncode'};
-    data_trials                     = run_trials(data_trials,par);
+itr1 = par.TimeSelect.t1;
+itr2 = par.TimeSelect.t2;
+
+% EEG_trialsF = EEG_trials1;
+% for iTr = 1:length(EEG_trials)
+%     EEG_trialsF(iTr).(signal_name) = cat(2,EEG_trials1.(signal_name),EEG_trials2.(signal_name));
+%     EEG_trialsF(iTr).timeeeg = linspace(0.5,size(EEG_trialsF(iTr).(signal_name),2)/fsample,fsample);
+% end
+
 % kfold-CrossValidation on the Train dataset
 kfold = 10;
 labs = [EEG_trials.trialType]'; %true labels
@@ -129,12 +85,13 @@ for i=1:kfold
     indices = training(cvp,i);
     test = (indices == 0);
     train = ~test;
-    EEG_train = EEG_trials(train);
-    EEG_test = EEG_trials(test);
-    data_train = data_trials(train);
-    data_test = data_trials(test);
+    EEG_train1 = EEG_trials1(train);
+    EEG_test1 = EEG_trials1(test);
 
-    Label_train(i).Iter = [EEG_test.trialType]';
+    EEG_train2 = EEG_trials2(train);
+    EEG_test2 = EEG_trials2(test);
+
+    Label_train(i).Iter = [EEG_test1.trialType]';
     %% Step 2. perform CSP
     % CSP Dictionary evaluation on train
     par.cspModel                  = cspModelParams;
@@ -142,17 +99,30 @@ for i=1:kfold
     par.cspModel.InField          = signal_name;
     par.cspModel.OutField         = signal_process;
 
-    [~,out.cspModel] = cspModel(EEG_train,par.cspModel);
+    [~,out.cspModel1] = cspModel(EEG_train1,par.cspModel);
+    [~,out.cspModel2] = cspModel(EEG_train2,par.cspModel);
     % CSP Encode on train and test data
     par.cspEncode                  = cspEncodeParams;
     par.cspEncode.InField          = signal_name;
     par.cspEncode.OutField         = signal_process;
-    par.cspEncode.W                = out.cspModel.W;
+    par.cspEncode.W                = out.cspModel1.W;
 
     par.exec.funname ={'cspEncode'};
-    EEG_train =run_trials(EEG_train,par);
-    EEG_test =run_trials(EEG_test,par);
+    EEG_train1 =run_trials(EEG_train1,par);
+    EEG_test1 =run_trials(EEG_test1,par);
 
+    par.cspEncode.W                = out.cspModel2.W;
+    EEG_train2 =run_trials(EEG_train2,par);
+    EEG_test2 =run_trials(EEG_test2,par);
+
+    EEG_train = EEG_train1;
+    EEG_test = EEG_test2;
+    for iTr=1:length(EEG_train)
+        EEG_train(iTr).(signal_process) = cat(2,EEG_train1(iTr).(signal_process),EEG_train2(iTr).(signal_process));
+    end
+    for iTr=1:length(EEG_test)
+        EEG_test(iTr).(signal_process) = cat(2,EEG_test1(iTr).(signal_process),EEG_test2(iTr).(signal_process));
+    end
     % Mutual Information
     par.miModel               = miModelParams;
     par.miModel.InField       = signal_process;
@@ -172,17 +142,6 @@ for i=1:kfold
     V_test = out.miEncode.V;
 
     %% Step 3. Model Classification on CSP
-
-    for iTrial=1:length(EEG_train)
-        [~,itstart_dpca]  = min(abs(data_train(iTrial).timedpca - dpca_start));
-        [~,itstop_dpca]   = min(abs(data_train(iTrial).timedpca - dpca_stop));
-        EEG_train(iTrial).(signal_process) = cat(2,EEG_train(iTrial).(signal_process),data_train(iTrial).dpca(1,itstart_dpca:itstop_dpca));
-    end
-    for iTrial=1:length(EEG_test)
-        [~,itstart_dpca]  = min(abs(data_test(iTrial).timedpca - dpca_start));
-        [~,itstop_dpca]   = min(abs(data_test(iTrial).timedpca - dpca_stop));
-        EEG_test(iTrial).(signal_process) = cat(2,EEG_test(iTrial).(signal_process),data_test(iTrial).dpca(1,itstart_dpca:itstop_dpca));
-    end
 
     % qdaModel
     par.qdaModel                      = qdaModelParams;

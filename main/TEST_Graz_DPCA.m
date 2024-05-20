@@ -14,7 +14,7 @@ kernSD                          = 150;
 % kernSD                          = 30;
 P                               = 95;
 
-indsub = 6;
+indsub = 3;
 
 %% Step 0. Load raw data and arrange trials
 signal_name                     = 'eeg';

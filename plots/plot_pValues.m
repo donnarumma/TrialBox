@@ -53,8 +53,9 @@ end
 if nClasses==1
     cmaps   = 0.2*ones(1,3);
 else
-    cmaps   = linspecer(nClasses+nComps+1);
-    cmaps   = cmaps(nClasses+1:end,:);
+    cmaps   = linspecer(nClasses+nComps+10);
+
+    cmaps   = cmaps(1:2:end,:);
 end
 limval  = [inf,-inf];
 totit   = cell(1,nChannels);
