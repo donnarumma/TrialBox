@@ -1,4 +1,4 @@
-% TEST_Graz_CrossVal_OnTrain_NSA.m
+% TEST_Graz_CrossVal_OnTrain.m
 
 % Dataset eeegplanetion: "Leeb, R., Brunner, C., Müller-Putz, G., Schlögl, A., & Pfurtscheller, G. J. G. U. O. T. (2008). BCI Competition 2008–Graz data set B.
 %       Graz University of Technology, Austria, 16, 1-6."
@@ -16,8 +16,7 @@ clear; close all;
 
 par.irng = 10;
 rng(par.irng);
-subs        = 1:9;
-subs        = 1;
+subs        = 5;
 for indsub=subs
 
     signal_name                     = 'eeg';
@@ -31,8 +30,8 @@ for indsub=subs
     StartClass = unique([EEG_trials.trialType]);
     % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = 1.46-0.5; % in s from ZeroEvent time
-    par.TimeSelect.t2            = 1.46+0.5; % in s from ZeroEvent time
+    par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
     par.TimeSelect.dt            = 1;
@@ -126,7 +125,7 @@ for indsub=subs
     par.FilterBankCompute            = FilterBankComputeParams();
     par.FilterBankCompute.InField    = signal_name;
     par.FilterBankCompute.OutField   = signal_name;
-    par.FilterBankCompute.attenuation = 20;
+    par.FilterBankCompute.attenuation = 10;
     par.FilterBankCompute.FilterBank = 'Nine';
     par.FilterBankCompute.fsample    = fsample;
 
@@ -136,9 +135,9 @@ for indsub=subs
 
 
     % kfold-CrossValidation on the Train dataset
-    kfold = 10;
+    kfoldSplit = 10;
     labs = [EEG_trials.trialType]'; %true labels
-    cvp = cvpartition(labs,'kfold',kfold,'Stratify',true);
+    cvp = cvpartition(labs,'kfold',kfoldSplit,'Stratify',true);
 
     resQDA          = struct();
     resKNN          = struct();
@@ -153,7 +152,7 @@ for indsub=subs
     LabpredictNBPW  = struct();
     Label_train     = struct();
 
-    for i=1:kfold
+    for i=1:kfoldSplit
         indices = training(cvp,i);
         test = (indices == 0);
         train = ~test;
@@ -180,9 +179,12 @@ for indsub=subs
         EEG_train =run_trials(EEG_train,par);
         EEG_test =run_trials(EEG_test,par);
 
+        TotalFeatures = size(EEG_test(1).(signal_process),2);
+
         % Mutual Information
         par.miModel               = miModelParams;
         par.miModel.InField       = signal_process;
+        par.miModel.m             = par.cspModel.m;
 
         [~, out.miModel]=miModel(EEG_train,par.miModel);
 
@@ -312,12 +314,15 @@ for indsub=subs
     params.createStructResult.test_name  = 'AT';
     params.createStructResult.test_ts1   = itr1;
     params.createStructResult.test_ts2   = itr2;
-    params.createStructResult.m          = par.cspModel.m;
-    params.createStructResult.class      = findclass(EEG_train,StartClass);
-    params.createStructResult.irng       = par.irng;
-    params.createStructResult.method     = signal_process;
-    params.createStructResult.Filter     = par.FilterBankCompute.FilterBank;
-
+    params.createStructResult.m             = par.cspModel.m;
+    params.createStructResult.class         = findclass(EEG_train,StartClass);
+    params.createStructResult.irng          = par.irng;
+    params.createStructResult.Filter        = par.FilterBankCompute.FilterBank;
+    params.createStructResult.n_Features    = size(EEG_train(1).(signal_process),2);
+    params.createStructResult.indMi         = par.miModel.k;
+    params.createStructResult.attenuation   = par.FilterBankCompute.attenuation;
+    params.createStructResult.TotalFeatures = TotalFeatures;
+    params.createStructResult.kfold         = kfoldSplit;
     % QDA save result
     resultQDA.train.Accuracy = AccuracyQDA;
     resultQDA.train.Accuracy_class = accuracyQDA_class;
@@ -330,7 +335,7 @@ for indsub=subs
 
     % Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_CrossVal_OnTrain_DPCA';
+    params.updateTab.name       = 'Graz_SearchInterv_NSA';
     params.updateTab.sheetnames = 'QDA';
 
     updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -338,7 +343,7 @@ for indsub=subs
     params.updateTab.sheetnames = 'KappaQDA';
     updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_CrossVal_OnTrain_DPCA_class';
+    params.updateTab.name     = 'Graz_SearchInterv_NSA_class';
     params.updateTab.sheetnames = 'QDA';
     updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -354,14 +359,14 @@ for indsub=subs
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_CrossVal_OnTrain_DPCA';
+    params.updateTab.name       = 'Graz_SearchInterv_NSA';
     params.updateTab.sheetnames = 'KNN';
     updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaKNN';
     updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_CrossVal_OnTrain_DPCA_class';
+    params.updateTab.name     = 'Graz_SearchInterv_NSA_class';
     params.updateTab.sheetnames = 'KNN';
     updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -377,14 +382,14 @@ for indsub=subs
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_CrossVal_OnTrain_DPCA';
+    params.updateTab.name       = 'Graz_SearchInterv_NSA';
     params.updateTab.sheetnames = 'NBPW';
     updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaNBPW';
     updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_CrossVal_OnTrain_DPCA_class';
+    params.updateTab.name     = 'Graz_SearchInterv_NSA_class';
     params.updateTab.sheetnames = 'NBPW';
     updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
 end
@@ -395,3 +400,11 @@ cNBPW = confusionmat([EEG_trials.trialType]',predictNBPW_train);
 confErrorQDA = confusionError(cQDA);
 confErrorKNN = confusionError(cKNN);
 confErrorNBPW = confusionError(cNBPW);
+
+indmin = nan(size(pVals.comparisons,1),1);
+pmin = nan(size(pVals.comparisons,1),1);
+for i=1:size(pVals.comparisons,1)
+    [pmin(i),indmin(i)] = min(pVals.comparisons(i,:));
+    disp(pmin(i));
+    disp(pVals.timecomparisons(indmin(i)));
+end

@@ -18,4 +18,8 @@ par.SOUNDarrangeTrials.OutField  = signal_name; % name of the field in which to 
 par.SOUNDarrangeTrials.ch_number = EEG_raw.ch_number;
 par.SOUNDarrangeTrials.exec      = true;
 
-EEG_trial                        = SOUNDarrangeTrials(EEG_raw,par.SOUNDarrangeTrials);
+if par.multiEpoch == true
+    EEG_trial                        = SOUNDarrangeTrialsMultiEpoch(EEG_raw,par.SOUNDarrangeTrials);
+else 
+    EEG_trial                        = SOUNDarrangeTrials(EEG_raw,par.SOUNDarrangeTrials);
+end
