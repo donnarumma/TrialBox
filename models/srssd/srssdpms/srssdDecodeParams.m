@@ -1,12 +1,10 @@
-function   par = mdlPredictParams(parSource)
-% function par = mdlPredictParams(parSource)
+function   par = srssdDecodeParams(parSource)
+% function par = srssdDecodeParams(parSource)
 par.exec            = true;
-par.kfold           = 4;
-par.numIterations   = 100;
 par.InField         = 'y';
 par.OutField        = 'y';
-par.SuccessField    = 'success';
-par.ProbField       = 'prob';
+par.nChannels       = 1;
+par.nTimes          = 1;
 try
     fnames=fieldnames(parSource);
     for in=1:length(fnames)

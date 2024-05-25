@@ -56,14 +56,14 @@ for icl=1:nClasses
         
         
         for iSample=1:nBootSamples
-            cl_data_trials(icls(iSample)).(OutField)(iChannel,:) = channelBootsVals(iSample,:);
-            cl_data_trials(icls(iSample)).trialName           = trialNames{icl};
-            cl_data_trials(icls(iSample)).trialType           = cl;
-            cl_data_trials(icls(iSample)).trialId             = icl;
-            cl_data_trials(icls(iSample)).train               = true;
-            cl_data_trials(icls(iSample)).valid               = false;
-            cl_data_trials(icls(iSample)).test                = false;
-            cl_data_trials(icls(iSample)).(['time' OutField]) = data_trials(1).(['time' par.InField]);
+            cl_data_trials(icls(iSample),1).(OutField)(iChannel,:) = channelBootsVals(iSample,:);
+            cl_data_trials(icls(iSample),1).trialName           = trialNames{icl};
+            cl_data_trials(icls(iSample),1).trialType           = cl;
+            cl_data_trials(icls(iSample),1).trialId             = icl;
+            cl_data_trials(icls(iSample),1).train               = true;
+            cl_data_trials(icls(iSample),1).valid               = false;
+            cl_data_trials(icls(iSample),1).test                = false;
+            cl_data_trials(icls(iSample),1).(['time' OutField]) = data_trials(1).(['time' par.InField]);
         end
     end
 end

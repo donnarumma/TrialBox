@@ -8,14 +8,6 @@
 % Springer Berlin Heidelberg.
 % https://link.springer.com/chapter/10.1007/978-3-642-21735-7_47
 %--------------------------------------------------------------------------
-% Test settings paddle
-%--------------------------------------------------------------------------
-nAtoms                      = 100;
-eta                         = 1;
-tau                         = 0.02;
-numIter                     = 500;
-rtoll                       = 1E-05;
-%--------------------------------------------------------------------------
 
 %% load MNIST in Matlab
 [XTrain,YTrain,anglesTrain] = digitTrain4DArrayData;
@@ -23,7 +15,7 @@ rtoll                       = 1E-05;
 X3dTrain                    = squeeze(XTrain);
 X3dTest                     = squeeze(XTest);
 
-%% arrange
+%% arrange data
 [nChannels,nTimes,nTrials]  = size(X3dTrain);
 % nChannels*nTimes x nTrials 
 XdataTrain                  = reshape(X3dTrain,nChannels*nTimes,nTrials);
@@ -31,17 +23,31 @@ XdataTest                   = reshape(X3dTest,nChannels*nTimes,nTrials);
 % nTrials x nChannels*nTimes
 XdataTrain                  = XdataTrain';
 XdataTest                   = XdataTest';
+
+%% Test settings paddle
+%--------------------------------------------------------------------------
+par.paddle.nAtoms           = 100;
+par.paddle.eta              = 1;
+par.paddle.tau              = 0.02;
+par.paddle.numIter          = 500;
+par.paddle.rtoll            = 1E-05;
+%--------------------------------------------------------------------------
+
 %%
 % learnPADDLE_FISTA d x n samples   -> d=nChannels*nTimes, n=nTrials 
 % [U, D, C]   = learnPADDLE_FISTA(XdataTrain,  nAtoms, eta, tau, rtoll);
-[Manifold, Dpaddle, Wpaddle]= learnPADDLE_FISTA(XdataTrain',  nAtoms, eta, tau, rtoll);
+[Manifold, Dpaddle, Wpaddle]= learnPADDLE_FISTA(XdataTrain',        ...
+                                                par.paddle.nAtoms,  ...
+                                                par.paddle.eta,     ...
+                                                par.paddle.tau,                             ...
+                                                par.paddle.rtoll);
 % Dpaddle -> nChannels*nTimes x nAtoms
 % Wpaddle -> nAtoms x nChannels*nTimes 
 
 %% manifold construct by simPADDLE     -> see below for an alternative
 % nAtoms x nTrials
-ZdataTrain                  = simPADDLE(XdataTrain', Dpaddle, tau, rtoll); 
-ZdataTest                   = simPADDLE(XdataTest', Dpaddle, tau, rtoll);
+ZdataTrain                  = simPADDLE(XdataTrain', Dpaddle, par.paddle.tau, par.paddle.rtoll); 
+ZdataTest                   = simPADDLE(XdataTest', Dpaddle, par.paddle.tau, par.paddle.rtoll);
 % nTrials x nAtoms
 ZdataTrain                  = ZdataTrain';  
 ZdataTest                   = ZdataTest';
@@ -78,18 +84,10 @@ fprintf('Elapsed time %g s\n',toc(t));
 out.accuracy = mean(YTest_pred==YTest);
 out.accuracyclass = accuracy4classes(YTest_pred,YTest);
 disp(out)
-%% plot a random number hmShow of test vs reconstructions
-numObservations = size(XTest,4);
-hmShow          = 49;
-idx             = randperm(numObservations,hmShow);
-ImTest          = imtile(reshape (XdataTest(idx,:)',nChannels,nTimes,hmShow) ) ;
-ImTestRec       = imtile(reshape (XdataTestrec(idx,:)',nChannels,nTimes,hmShow) ) ;
-figure
-subplot(1,2,1);imshow(ImTest);title('Test Original');
-subplot(1,2,2);imshow(ImTestRec);title(sprintf('Reconstructed | Rms Error: %.4f',errorXTest));
-%% plot a number hmShow of train vs reconstructions
-col             = [0.5,0.5,0.7]; % col borders
-hmShow          = 49;
+%% plot reconstructions
+col             = [0.5,0.5,0.7]; % border color
+hmShow          = 49;            % how many reconstructions to show (choosen random)
+% train
 numObservations = size(XTrain,4);
 idx             = randperm(numObservations,hmShow);
 ImgTrain        = reshape (XdataTrain(idx,:)',nChannels,nTimes,hmShow);
@@ -114,22 +112,7 @@ subplot(1,2,2);
 montage (ImgTestRec, 'BorderSize', [1,1], 'BackgroundColor', col);
 title('Reconstructed');
 sgtitle(sprintf('Test (RMS: %.4f)',errorXTest))
-%%
-% ImTrainRec      = imtile(reshape (XdataTrainrec(idx,:)',nChannels,nTimes,hmShow) ) ;
-figure;
-subplot(1,2,1);imshow(ImTrain);   title('Train Original');
-subplot(1,2,2);imshow(ImTrainRec);title(sprintf('Reconstructed | Rms Error: %.4f',errorXTrain));
-%% plot test vs reconstruction (imtile)
-numObservations = size(XTest,4);
-figure;
-idx             = randperm(numObservations,hmShow);
-
-ImTest          = imtile(reshape (XdataTest(idx,:)',nChannels,nTimes,hmShow) ) ;
-ImTestRec       = imtile(reshape (XdataTestrec(idx,:)',nChannels,nTimes,hmShow) ) ;
-figure
-subplot(1,2,1);imshow(ImTest);title('Test Original');
-subplot(1,2,2);imshow(ImTestRec);title(sprintf('Reconstructed | Rms Error: %.4f',errorXTest));
-%% plot dictionaries (use montage) 
+%% plot dictionaries 
 % encoding
 figure;
 tiledlayout(1,2, 'Padding', 'tight', 'TileSpacing', 'tight');
@@ -155,3 +138,30 @@ end
 ID=reshape (ID,nChannels,nTimes,nAtoms);
 montage (ID, 'BorderSize', [1,1], 'BackgroundColor', col);
 return
+%%
+%% plot dictionaries 
+% encoding
+figure;
+% tiledlayout(1,2, 'Padding', 'tight', 'TileSpacing', 'tight');
+nexttile;
+hold on;
+title ('Encoding Dictionary')
+IW = Wpaddle;
+% IW = rescale(IW,0,1); % uniformly scale
+for iAtom = 1:size(IW,2)
+    IW(:,iAtom) = rescale(IW(:,iAtom),0,1);
+end
+IW=reshape (IW,nChannels,nTimes,nAtoms);
+montage (IW, 'BorderSize', [1,1], 'BackgroundColor', col);
+%% decoding
+nexttile;
+hold on;
+title ('Decoding Dictionary')
+ID = Dpaddle;
+% ID = rescale(ID,0,1); % uniformly scale
+for iAtom = 1:nAtoms
+    ID(:,iAtom) = rescale(ID(:,iAtom),0,1);
+end
+ID=reshape (ID,nChannels,nTimes,nAtoms);
+montage (ID, 'BorderSize', [1,1], 'BackgroundColor', col);
+%%
