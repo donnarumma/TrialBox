@@ -16,10 +16,15 @@ ts2 = sprintf('[%.2f,%.2f]',par.test_ts2);
 % ts2 = par.test_ts2;
 class = par.class;
 method = par.method;
+n_Features = par.n_Features;
 
 try m = par.m;
 catch
     m=0;
+end
+try indMi = par.indMi;
+catch
+    indMi = 0;
 end
 
 % KappaValue
@@ -49,8 +54,13 @@ for ncl=1:length(class)
     class_name = sprintf('Class%d',ncl);
     ResultKappa.(class_name) = class{ncl};
 end
-ResultKappa.irng = par.irng;
+ResultKappa.indMi = indMi;
 ResultKappa.Filter = par.Filter;
+ResultKappa.attenuation = par.attenuation;
+ResultKappa.TotalFeatures = par.TotalFeatures;
+ResultKappa.nFeatures= n_Features;
+ResultKappa.kfold_Splitdata = par.kfold;
+ResultKappa.irng = par.irng;
 
 % Accuracy
 train_acc_m = nan(length(res),1);
@@ -71,7 +81,7 @@ std_class_test_acc = std(test_acc_class,0,1);
 
 
 ResultAcc.date = datetime('now');
-ResultAcc_class.Method = method;
+ResultAcc_class.method = method;
 ResultAcc.subj = subj;
 ResultAcc.file = file;
 ResultAcc.train_name = train_name;
@@ -89,8 +99,13 @@ for ncl=1:length(class)
     class_name = sprintf('Class%d',ncl);
     ResultAcc.(class_name) = class{ncl};
 end
-ResultAcc.irng = par.irng;
+ResultAcc.indMi = indMi;
 ResultAcc.Filter = par.Filter;
+ResultAcc.attenuation = par.attenuation;
+ResultAcc.TotalFeatures = par.TotalFeatures;
+ResultAcc.nFeatures= n_Features;
+ResultAcc.kfold_Splitdata = par.kfold;
+ResultAcc.irng = par.irng;
 
 % Result for class
 train_cl_mean = cell(length(mean_class_train_acc),1);
@@ -107,7 +122,7 @@ for i=1:length(mean_class_test_acc)
 end
 
 ResultAcc_class.date = datetime('now');
-ResultAcc_class.Method = method;
+ResultAcc_class.method = method;
 ResultAcc_class.subj = subj;
 ResultAcc_class.file = file;
 ResultAcc_class.train_name = train_name;
@@ -129,5 +144,10 @@ for ncl=1:length(class)
     class_name = sprintf('Class%d',ncl);
     ResultAcc_class.(class_name) = class{ncl};
 end
-ResultAcc_class.irng = par.irng;
+ResultAcc_class.indMi = indMi;
 ResultAcc_class.Filter = par.Filter;
+ResultAcc_class.attenuation = par.attenuation;
+ResultAcc_class.TotalFeatures = par.TotalFeatures;
+ResultAcc_class.nFeatures= n_Features;
+ResultAcc_class.kfold_Splitdata = par.kfold;
+ResultAcc_class.irng = par.irng;

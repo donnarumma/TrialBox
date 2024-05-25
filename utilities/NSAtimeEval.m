@@ -1,4 +1,4 @@
-function out = TimeDPCAev(confError,pcaComp,pClasses)
+function out = NSAtimeEval(confError,pcaComp,pClasses)
 
 [~,indMax] = max([confError.sum_ij]);
 

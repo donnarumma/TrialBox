@@ -28,7 +28,7 @@ end
 n_bin= floor(min((time_intervals(:,2).*fsample) - (time_intervals(:,1).*fsample)));
 bin_intervals = zeros(n_epoch, 2);
 for i = 1:n_epoch
-    start_bin = 1 + (i - 1) * (n_bin - floor(n_bin * overlap_percent/100));
+    start_bin = 1 + (i - 1) * floor(n_bin - (n_bin * overlap_percent/100));
     end_bin = start_bin + n_bin - 1;
     bin_intervals(i, :) = [start_bin, end_bin];
 end

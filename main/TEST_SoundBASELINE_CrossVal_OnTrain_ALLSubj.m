@@ -1,135 +1,66 @@
-% TEST_Sound_CrossVal_OnTrain_NPC.m
+% TEST_SoundBASELINE_CrossVal_OnTrain_ALLSubj.m
 
+
+% Specifics:
+% label indexes
+% 1: COHERENT ENGLISH
+% 2: COHERENT ITALIAN
+% 3: INCOHERENT ENGLISH
+% 4: INCOHERENT ITALIAN
+% 5: SCUMBLED
 
 clear; close all;
 
-par.irng = 10;
-rng(par.irng);
+% par.irng = 10;
+% rng(par.irng);
 
-for indsub = 9
-    signal_name                     = 'eeg_sound';
+for irng=10
+    par.irng = irng;
+    rng(par.irng);
+    
+    signal_name                     = 'eeg_baseline';
     signal_process                  = 'CSP';
-
+EEG_trials = struct([]);
+for indsub=1:9
     %% Extract and Arrange Data
     par.extractSound.signal_name    = signal_name;
     par.extractSound.InField        = 'train';
-    par.extractSound.it_end         = 2;
-    [EEG_trials,fsample]            = extractSound(indsub,par.extractSound);
-
+    par.extractSound.it_end         = 1;
+    [EEG_subj,fsample]            = extractSound(indsub,par.extractSound);
+    EEG_trials = [EEG_trials;EEG_subj];
+end
+for iTr = 1:length(EEG_trials)
+    EEG_trials(iTr).trialId = iTr;
+end
     % remapTypes
     par.remapTypes           = remapTypesParams();
     par.remapTypes.selection = {1,2};
 
     StartClass = unique([EEG_trials.trialType]);
-    % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
+    % Time Interpolation and selection Trials
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
-    par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
+    par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 1; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
-    par.TimeSelect.dt            = 1;
 
     itr1 = par.TimeSelect.t1;
     itr2 = par.TimeSelect.t2;
-
-    par.exec.funname ={'remapTypes','TimeSelect'};
-    % par.exec.funname ={'TimeSelect'};
-    EEG_trials =run_trials(EEG_trials,par);
-    %% NSA with pca
-
-    % Smooth for dpca processing. Compute dpca - CISEK pca
-    nsa_process                     = 'dpca';        % data processed are in 'y' field
-    binWidth                        = 20;
-    kernSD                          = 30;
-    % SmoothWindow (moving window smoothing)
-    par.SmoothWindow                = SmoothWindowParams;
-    par.SmoothWindow.InField        = signal_name;
-    par.SmoothWindow.OutField       = nsa_process;
-    par.SmoothWindow.binWidth       = binWidth;
-    % removeInactives (0 mean channels removal)
-    par.removeInactive              = removeInactiveParams;
-    par.removeInactive.InField      = nsa_process;
-    par.removeInactive.OutField     = nsa_process;
-    % function to be execute
-    par.exec.funname                = {'SmoothWindow','removeInactive'};
-    data_trials                     = run_trials(EEG_trials,par);
-
-    % perform pca on trials averaged on conditions
-    % meanData
-    par.meanData                    = meanDataParams;
-    par.meanData.InField            = nsa_process;
-    par.meanData.OutField           = nsa_process;
-    % AverageWindow
-    par.AverageWindow               = AverageWindowParams;
-    par.AverageWindow.InField       = nsa_process;
-    par.AverageWindow.OutField      = nsa_process;
-    par.AverageWindow.binWidth      = binWidth;
-    % GaussianSmoother (kernel smoothing)
-    par.GaussianSmoother            = GaussianSmootherParams;
-    par.GaussianSmoother.InField    = nsa_process;
-    par.GaussianSmoother.OutField   = nsa_process;
-    par.GaussianSmoother.kernSD     = kernSD;       % standard deviation of Gaussian kernel, in msec
-    par.GaussianSmoother.stepSize   = binWidth;     % time between 2 consecutive datapoints, in msec
-    % pcaModel
-    par.pcaModel                    = pcaModelParams();
-    par.pcaModel.numComponents      = 0;
-    par.pcaModel.perc               = 95;
-    par.pcaModel.InField            = nsa_process;
-    par.pcaModel.OutField           = nsa_process;
-    %%%%%%%%%%%%% nsa_pca 2-Stage Engine Churchland : kernel smooth + pca -> %%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%% 'AverageWindow','GaussianSmoother','pcaModel'            %%%%%%%%%%%%%%%%%%
-    par.exec.funname                = {'meanData','AverageWindow','GaussianSmoother','pcaModel'};
-    [~, out]                        = run_trials(data_trials,par);
-
-    % pcaProject
-    par.pcaEncode.Wpca              = out.pcaModel.Wpca;
-    par.pcaEncode.mu                = out.pcaModel.mu;
-    par.pcaEncode.explained         = out.pcaModel.explained;
-    par.pcaEncode.InField           = nsa_process;
-    par.pcaEncode.OutField          = nsa_process;
-
-    par.exec.funname                = {'AverageWindow','GaussianSmoother','pcaEncode'};
-    data_trials                     = run_trials(data_trials,par);
-
-    % pSeparability
-    par.pSeparability                   = pSeparabilityParams;
-    par.pSeparability.InField           = nsa_process;
-    par.pSeparability.OutField          = 'comparisons';
-    % pdata_trials                        = bootdata_trials; % data_trials
-    [pVals,pClasses]                    = pSeparability(data_trials,par.pSeparability);
-
-    % pvalue plot per feature
-    ifplot                              = true;
-    par.plot_pValues                    = plot_pValuesParams;
-    par.plot_pValues.InField            = par.pSeparability.OutField;
-    par.plot_pValues.xfld               = 'time';
-    par.plot_pValues.dt                 = 0.1;
-    par.plot_pValues.nRows              = 1;
-    par.plot_pValues.nCols              = out.pcaModel.numComponents;
-    par.plot_pValues.explained          = out.pcaModel.explained;
-    par.plot_pValues.decisionsN         = {'START'};
-    titlestr                            = ['Subject ' num2str(indsub)];
-    par.plot_pValues.hfig               = figure('visible',ifplot);
-    hfg.pClasses                        = plot_pValues(pClasses,par.plot_pValues);
-    sgtitle(hfg.pClasses,titlestr);
-    par.plot_pValues.hfig               = figure('visible',ifplot);
-    hfg.pvals                           = plot_pValues(pVals,par.plot_pValues);
-    sgtitle(hfg.pvals,titlestr);
 
     % Filter Bank
     par.FilterBankCompute            = FilterBankComputeParams();
     par.FilterBankCompute.InField    = signal_name;
     par.FilterBankCompute.OutField   = signal_name;
-    par.FilterBankCompute.attenuation = 10;
-    par.FilterBankCompute.FilterBank = 'Nine';
+    par.FilterBankCompute.FilterBank = 'One';
     par.FilterBankCompute.fsample    = fsample;
-    par.exec.funname ={'FilterBankCompute'};
-    % par.exec.funname ={'TimeSelect','FilterBankCompute'};
+
+    par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute'};
+    % par.exec.funname ={'remapTypes','FilterBankCompute'};
     EEG_trials =run_trials(EEG_trials,par);
 
 
     % kfold-CrossValidation on the Train dataset
-    kfold = 3;
+    kfold = 5;
     labs = [EEG_trials.trialType]'; %true labels
     cvp = cvpartition(labs,'kfold',kfold,'Stratify',true);
 
@@ -151,15 +82,6 @@ for indsub = 9
         test = (indices == 0);
         train = ~test;
         EEG_train = EEG_trials(train);
-
-        % Bootstrap
-        par.BootStrapData               = BootStrapDataParams;
-        par.BootStrapData.N             = 100;
-        par.BootStrapData.InField       = signal_name;
-        par.BootStrapData.OutField      = signal_name;
-        EEG_train                       = BootStrapData(EEG_train,par.BootStrapData);
-        EEG_train = EEG_train';
-
         EEG_test = EEG_trials(test);
         Label_train(i).Iter = [EEG_test.trialType]';
         %% Step 2. perform CSP
@@ -184,6 +106,8 @@ for indsub = 9
         % Mutual Information
         par.miModel               = miModelParams;
         par.miModel.InField       = signal_process;
+        par.miModel.m             = par.cspModel.m;
+        % par.miModel.k             = 5;
 
         [~, out.miModel]=miModel(EEG_train,par.miModel);
 
@@ -242,10 +166,10 @@ for indsub = 9
         par.fitNBPW.labs_test           = [EEG_train.trialType]';
         [pred_train,outNBPW.train]      = fitNBPW(V_train,V_train,par.fitNBPW);
 
-        par.fitNBPW                 = fitNBPWParams;
-        par.fitNBPW.labs_train      = [EEG_train.trialType]';
-        par.fitNBPW.labs_test       = [EEG_test.trialType]';
-        [pred_test,outNBPW.test]    = fitNBPW(V_train,V_test,par.fitNBPW);
+        par.fitNBPW                     = fitNBPWParams;
+        par.fitNBPW.labs_train          = [EEG_train.trialType]';
+        par.fitNBPW.labs_test           = [EEG_test.trialType]';
+        [pred_test,outNBPW.test]        = fitNBPW(V_train,V_test,par.fitNBPW);
 
         % predictNBPW Train
         par.predictNBPW                  = predictNBPWParams;
@@ -306,7 +230,7 @@ for indsub = 9
     %% create Tab Result
     params.createStructResult.subj       = indsub;
     params.createStructResult.method     = 'CSP';
-    params.createStructResult.file       = 'Sound';
+    params.createStructResult.file       = 'BaselineSound';
     params.createStructResult.train_name = 'Strain';
     params.createStructResult.train_tr1  = itr1;
     params.createStructResult.train_tr2  = itr2;
@@ -331,7 +255,7 @@ for indsub = 9
 
     % Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-    params.updateTab.name       = 'Sound_CrossVal_OnTrain';
+    params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain_AllSubj';
     params.updateTab.sheetnames = 'QDA';
 
     updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -339,7 +263,7 @@ for indsub = 9
     params.updateTab.sheetnames = 'KappaQDA';
     updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Sound_CrossVal_OnTrain_class';
+    params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_AllSubj_class';
     params.updateTab.sheetnames = 'QDA';
     updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -355,14 +279,14 @@ for indsub = 9
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-    params.updateTab.name       = 'Sound_CrossVal_OnTrain';
+    params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain_AllSubj';
     params.updateTab.sheetnames = 'KNN';
     updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaKNN';
     updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Sound_CrossVal_OnTrain_class';
+    params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_AllSubj_class';
     params.updateTab.sheetnames = 'KNN';
     updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -378,20 +302,14 @@ for indsub = 9
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-    params.updateTab.name       = 'Sound_CrossVal_OnTrain';
+    params.updateTab.name       = 'BaselineSound_CrossVal_OnTrain_AllSubj';
     params.updateTab.sheetnames = 'NBPW';
     updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaNBPW';
     updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Sound_CrossVal_OnTrain_class';
+    params.updateTab.name     = 'BaselineSound_CrossVal_OnTrain_AllSubj_class';
     params.updateTab.sheetnames = 'NBPW';
     updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
-    cQDA = confusionmat([EEG_trials.trialType]',predictQDA_train);
-    cKNN = confusionmat([EEG_trials.trialType]',predictKNN_train);
-    cNBPW = confusionmat([EEG_trials.trialType]',predictNBPW_train);
 end
-confErrorQDA = confusionError(cQDA);
-confErrorKNN = confusionError(cKNN);
-confErrorNBPW = confusionError(cNBPW);

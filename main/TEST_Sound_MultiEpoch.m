@@ -13,7 +13,7 @@ clear; close all;
 
 % par.irng = 10;
 % rng(par.irng);
-for irng=1:10
+for irng=10
     par.irng = irng;
     rng(par.irng);
     indsub = 9;
@@ -23,7 +23,8 @@ for irng=1:10
     %% Extract and Arrange Data
     par.extractSound.signal_name    = signal_name;
     par.extractSound.InField        = 'train';
-    par.extractSound.it_end         = 2;
+    par.extractSound.it_end         = 2.5;
+    par.extractSound.multiEpoch     = true;
     [EEG_trials,fsample]            = extractSound(indsub,par.extractSound);
 
     % remapTypes
@@ -34,12 +35,12 @@ for irng=1:10
     % Time Interpolation and selection Trials
     par.TimeSelect               = TimeSelectParams;
     par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
-    par.TimeSelect.t2            = 2.0; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
 
-    itr1 = par.TimeSelect.t1;
-    itr2 = par.TimeSelect.t2;
+    % itr1 = par.TimeSelect.t1;
+    % itr2 = par.TimeSelect.t2;
 
     % Filter Bank
     par.FilterBankCompute            = FilterBankComputeParams();
@@ -59,12 +60,12 @@ for irng=1:10
 
     % par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute','eeg_overlap'};
     par.exec.funname ={'remapTypes','FilterBankCompute','epochCompute'};
-    [EEG_trials,out.epochCompute] =run_trials(EEG_trials,par);
+    [EEG_trials,out.epochCompute] = run_trials(EEG_trials,par);
     itr1 = round(out.epochCompute.epochCompute.time_intervals(:,1),2);
     itr2 = round(out.epochCompute.epochCompute.time_intervals(:,2),2);
 
     % kfold-CrossValidation on the Train dataset
-    kfold = 3;
+    kfold = 20;
     labs = [EEG_trials.trialType]'; %true labels
     cvp = cvpartition(labs,'kfold',kfold,'Stratify',true);
 
@@ -92,13 +93,13 @@ for irng=1:10
             EEG_train(iTrial).(signal_name) = squeeze(E_train(iTrial,:,:,:));
         end
 
-        % Bootstrap
-        par.BootStrapData               = BootStrapDataParams;
-        par.BootStrapData.N             = 100;
-        par.BootStrapData.InField       = signal_name;
-        par.BootStrapData.OutField      = signal_name;
-        EEG_train                       = BootStrapData(EEG_train,par.BootStrapData);
-        EEG_train = EEG_train';
+        % % Bootstrap
+        % par.BootStrapData               = BootStrapDataParams;
+        % par.BootStrapData.N             = 100;
+        % par.BootStrapData.InField       = signal_name;
+        % par.BootStrapData.OutField      = signal_name;
+        % EEG_train                       = BootStrapData(EEG_train,par.BootStrapData);
+        % EEG_train = EEG_train';
 
 
         EEG_test = repmat(EEG_trials(test),2,1);
@@ -111,7 +112,7 @@ for irng=1:10
         %% Step 2. perform CSP
         % CSP Dictionary evaluation on train
         par.cspModel                  = cspModelParams;
-        par.cspModel.m                = 2;
+        par.cspModel.m                = 14;
         par.cspModel.InField          = signal_name;
         par.cspModel.OutField         = signal_process;
 
@@ -127,9 +128,13 @@ for irng=1:10
         EEG_train = run_trials(EEG_train,par);
         EEG_test = run_trials(EEG_test,par);
 
+        TotalFeatures = size(EEG_test(1).(signal_process),2);
+
         % Mutual Information
         par.miModel               = miModelParams;
         par.miModel.InField       = signal_process;
+        par.miModel.m             = par.cspModel.m; 
+        % par.miModel.k             = 5;
 
         [~, out.miModel]=miModel(EEG_train,par.miModel);
 
@@ -169,7 +174,7 @@ for irng=1:10
         par.knnModel.InField              = 'CSP';
         par.knnModel.numIterations        = 100;
         par.knnModel.kfold                = 5;
-        [~, outKNN(i).Iter]             = knnModel(EEG_train,par.knnModel);
+        [~, outKNN(i).Iter]               = knnModel(EEG_train,par.knnModel);
 
         % predictKNN
         par.mdlPredict                  = mdlPredictParams;
@@ -259,12 +264,15 @@ for irng=1:10
     params.createStructResult.test_name  = 'Strain';
     params.createStructResult.test_ts1   = itr1;
     params.createStructResult.test_ts2   = itr2;
-    params.createStructResult.m          = par.cspModel.m;
-    params.createStructResult.class      = findclass(EEG_train,StartClass);
-    params.createStructResult.irng       = par.irng;
-    params.createStructResult.method     = signal_process;
-    params.createStructResult.Filter     = par.FilterBankCompute.FilterBank;
-
+    params.createStructResult.m             = par.cspModel.m;
+    params.createStructResult.class         = findclass(EEG_train,StartClass);
+    params.createStructResult.irng          = par.irng;
+    params.createStructResult.Filter        = par.FilterBankCompute.FilterBank;
+    params.createStructResult.n_Features    = size(EEG_train(1).(signal_process),2);
+    params.createStructResult.indMi         = par.miModel.k;
+    params.createStructResult.attenuation   = par.FilterBankCompute.attenuation;
+    params.createStructResult.TotalFeatures = TotalFeatures;
+    
     % QDA save result
     resultQDA.train.Accuracy = AccuracyQDA;
     resultQDA.train.Accuracy_class = accuracyQDA_class;

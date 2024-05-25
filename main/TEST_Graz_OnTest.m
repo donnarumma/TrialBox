@@ -16,7 +16,8 @@ clear; close all;
 
 par.irng = 10;
 rng(par.irng);
-for indsub=2
+subj=1:9;
+for indsub=subj
 
     signal_name                     = 'eeg';
     signal_process                  = 'CSP';
@@ -29,7 +30,7 @@ for indsub=2
     StartClass = unique([EEG_train.trialType]);
     % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = 1.7; % in s from ZeroEvent time
+    par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
     par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
