@@ -9,7 +9,8 @@ if nargin < 1
     code_dir = pwd;
 end
 p=[p code_dir 'main'               d]; %% main (executables)
-p=[p code_dir 'DL'                 d]; %% dictionary learning tests (executables)
+% p=[p code_dir 'DL'                 d]; %% dictionary learning tests (executables)
+p=[p genpath([ code_dir 'DL'     ] )]; %% dictionary learning tests (executables)
 p=[p genpath([ code_dir 'models' ] )]; %% models load
 % p=[p code_dir 'models'             d]; 
 % p=[p code_dir 'models'    S 'pms'  d]; %% model params load
