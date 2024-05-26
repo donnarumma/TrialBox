@@ -107,7 +107,7 @@ subplot(1,2,2);
 montage (ImgTrainRec, 'BorderSize', [1,1], 'BackgroundColor', col);
 title('Reconstructed');
 sgtitle(sprintf('Train (RMS: %.4f)',errorXTrain))
-% test
+%% test
 numObservations = size(XTest,4);
 idx             = randperm(numObservations,hmShow);
 ImgTest         = reshape (XdataTest(idx,:)',nChannels,nTimes,hmShow);

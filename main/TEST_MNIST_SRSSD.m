@@ -113,17 +113,23 @@ X3dTrain_rec                = cat(3,data_trials.MNIST_rec);
 X3dTrain_rec                = permute(X3dTrain_rec,[3,1,2]);
 % nTrials x nChannels*nTimes
 XdataTrain_rec              = reshape(X3dTrain_rec,size(X3dTrain_rec,1),size(X3dTrain_rec,2)*size(X3dTrain_rec,3));
-errorXTrain                 = RMSError(XdataTrain_rec,XdataTrain);
+errorTrains                 = errors(XdataTrain_rec,XdataTrain);
+errorXTrain                 = errorTrains.RMSE;
+% errorXTrain                 = RMSError(XdataTrain_rec,XdataTrain);
 % test
 X3dTest_rec                 = cat(3,data_trials_test.MNIST_rec);
 % nTrials x nChannels x nTimes
 X3dTest_rec                 = permute(X3dTest_rec,[3,1,2]);
 % nTrials x nChannels*nTimes
 XdataTest_rec               = reshape(X3dTest_rec,size(X3dTest_rec,1),size(X3dTest_rec,2)*size(X3dTest_rec,3));
-errorXTest                  = RMSError(XdataTest_rec,XdataTest);
+errorTests                  = errors(XdataTest_rec,XdataTest);
+errorXTest                  = errorTests.RMSE;
+% errorXTest                  = RMSError(XdataTest_rec,XdataTest);
 out.errorXTrain             = errorXTrain;
 out.errorXTest              = errorXTest;
 disp(out)
+disp(errorXTrain)
+disp(errorXTest)
 %% Learn classifier
 par.qdaModel                = qdaModelParams();
 par.qdaModel.numIterations  = 300;
