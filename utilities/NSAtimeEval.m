@@ -9,8 +9,10 @@ pij = smooth(pij);
 time            = pClasses(1).timecomparisons;
 [t,indT]= min(pij(3:end-2));
 
-disp(t);
-disp(time(indT+2));
+disp('min value is:')
+    disp(t)
+disp('time is:')
+    disp(time(indT+2))
 
 out.t1 = t;
 out.indT1 = indT;

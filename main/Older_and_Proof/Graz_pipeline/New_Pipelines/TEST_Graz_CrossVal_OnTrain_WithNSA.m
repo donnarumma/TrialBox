@@ -17,7 +17,7 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-subs        = 5;
+subs        = 1;
 
 for indsub=subs
 
@@ -30,10 +30,10 @@ for indsub=subs
     [EEG_trials,fsample]            = extractGraz(indsub,par.extractGraz);
 
     StartClass = unique([EEG_trials.trialType]);
-    % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
+    % Time Interpolation and selection Trials [0.75;2.5] from CUE (Motor Imagery Interval)
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = 1.4626-0.75; % in s from ZeroEvent time
-    par.TimeSelect.t2            = 1.4626+0.75; % in s from ZeroEvent time
+    par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 0.8998+0.5; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
     par.TimeSelect.dt            = 1;

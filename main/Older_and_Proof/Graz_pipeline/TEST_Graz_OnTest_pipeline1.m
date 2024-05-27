@@ -1,4 +1,4 @@
-% TEST_Graz_OnTest_postDPCApipeline1.m
+% TEST_Graz_OnTest_pipeline1.m
 
 % Dataset eeegplanetion: "Leeb, R., Brunner, C., Müller-Putz, G., Schlögl, A., & Pfurtscheller, G. J. G. U. O. T. (2008). BCI Competition 2008–Graz data set B.
 %       Graz University of Technology, Austria, 16, 1-6."
@@ -17,7 +17,14 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-indsub = 6;
+indsub = 3;
+
+int4sub1 = 1.3018 - 0.75;
+int4sub2 = 1.3018 + 0.75;
+
+int4sub3 = 1.3047 - 0.2;
+int4sub4 = 1.3047 + 0.2;
+
 
 signal_name                     = 'eeg';
 signal_process                  = 'CSP';
@@ -30,28 +37,28 @@ par.extractGraz.InField                      = 'train';
 StartClass = unique([EEG_train.trialType]);
 % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
 par.TimeSelect               = TimeSelectParams;
-par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
-par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
+par.TimeSelect.t1            = int4sub1; % in s from ZeroEvent time
+par.TimeSelect.t2            = int4sub2; % in s from ZeroEvent time
 par.TimeSelect.InField       = signal_name;
 par.TimeSelect.OutField      = signal_name;
 par.TimeSelect.dt            = 1;
 
 % Filter Bank
-par.FilterBankCompute            = FilterBankComputeParams();
-par.FilterBankCompute.InField    = signal_name;
-par.FilterBankCompute.OutField   = signal_name;
-par.FilterBankCompute.attenuation = 20;
-par.FilterBankCompute.FilterBank = 'Nine';
-par.FilterBankCompute.fsample    = fsample;
+par.FilterBankCompute               = FilterBankComputeParams();
+par.FilterBankCompute.InField       = signal_name;
+par.FilterBankCompute.OutField      = signal_name;
+par.FilterBankCompute.attenuation   = 10;
+par.FilterBankCompute.FilterBank    = 'Nine';
+par.FilterBankCompute.fsample       = fsample;
 
 par.exec.funname ={'TimeSelect','FilterBankCompute'};
 EEG_train1 =run_trials(EEG_train,par);
 
-par.TimeSelect.t1            = 1.5; % in s from ZeroEvent time
-par.TimeSelect.t2            = 1.7; % in s from ZeroEvent time
+par.TimeSelect.t1            = int4sub3; % in s from ZeroEvent time
+par.TimeSelect.t2            = int4sub4; % in s from ZeroEvent time
 
-itr1 = par.TimeSelect.t1;
-itr2 = par.TimeSelect.t2;
+itr1 = [int4sub1,int4sub2,int4sub3,int4sub4];
+itr2 = [int4sub1,int4sub2,int4sub3,int4sub4];
 
 EEG_train2=run_trials(EEG_train,par);
 
@@ -62,28 +69,29 @@ par.extractGraz.InField                      = 'test';
 
 % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
 par.TimeSelect               = TimeSelectParams;
-par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
-par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
+par.TimeSelect.t1            = int4sub1; % in s from ZeroEvent time
+par.TimeSelect.t2            = int4sub2; % in s from ZeroEvent time
 par.TimeSelect.InField       = signal_name;
 par.TimeSelect.OutField      = signal_name;
 par.TimeSelect.dt            = 1;
 
-its1 = par.TimeSelect.t1;
-its2 = par.TimeSelect.t2;
 
 % Filter Bank
 par.FilterBankCompute            = FilterBankComputeParams();
 par.FilterBankCompute.InField    = signal_name;
 par.FilterBankCompute.OutField   = signal_name;
-par.FilterBankCompute.attenuation = 20;
+par.FilterBankCompute.attenuation = 10;
 par.FilterBankCompute.FilterBank = 'Nine';
 par.FilterBankCompute.fsample    = fsample;
 
 par.exec.funname ={'TimeSelect','FilterBankCompute'};
 EEG_test1 =run_trials(EEG_test,par);
 
-par.TimeSelect.t1            = itr1; % in s from ZeroEvent time
-par.TimeSelect.t2            = itr2; % in s from ZeroEvent time
+par.TimeSelect.t1            = int4sub3; % in s from ZeroEvent time
+par.TimeSelect.t2            = int4sub4; % in s from ZeroEvent time
+
+its1 = [int4sub1,int4sub2,int4sub3,int4sub4];
+its2 = [int4sub1,int4sub2,int4sub3,int4sub4];
 
 EEG_test2 =run_trials(EEG_test,par);
 %% Step 2. perform CSP
@@ -95,6 +103,7 @@ par.cspModel.OutField         = signal_process;
 
 [~,out.cspModel1] = cspModel(EEG_train1,par.cspModel);
 [~,out.cspModel2] = cspModel(EEG_train2,par.cspModel);
+
 % CSP Encode on train and test data
 par.cspEncode                  = cspEncodeParams;
 par.cspEncode.InField          = signal_name;
@@ -118,9 +127,12 @@ for iTr=1:length(EEG_test)
     EEG_test(iTr).(signal_process) = cat(2,EEG_test1(iTr).(signal_process),EEG_test2(iTr).(signal_process));
 end
 
+TotalFeatures = size(EEG_test(1).(signal_process),2);
+
 % Mutual Information
 par.miModel               = miModelParams;
 par.miModel.InField       = signal_process;
+par.miModel.m             = par.cspModel.m;
 
 [~, out.miModel]=miModel(EEG_train,par.miModel);
 
@@ -213,24 +225,28 @@ params.createStructResult.train_tr2  = itr2;
 params.createStructResult.test_name  = 'AE';
 params.createStructResult.test_ts1   = its1;
 params.createStructResult.test_ts2   = its2;
-params.createStructResult.m          = par.cspModel.m;
-params.createStructResult.class      = findclass(EEG_train,StartClass);
-params.createStructResult.irng       = par.irng;
-params.createStructResult.method     = signal_process;
-params.createStructResult.Filter     = par.FilterBankCompute.FilterBank;
+params.createStructResult.m             = par.cspModel.m;
+params.createStructResult.class         = findclass(EEG_train,StartClass);
+params.createStructResult.irng          = par.irng;
+params.createStructResult.Filter        = par.FilterBankCompute.FilterBank;
+params.createStructResult.n_Features    = size(EEG_train(1).(signal_process),2);
+params.createStructResult.indMi         = par.miModel.k;
+params.createStructResult.attenuation   = par.FilterBankCompute.attenuation;
+params.createStructResult.TotalFeatures = TotalFeatures;
+params.createStructResult.kfold         = 0;
 
 % QDA Accuracy save
 [ResultQDA_kappa,ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resQDA,params.createStructResult);
 % Update Tab Result
 params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-params.updateTab.name               = 'Graz_OnTest_postDPCA';
+params.updateTab.name               = 'Graz_OnTest_pipeline1';
 params.updateTab.sheetnames         = 'QDA';
 updated_Result_tableAccQDA          = updateTab(ResultQDA_Acc,params.updateTab);
 
 params.updateTab.sheetnames         = 'KappaQDA';
 updated_Result_tableKappaQDA        = updateTab(ResultQDA_kappa,params.updateTab);
 
-params.updateTab.name               = 'Graz_OnTest_class_postDPCA';
+params.updateTab.name               = 'Graz_OnTest_class_pipeline1';
 params.updateTab.sheetnames         = 'QDA';
 updated_Resultclass_tableAccQDA     = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -238,14 +254,14 @@ updated_Resultclass_tableAccQDA     = updateTab(ResultQDA_class_Acc,params.updat
 [ResultKNN_kappa,ResultKNN_Acc,ResultKNN_class_Acc] = createStructResult(resKNN,params.createStructResult);
 % Update Tab Result
 params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-params.updateTab.name               = 'Graz_OnTest_postDPCA';
+params.updateTab.name               = 'Graz_OnTest_pipeline1';
 params.updateTab.sheetnames         = 'KNN';
 updated_Result_tableAccKNN          = updateTab(ResultKNN_Acc,params.updateTab);
 
 params.updateTab.sheetnames         = 'KappaKNN';
 updated_Result_tableKappaKNN        = updateTab(ResultKNN_kappa,params.updateTab);
 
-params.updateTab.name               = 'Graz_OnTest_class_postDPCA';
+params.updateTab.name               = 'Graz_OnTest_class_pipeline1';
 params.updateTab.sheetnames         = 'KNN';
 updated_Resultclass_tableAccKNN     = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -253,13 +269,13 @@ updated_Resultclass_tableAccKNN     = updateTab(ResultKNN_class_Acc,params.updat
 [ResultNBPW_kappa,ResultNBPW_Acc,ResultNBPW_class_Acc] = createStructResult(resNBPW,params.createStructResult);
 % Update Tab Result
 params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-params.updateTab.name               = 'Graz_OnTest_postDPCA';
+params.updateTab.name               = 'Graz_OnTest_pipeline1';
 params.updateTab.sheetnames         = 'NBPW';
 updated_Result_tableAccNBPW         = updateTab(ResultNBPW_Acc,params.updateTab);
 
 params.updateTab.sheetnames         = 'KappaNBPW';
 updated_Result_tableKappaNBPW       = updateTab(ResultNBPW_kappa,params.updateTab);
 
-params.updateTab.name               = 'Graz_OnTest_class_postDPCA';
+params.updateTab.name               = 'Graz_OnTest_class_pipeline1';
 params.updateTab.sheetnames         = 'NBPW';
 updated_Resultclass_tableAccNBPW    = updateTab(ResultNBPW_class_Acc,params.updateTab);

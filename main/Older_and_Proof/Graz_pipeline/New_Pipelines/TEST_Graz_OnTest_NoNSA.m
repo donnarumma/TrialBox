@@ -1,4 +1,4 @@
-% TEST_Graz_OnTest_WithNSA.m
+% TEST_Graz_OnTest_NoNSA.m
 
 % Dataset eeegplanetion: "Leeb, R., Brunner, C., Müller-Putz, G., Schlögl, A., & Pfurtscheller, G. J. G. U. O. T. (2008). BCI Competition 2008–Graz data set B.
 %       Graz University of Technology, Austria, 16, 1-6."
@@ -16,7 +16,7 @@ clear; close all;
 
 par.irng = 10;
 rng(par.irng);
-subj=5;
+subj=1:9;
 for indsub=subj
 
     signal_name                     = 'eeg';
@@ -28,10 +28,10 @@ for indsub=subj
     [EEG_train,fsample] = extractGraz(indsub,par.extractGraz);
 
     StartClass = unique([EEG_train.trialType]);
-    % Time Interpolation and selection Trials [0.75;2.5] from CUE (Motor Imagery Interval)
+    % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = 1.4626-0.75; % in s from ZeroEvent time
-    par.TimeSelect.t2            = 1.4626+0.75; % in s from ZeroEvent time
+    par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
     par.TimeSelect.dt            = 1;
@@ -55,10 +55,10 @@ for indsub=subj
     par.extractGraz.InField                      = 'test';
     [EEG_test,fsample] = extractGraz(indsub,par.extractGraz);
 
-    % Time Interpolation and selection Trials [0.75;2.5] from CUE (Motor Imagery Interval)
+    % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = 1.4626-0.75; % in s from ZeroEvent time
-    par.TimeSelect.t2            = 1.4626+0.75; % in s from ZeroEvent time
+    par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
     par.TimeSelect.dt            = 1;
@@ -208,14 +208,14 @@ for indsub=subj
     [ResultQDA_kappa,ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resQDA,params.createStructResult);
     % Update Tab Result
     params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name               = 'Graz_OnTest_WithNSA';
+    params.updateTab.name               = 'Graz_OnTest_NoNSA';
     params.updateTab.sheetnames         = 'QDA';
     updated_Result_tableAccQDA          = updateTab(ResultQDA_Acc,params.updateTab);
 
     params.updateTab.sheetnames         = 'KappaQDA';
     updated_Result_tableKappaQDA        = updateTab(ResultQDA_kappa,params.updateTab);
 
-    params.updateTab.name               = 'Graz_OnTest_WithNSA_class';
+    params.updateTab.name               = 'Graz_OnTest_NoNSA_class';
     params.updateTab.sheetnames         = 'QDA';
     updated_Resultclass_tableAccQDA     = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -223,14 +223,14 @@ for indsub=subj
     [ResultKNN_kappa,ResultKNN_Acc,ResultKNN_class_Acc] = createStructResult(resKNN,params.createStructResult);
     % Update Tab Result
     params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name               = 'Graz_OnTest_WithNSA';
+    params.updateTab.name               = 'Graz_OnTest_NoNSA';
     params.updateTab.sheetnames         = 'KNN';
     updated_Result_tableAccKNN          = updateTab(ResultKNN_Acc,params.updateTab);
 
     params.updateTab.sheetnames         = 'KappaKNN';
     updated_Result_tableKappaKNN        = updateTab(ResultKNN_kappa,params.updateTab);
 
-    params.updateTab.name               = 'Graz_OnTest_WithNSA_class';
+    params.updateTab.name               = 'Graz_OnTest_NoNSA_class';
     params.updateTab.sheetnames         = 'KNN';
     updated_Resultclass_tableAccKNN     = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -238,14 +238,14 @@ for indsub=subj
     [ResultNBPW_kappa,ResultNBPW_Acc,ResultNBPW_class_Acc] = createStructResult(resNBPW,params.createStructResult);
     % Update Tab Result
     params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name               = 'Graz_OnTest_WithNSA';
+    params.updateTab.name               = 'Graz_OnTest_NoNSA';
     params.updateTab.sheetnames         = 'NBPW';
     updated_Result_tableAccNBPW         = updateTab(ResultNBPW_Acc,params.updateTab);
 
     params.updateTab.sheetnames         = 'KappaNBPW';
     updated_Result_tableKappaNBPW       = updateTab(ResultNBPW_kappa,params.updateTab);
 
-    params.updateTab.name               = 'Graz_OnTest_WithNSA_class';
+    params.updateTab.name               = 'Graz_OnTest_NoNSA_class';
     params.updateTab.sheetnames         = 'NBPW';
     updated_Resultclass_tableAccNBPW    = updateTab(ResultNBPW_class_Acc,params.updateTab);
 end

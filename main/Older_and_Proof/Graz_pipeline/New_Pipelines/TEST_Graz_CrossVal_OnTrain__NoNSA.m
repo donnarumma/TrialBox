@@ -16,7 +16,7 @@ clear; close all;
 
 par.irng = 10;
 rng(par.irng);
-subs        = 1:9;
+subs        = 4:5;
 for indsub=subs
 
     signal_name                     = 'eeg';
@@ -42,7 +42,7 @@ for indsub=subs
     par.FilterBankCompute               = FilterBankComputeParams();
     par.FilterBankCompute.InField       = signal_name;
     par.FilterBankCompute.OutField      = signal_name;
-    par.FilterBankCompute.attenuation   = 20; % one HyperParam
+    par.FilterBankCompute.attenuation   = 10; % one HyperParam
     par.FilterBankCompute.FilterBank    = 'Nine';
     par.FilterBankCompute.fsample       = fsample;
 
