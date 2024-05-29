@@ -1,4 +1,4 @@
-% TEST_Graz_OnTest_pipeline1.m
+% TEST_Graz_OnTest_pipeline2_OLD.m
 
 % Dataset eeegplanetion: "Leeb, R., Brunner, C., Müller-Putz, G., Schlögl, A., & Pfurtscheller, G. J. G. U. O. T. (2008). BCI Competition 2008–Graz data set B.
 %       Graz University of Technology, Austria, 16, 1-6."
@@ -17,13 +17,13 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-indsub = 3;
+indsub = 4;
 
-int4sub1 = 1.3018 - 0.75;
-int4sub2 = 1.3018 + 0.75;
+int4sub1 = 1.0606 - 0.75;
+int4sub2 = 1.0606 + 0.75;
 
-int4sub3 = 1.3047 - 0.2;
-int4sub4 = 1.3047 + 0.2;
+int4sub3 = 1.1488 - 0.1;
+int4sub4 = 1.1488 + 0.1;
 
 
 signal_name                     = 'eeg';
@@ -62,6 +62,11 @@ itr2 = [int4sub1,int4sub2,int4sub3,int4sub4];
 
 EEG_train2=run_trials(EEG_train,par);
 
+% concatenate Train Trials
+par.concatenateEEG.InField = signal_name;
+par.concatenateEEG.fsample = fsample; 
+EEG_train = concatenateEEG(EEG_train1,EEG_train2,par.concatenateEEG);
+
 %% Extract and Arrange Test Data
 par.extractGraz.signal_name                  = signal_name;
 par.extractGraz.InField                      = 'test';
@@ -94,6 +99,8 @@ its1 = [int4sub1,int4sub2,int4sub3,int4sub4];
 its2 = [int4sub1,int4sub2,int4sub3,int4sub4];
 
 EEG_test2 =run_trials(EEG_test,par);
+
+EEG_test = concatenateEEG(EEG_test1,EEG_test2,par.concatenateEEG);
 %% Step 2. perform CSP
 % CSP Dictionary evaluation on train
 par.cspModel                  = cspModelParams;
@@ -101,31 +108,17 @@ par.cspModel.m                = 2;
 par.cspModel.InField          = signal_name;
 par.cspModel.OutField         = signal_process;
 
-[~,out.cspModel1] = cspModel(EEG_train1,par.cspModel);
-[~,out.cspModel2] = cspModel(EEG_train2,par.cspModel);
+[~,out.cspModel] = cspModel(EEG_train,par.cspModel);
 
 % CSP Encode on train and test data
 par.cspEncode                  = cspEncodeParams;
 par.cspEncode.InField          = signal_name;
 par.cspEncode.OutField         = signal_process;
-par.cspEncode.W                = out.cspModel1.W;
+par.cspEncode.W                = out.cspModel.W;
 
 par.exec.funname ={'cspEncode'};
-EEG_train1 =run_trials(EEG_train1,par);
-EEG_test1 =run_trials(EEG_test1,par);
-
-par.cspEncode.W                = out.cspModel2.W;
-EEG_train2 =run_trials(EEG_train2,par);
-EEG_test2 =run_trials(EEG_test2,par);
-
-EEG_train = EEG_train1;
-EEG_test = EEG_test2;
-for iTr=1:length(EEG_train)
-    EEG_train(iTr).(signal_process) = cat(2,EEG_train1(iTr).(signal_process),EEG_train2(iTr).(signal_process));
-end
-for iTr=1:length(EEG_test)
-    EEG_test(iTr).(signal_process) = cat(2,EEG_test1(iTr).(signal_process),EEG_test2(iTr).(signal_process));
-end
+EEG_train =run_trials(EEG_train,par);
+EEG_test =run_trials(EEG_test,par);
 
 TotalFeatures = size(EEG_test(1).(signal_process),2);
 
@@ -239,14 +232,14 @@ params.createStructResult.kfold         = 0;
 [ResultQDA_kappa,ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resQDA,params.createStructResult);
 % Update Tab Result
 params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-params.updateTab.name               = 'Graz_OnTest_pipeline1';
+params.updateTab.name               = 'Graz_OnTest_pipeline2';
 params.updateTab.sheetnames         = 'QDA';
 updated_Result_tableAccQDA          = updateTab(ResultQDA_Acc,params.updateTab);
 
 params.updateTab.sheetnames         = 'KappaQDA';
 updated_Result_tableKappaQDA        = updateTab(ResultQDA_kappa,params.updateTab);
 
-params.updateTab.name               = 'Graz_OnTest_class_pipeline1';
+params.updateTab.name               = 'Graz_OnTest_class_pipeline2';
 params.updateTab.sheetnames         = 'QDA';
 updated_Resultclass_tableAccQDA     = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -254,14 +247,14 @@ updated_Resultclass_tableAccQDA     = updateTab(ResultQDA_class_Acc,params.updat
 [ResultKNN_kappa,ResultKNN_Acc,ResultKNN_class_Acc] = createStructResult(resKNN,params.createStructResult);
 % Update Tab Result
 params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-params.updateTab.name               = 'Graz_OnTest_pipeline1';
+params.updateTab.name               = 'Graz_OnTest_pipeline2';
 params.updateTab.sheetnames         = 'KNN';
 updated_Result_tableAccKNN          = updateTab(ResultKNN_Acc,params.updateTab);
 
 params.updateTab.sheetnames         = 'KappaKNN';
 updated_Result_tableKappaKNN        = updateTab(ResultKNN_kappa,params.updateTab);
 
-params.updateTab.name               = 'Graz_OnTest_class_pipeline1';
+params.updateTab.name               = 'Graz_OnTest_class_pipeline2';
 params.updateTab.sheetnames         = 'KNN';
 updated_Resultclass_tableAccKNN     = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -269,13 +262,13 @@ updated_Resultclass_tableAccKNN     = updateTab(ResultKNN_class_Acc,params.updat
 [ResultNBPW_kappa,ResultNBPW_Acc,ResultNBPW_class_Acc] = createStructResult(resNBPW,params.createStructResult);
 % Update Tab Result
 params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-params.updateTab.name               = 'Graz_OnTest_pipeline1';
+params.updateTab.name               = 'Graz_OnTest_pipeline2';
 params.updateTab.sheetnames         = 'NBPW';
 updated_Result_tableAccNBPW         = updateTab(ResultNBPW_Acc,params.updateTab);
 
 params.updateTab.sheetnames         = 'KappaNBPW';
 updated_Result_tableKappaNBPW       = updateTab(ResultNBPW_kappa,params.updateTab);
 
-params.updateTab.name               = 'Graz_OnTest_class_pipeline1';
+params.updateTab.name               = 'Graz_OnTest_class_pipeline2';
 params.updateTab.sheetnames         = 'NBPW';
 updated_Resultclass_tableAccNBPW    = updateTab(ResultNBPW_class_Acc,params.updateTab);

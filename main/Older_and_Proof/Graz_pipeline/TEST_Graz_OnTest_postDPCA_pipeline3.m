@@ -124,19 +124,19 @@ V_train = out.miEncode.V;
 V_test = out.miEncode.V;
 
 % pca Dictionary evaluation on train
-par.pcaSynergy.InField          = signal_name;
-par.pcaSynergy.OutField         = signal_process2;
-par.pcaSynergy.numComponents    = 0;
-par.pcaSynergy.perc             = 95;
+par.pcaModel.InField          = signal_name;
+par.pcaModel.OutField         = signal_process2;
+par.pcaModel.numComponents    = 0;
+par.pcaModel.perc             = 95;
 
-par.exec.funname ={'pcaSynergy'};
+par.exec.funname ={'pcaModel'};
 [EEG_train2,out] =run_trials(EEG_train2,par);
 
 % pca Encode on test data
-par.pcaSynergyEncode.InField = signal_name;
-par.pcaSynergyEncode.OutField = signal_process2;
-par.pcaSynergyEncode.Wpca  = out.pcaSynergy.W;
-par.exec.funname ={'pcaSynergyEncode'};
+par.pcaEncode.InField = signal_name;
+par.pcaEncode.OutField = signal_process2;
+par.pcaEncode.Wpca  = out.pcaSynergy.W;
+par.exec.funname ={'pcaEncode'};
 EEG_test2 =run_trials(EEG_test2,par);
 
 EEG_train = EEG_train1;

@@ -6,7 +6,10 @@ if ~isempty(execinfo); t=tic; fprintf('Function: %s ',mfilename); end
 
 InField     =par.InField;
 
-Xdata      =[data_trials.(InField)]; % original data are nChannels x nTimes*nTrials 
+all_data = cat(4,data_trials.(InField));
+Xdata    = reshape(all_data,[size(all_data,1),size(all_data,2)*size(all_data,3)*size(all_data,4)]); % original data are nChannels x nTimes*nTrials 
+
+% Xdata      =[data_trials.(InField)]; % original data are nChannels x nTimes*nTrials 
 
 % [dataTrials.(fn)] same as cat(2,dataTrials.(fn)) -> nChannels x nTimes*nTrials
 % different from cat(3,dataTrials.(fn)) that put trials on the third dimension,

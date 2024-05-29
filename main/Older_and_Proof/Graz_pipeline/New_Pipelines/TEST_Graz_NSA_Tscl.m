@@ -1,4 +1,4 @@
-% TEST_Graz_NSA_2class.m
+% TEST_Graz_NSA_Tslc.m
 
 % Dataset eeegplanetion: "Leeb, R., Brunner, C., Müller-Putz, G., Schlögl, A., & Pfurtscheller, G. J. G. U. O. T. (2008). BCI Competition 2008–Graz data set B.
 %       Graz University of Technology, Austria, 16, 1-6."
@@ -16,7 +16,12 @@ clear; close all;
 
 par.irng = 10;
 rng(par.irng);
-subs        =   3;
+
+subs        =   9;
+
+int4sub1 = 0.5;
+int4sub2 = 2.5;
+
 for indsub=subs
 
     signal_name                     = 'eeg';
@@ -30,8 +35,8 @@ for indsub=subs
     StartClass = unique([EEG_trials.trialType]);
     % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = 1.3018 - 0.75; % in s from ZeroEvent time
-    par.TimeSelect.t2            = 1.3018 + 0.75; % in s from ZeroEvent time
+    par.TimeSelect.t1            = int4sub1; % in s from ZeroEvent time
+    par.TimeSelect.t2            = int4sub2; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
     par.TimeSelect.dt            = 1;
@@ -335,7 +340,7 @@ for indsub=subs
 
     % Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_SearchInterv_NSA_2class';
+    params.updateTab.name       = 'Graz_SearchInterv_NSA_Tslc';
     params.updateTab.sheetnames = 'QDA';
 
     updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -343,7 +348,7 @@ for indsub=subs
     params.updateTab.sheetnames = 'KappaQDA';
     updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_SearchInterv_NSA_2class_class';
+    params.updateTab.name     = 'Graz_SearchInterv_NSA_Tslc_class';
     params.updateTab.sheetnames = 'QDA';
     updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -359,14 +364,14 @@ for indsub=subs
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_SearchInterv_NSA_2class';
+    params.updateTab.name       = 'Graz_SearchInterv_NSA_Tslc';
     params.updateTab.sheetnames = 'KNN';
     updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaKNN';
     updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_SearchInterv_NSA_2class_4class';
+    params.updateTab.name     = 'Graz_SearchInterv_NSA_Tslc_class';
     params.updateTab.sheetnames = 'KNN';
     updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -382,14 +387,14 @@ for indsub=subs
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_SearchInterv_NSA_2class';
+    params.updateTab.name       = 'Graz_SearchInterv_NSA_Tslc';
     params.updateTab.sheetnames = 'NBPW';
-    updated_Result_tabl_NSA_2classeAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
+    updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaNBPW';
     updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_SearchInterv_NSA_2class_class';
+    params.updateTab.name     = 'Graz_SearchInterv_NSA_Tslc_class';
     params.updateTab.sheetnames = 'NBPW';
     updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
 end
@@ -397,11 +402,31 @@ cQDA = confusionmat([EEG_trials.trialType]',predictQDA_train);
 cKNN = confusionmat([EEG_trials.trialType]',predictKNN_train);
 cNBPW = confusionmat([EEG_trials.trialType]',predictNBPW_train);
 
+
+indmin = nan(size(pVals.comparisons,1),1);
+pmin = nan(size(pVals.comparisons,1),1);
+time = pVals.timecomparisons;
+
+for i=1:size(pVals.comparisons,1)
+    [pmin(i),indmin(i)] = min(smooth(pVals.comparisons(i,:)));
+    disp(pmin(i));
+    disp(time(indmin(i)));
+end
+
 confErrorQDA = confusionError(cQDA);
 % confErrorKNN = confusionError(cKNN);
 % confErrorNBPW = confusionError(cNBPW);
 
+% indmin = nan(size(pVals.comparisons,1),1);
+% pmin = nan(size(pVals.comparisons,1),1);
+% time = pVals.timecomparisons;
+% for i=1:size(pVals.comparisons,1)
+%     [pmin(i),indmin(i)] = min(smooth(pVals.comparisons(i,3:end-2)));
+%     disp(pmin(i));
+%     disp(time(indmin(i)+2));
+% end
+
 for pcaComp = 1:size(pVals.comparisons,1)
     sprintf('pca Component is: %d',pcaComp)
-    out(pcaComp) = NSAtimeEval(confErrorQDA,pcaComp,pClasses);
+    out.pcaComp = NSAtimeEval(confErrorQDA,pcaComp,pClasses);
 end

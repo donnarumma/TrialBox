@@ -10,7 +10,10 @@ InField     = par.InField;
 OutField    = par.OutField;
 
 [~,nTimes]       = size(data_trials(1).(InField));
-X_data      = [data_trials.(InField)];          % data are nChannels x nTimes * nTrials 
+all_data = cat(4,data_trials.(InField));
+X_data = reshape(all_data,[size(all_data,1),size(all_data,2)*size(all_data,3)*size(all_data,4)]);          % data are nChannels x nTimes * nTrials 
+
+% X_data      = [data_trials.(InField)];          % data are nChannels x nTimes * nTrials 
 X_data      = X_data - repmat(par.mu,1,size(X_data,2));
 
 % [dataTrials.(InField)] same as cat(2,dataTrials.(fn)) 

@@ -1,4 +1,4 @@
-% TEST_Graz_CrossVal_OnTrain_pipline1.m
+% TEST_Graz_NSA_2class.m
 
 % Dataset eeegplanetion: "Leeb, R., Brunner, C., Müller-Putz, G., Schlögl, A., & Pfurtscheller, G. J. G. U. O. T. (2008). BCI Competition 2008–Graz data set B.
 %       Graz University of Technology, Austria, 16, 1-6."
@@ -16,15 +16,7 @@ clear; close all;
 
 par.irng = 10;
 rng(par.irng);
-
-subs        = 3;
-
-int4sub1 = 1.3018 - 0.75;
-int4sub2 = 1.3018 + 0.75;
-
-int4sub3 = 1.3047 - 0.2;
-int4sub4 = 1.3047 + 0.2;
-
+subs        =  1;
 for indsub=subs
 
     signal_name                     = 'eeg';
@@ -36,38 +28,116 @@ for indsub=subs
     [EEG_trials,fsample]            = extractGraz(indsub,par.extractGraz);
 
     StartClass = unique([EEG_trials.trialType]);
-    % Time Interpolation and selection Trials [0.75;2.5] from CUE (Motor Imagery Interval)
+    % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
     par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = int4sub1; % in s from ZeroEvent time
-    par.TimeSelect.t2            = int4sub2; % in s from ZeroEvent time
+    par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
     par.TimeSelect.dt            = 1;
 
+    itr1                         = par.TimeSelect.t1;
+    itr2                         = par.TimeSelect.t2;
 
+    EEG_trials                   = TimeSelect(EEG_trials,par.TimeSelect);
+    %% NSA with pca
+
+    % Smooth for dpca processing. Compute dpca - CISEK pca
+    nsa_process                     = 'dpca';        % data processed are in 'y' field
+    binWidth                        = 20;
+    kernSD                          = 30;
+    % SmoothWindow (moving window smoothing)
+    par.SmoothWindow                = SmoothWindowParams;
+    par.SmoothWindow.InField        = signal_name;
+    par.SmoothWindow.OutField       = nsa_process;
+    par.SmoothWindow.binWidth       = binWidth;
+    % removeInactives (0 mean channels removal)
+    par.removeInactive              = removeInactiveParams;
+    par.removeInactive.InField      = nsa_process;
+    par.removeInactive.OutField     = nsa_process;
+    % function to be execute
+    par.exec.funname                = {'SmoothWindow','removeInactive'};
+    data_trials                     = run_trials(EEG_trials,par);
+    
+    % perform pca on trials averaged on conditions 
+    % meanData
+    par.meanData                    = meanDataParams;
+    par.meanData.InField            = nsa_process;
+    par.meanData.OutField           = nsa_process;
+    % AverageWindow 
+    par.AverageWindow               = AverageWindowParams;
+    par.AverageWindow.InField       = nsa_process;
+    par.AverageWindow.OutField      = nsa_process;
+    par.AverageWindow.binWidth      = binWidth;
+    % GaussianSmoother (kernel smoothing)
+    par.GaussianSmoother            = GaussianSmootherParams;
+    par.GaussianSmoother.InField    = nsa_process;
+    par.GaussianSmoother.OutField   = nsa_process;
+    par.GaussianSmoother.kernSD     = kernSD;       % standard deviation of Gaussian kernel, in msec
+    par.GaussianSmoother.stepSize   = binWidth;     % time between 2 consecutive datapoints, in msec
+    % pcaModel
+    par.pcaModel                    = pcaModelParams();
+    par.pcaModel.numComponents      = 0;
+    par.pcaModel.perc               = 95;
+    par.pcaModel.InField            = nsa_process;
+    par.pcaModel.OutField           = nsa_process;
+    %%%%%%%%%%%%% nsa_pca 2-Stage Engine Churchland : kernel smooth + pca -> %%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%% 'AverageWindow','GaussianSmoother','pcaModel'            %%%%%%%%%%%%%%%%%%
+    par.exec.funname                = {'meanData','AverageWindow','GaussianSmoother','pcaModel'};
+    [~, out]                        = run_trials(data_trials,par);
+    
+    % pcaProject
+    par.pcaEncode.Wpca              = out.pcaModel.Wpca;
+    par.pcaEncode.mu                = out.pcaModel.mu;
+    par.pcaEncode.explained         = out.pcaModel.explained;
+    par.pcaEncode.InField           = nsa_process;
+    par.pcaEncode.OutField          = nsa_process;
+    
+    par.exec.funname                = {'AverageWindow','GaussianSmoother','pcaEncode'};
+    data_trials                     = run_trials(data_trials,par);
+
+    % pSeparability
+    par.pSeparability                   = pSeparabilityParams;
+    par.pSeparability.InField           = nsa_process;
+    par.pSeparability.OutField          = 'comparisons';
+    % pdata_trials                        = bootdata_trials; % data_trials
+    [pVals,pClasses]                    = pSeparability(data_trials,par.pSeparability);
+    
+    % pvalue plot per feature
+    ifplot                              = true;
+    par.plot_pValues                    = plot_pValuesParams;
+    par.plot_pValues.InField            = par.pSeparability.OutField;
+    par.plot_pValues.xfld               = 'time';
+    par.plot_pValues.dt                 = 0.1;
+    par.plot_pValues.nRows              = 1;
+    par.plot_pValues.nCols              = out.pcaModel.numComponents;
+    par.plot_pValues.explained          = out.pcaModel.explained;
+    par.plot_pValues.decisionsN         = {'START'};
+    titlestr                            = ['Subject ' num2str(indsub)];
+    par.plot_pValues.hfig               = figure('visible',ifplot);
+    hfg.pClasses                        = plot_pValues(pClasses,par.plot_pValues);
+    sgtitle(hfg.pClasses,titlestr);
+    par.plot_pValues.hfig               = figure('visible',ifplot);
+    hfg.pvals                           = plot_pValues(pVals,par.plot_pValues);
+    sgtitle(hfg.pvals,titlestr);
+    
     % Filter Bank
-    par.FilterBankCompute               = FilterBankComputeParams();
-    par.FilterBankCompute.InField       = signal_name;
-    par.FilterBankCompute.OutField      = signal_name;
-    par.FilterBankCompute.attenuation   = 10; % one HyperParam
-    par.FilterBankCompute.FilterBank    = 'Nine';
-    par.FilterBankCompute.fsample       = fsample;
+    par.FilterBankCompute            = FilterBankComputeParams();
+    par.FilterBankCompute.InField    = signal_name;
+    par.FilterBankCompute.OutField   = signal_name;
+    par.FilterBankCompute.attenuation = 10;
+    par.FilterBankCompute.FilterBank = 'Nine';
+    par.FilterBankCompute.fsample    = fsample;
 
-    par.exec.funname ={'TimeSelect','FilterBankCompute'};
-    EEG_trials1 =run_trials(EEG_trials,par);
+    par.exec.funname ={'FilterBankCompute'};
+    % par.exec.funname ={'TimeSelect','FilterBankCompute'};
+    EEG_trials =run_trials(EEG_trials,par);
 
-    par.TimeSelect.t1            = int4sub3; % in s from ZeroEvent time
-    par.TimeSelect.t2            = int4sub4; % in s from ZeroEvent time
-
-    itr1 = [int4sub1,int4sub2,int4sub3,int4sub4];
-    itr2 = [int4sub1,int4sub2,int4sub3,int4sub4];
-
-    EEG_trials2 = run_trials(EEG_trials,par);
 
     % kfold-CrossValidation on the Train dataset
-    kfoldSplit   = 10;
-    labs    = [EEG_trials.trialType]'; %true labels
-    cvp     = cvpartition(labs,'kfold',kfoldSplit,'Stratify',true);
+    kfoldSplit = 10;
+    labs = [EEG_trials.trialType]'; %true labels
+    cvp = cvpartition(labs,'kfold',kfoldSplit,'Stratify',true);
 
     resQDA          = struct();
     resKNN          = struct();
@@ -86,13 +156,10 @@ for indsub=subs
         indices = training(cvp,i);
         test = (indices == 0);
         train = ~test;
-        EEG_train1 = EEG_trials1(train);
-        EEG_test1 = EEG_trials1(test);
+        EEG_train = EEG_trials(train);
+        EEG_test = EEG_trials(test);
 
-        EEG_train2 = EEG_trials2(train);
-        EEG_test2 = EEG_trials2(test);
-
-        Label_train(i).Iter = [EEG_test1.trialType]';
+        Label_train(i).Iter = [EEG_test.trialType]';
         %% Step 2. perform CSP
         % CSP Dictionary evaluation on train
         par.cspModel                  = cspModelParams;
@@ -100,38 +167,24 @@ for indsub=subs
         par.cspModel.InField          = signal_name;
         par.cspModel.OutField         = signal_process;
 
-        [~,out.cspModel1] = cspModel(EEG_train1,par.cspModel);
-        [~,out.cspModel2] = cspModel(EEG_train2,par.cspModel);
+        [~,out.cspModel] = cspModel(EEG_train,par.cspModel);
 
         % CSP Encode on train and test data
         par.cspEncode                  = cspEncodeParams;
         par.cspEncode.InField          = signal_name;
         par.cspEncode.OutField         = signal_process;
-        par.cspEncode.W                = out.cspModel1.W;
+        par.cspEncode.W                = out.cspModel.W;
 
         par.exec.funname ={'cspEncode'};
-        EEG_train1 =run_trials(EEG_train1,par);
-        EEG_test1 =run_trials(EEG_test1,par);
-
-        par.cspEncode.W                = out.cspModel2.W;
-        EEG_train2 =run_trials(EEG_train2,par);
-        EEG_test2 =run_trials(EEG_test2,par);
-
-        EEG_train = EEG_train1;
-        EEG_test = EEG_test2;
-        for iTr=1:length(EEG_train)
-            EEG_train(iTr).(signal_process) = cat(2,EEG_train1(iTr).(signal_process),EEG_train2(iTr).(signal_process));
-        end
-        for iTr=1:length(EEG_test)
-            EEG_test(iTr).(signal_process) = cat(2,EEG_test1(iTr).(signal_process),EEG_test2(iTr).(signal_process));
-        end
+        EEG_train =run_trials(EEG_train,par);
+        EEG_test =run_trials(EEG_test,par);
 
         TotalFeatures = size(EEG_test(1).(signal_process),2);
 
         % Mutual Information
         par.miModel               = miModelParams;
         par.miModel.InField       = signal_process;
-        par.miModel.m             = par.cspModel.m; 
+        par.miModel.m             = par.cspModel.m;
 
         [~, out.miModel]=miModel(EEG_train,par.miModel);
 
@@ -252,16 +305,15 @@ for indsub=subs
 
     % Save Result
     %% create Tab Result
-    params.createStructResult               = createStructResultParams();
-    params.createStructResult.subj          = indsub;
-    params.createStructResult.method        = signal_process;
-    params.createStructResult.file          = 'Graz';
-    params.createStructResult.train_name    = 'AT';
-    params.createStructResult.train_tr1     = itr1;
-    params.createStructResult.train_tr2     = itr2;
-    params.createStructResult.test_name     = 'AT';
-    params.createStructResult.test_ts1      = itr1;
-    params.createStructResult.test_ts2      = itr2;
+    params.createStructResult.subj       = indsub;
+    params.createStructResult.method     = 'CSP';
+    params.createStructResult.file       = 'Graz';
+    params.createStructResult.train_name = 'AT';
+    params.createStructResult.train_tr1  = itr1;
+    params.createStructResult.train_tr2  = itr2;
+    params.createStructResult.test_name  = 'AT';
+    params.createStructResult.test_ts1   = itr1;
+    params.createStructResult.test_ts2   = itr2;
     params.createStructResult.m             = par.cspModel.m;
     params.createStructResult.class         = findclass(EEG_train,StartClass);
     params.createStructResult.irng          = par.irng;
@@ -271,7 +323,6 @@ for indsub=subs
     params.createStructResult.attenuation   = par.FilterBankCompute.attenuation;
     params.createStructResult.TotalFeatures = TotalFeatures;
     params.createStructResult.kfold         = kfoldSplit;
-    
     % QDA save result
     resultQDA.train.Accuracy = AccuracyQDA;
     resultQDA.train.Accuracy_class = accuracyQDA_class;
@@ -284,7 +335,7 @@ for indsub=subs
 
     % Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_CrossVal_OnTrain_pipeline1';
+    params.updateTab.name       = 'Graz_SearchInterv_NSA_2class';
     params.updateTab.sheetnames = 'QDA';
 
     updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -292,7 +343,7 @@ for indsub=subs
     params.updateTab.sheetnames = 'KappaQDA';
     updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_CrossVal_OnTrain_class_pipeline1';
+    params.updateTab.name     = 'Graz_SearchInterv_NSA_2class_class';
     params.updateTab.sheetnames = 'QDA';
     updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -308,14 +359,14 @@ for indsub=subs
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_CrossVal_OnTrain_pipeline1';
+    params.updateTab.name       = 'Graz_SearchInterv_NSA_2class';
     params.updateTab.sheetnames = 'KNN';
     updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaKNN';
     updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_CrossVal_OnTrain_class_pipeline1';
+    params.updateTab.name     = 'Graz_SearchInterv_NSA_2class_4class';
     params.updateTab.sheetnames = 'KNN';
     updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -331,14 +382,26 @@ for indsub=subs
 
     %% Update Tab Result
     params.updateTab.dir        = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name       = 'Graz_CrossVal_OnTrain_pipeline1';
+    params.updateTab.name       = 'Graz_SearchInterv_NSA_2class';
     params.updateTab.sheetnames = 'NBPW';
-    updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
+    updated_Result_tabl_NSA_2classeAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
     params.updateTab.sheetnames = 'KappaNBPW';
     updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-    params.updateTab.name     = 'Graz_CrossVal_OnTrain_class_pipeline1';
+    params.updateTab.name     = 'Graz_SearchInterv_NSA_2class_class';
     params.updateTab.sheetnames = 'NBPW';
     updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
+end
+cQDA = confusionmat([EEG_trials.trialType]',predictQDA_train);
+cKNN = confusionmat([EEG_trials.trialType]',predictKNN_train);
+cNBPW = confusionmat([EEG_trials.trialType]',predictNBPW_train);
+
+confErrorQDA = confusionError(cQDA);
+% confErrorKNN = confusionError(cKNN);
+% confErrorNBPW = confusionError(cNBPW);
+
+for pcaComp = 1:size(pVals.comparisons,1)
+    sprintf('pca Component is: %d',pcaComp)
+    out.pcaComp = NSAtimeEval(confErrorQDA,pcaComp,pClasses);
 end
