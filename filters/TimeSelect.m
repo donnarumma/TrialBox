@@ -14,6 +14,7 @@ OutField    = par.OutField;
 xfld        = 'time';
 
 %% time selection and interpolation: to put in a separate function
+
 nTrials             = length(data_trials);
 for iTrial = 1:nTrials
     [~,itstart]  = min(abs(data_trials(iTrial).([xfld InField]) - t1));

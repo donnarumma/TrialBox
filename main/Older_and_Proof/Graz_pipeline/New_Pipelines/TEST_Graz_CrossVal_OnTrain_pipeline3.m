@@ -17,42 +17,39 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-% subj = 2:9;
+% select the case: 1 2 3 4
 
-tsub1 = [0,1.5429,1.3018,1.0606,1.4626,1.2214,1.3822,1.3018,1.5429];
+for c=4
 
-% % case 1,4
-% tsub3 = [0.9952,1.5468,1.3047,1.1488,1.5508,0.9717,1.3004,1.8104,1.5468];
+    [tsub1,tsub3] = caseSelect(c);
 
-% % case 2
-% tsub3 = [0.8998,1.5429,1.3018,1.141,1.5429,0.9802,1.3018,1.8645,0.7391];
+    for indsub = 1:9
 
-% % case 3
-% tsub3 = [0.8998,1.5429,1.3018,1.0606,1.4626,1.2214,1.3822,1.3018,1.5429];
-
-
-for indsub = 1:9
-    % t*2cl
-    % int4sub1 = tsub1(indsub) - 0.75;
-    % int4sub2 = tsub1(indsub) + 0.75;
-
-    % tscl
-    int4sub1 = 0.5;
-    int4sub2 = 2.5;
-
-    for deltaT = 1:2
-        
-        % % Case 1,2
-        % int4sub3 = tsub3(indsub) - 0.1*deltaT;
-        % int4sub4 = tsub3(indsub) + 0.1*deltaT;
-    
-        % % case 3
-        % int4sub3 = tsub3(indsub) - 0.75;
-        % int4sub4 = tsub3(indsub) + 0.75;
-        
-        int4sub3 = 0.5;
-        int4sub4 = 1.65;
-
+        if c==1
+            int4sub1 = tsub1(indsub) - 0.75;
+            int4sub2 = tsub1(indsub) + 0.75;
+            if  int4sub1 <= 0.5
+                int4sub1 = 0.5;
+            elseif int4sub2 >= 2.5
+                int4sub2 = 2.5;
+            end
+        else
+            int4sub1 = 0.5;
+            int4sub2 = 2.5;
+        end
+        for deltaT = 1:2
+            if c==3
+                int4sub3 = tsub3(indsub) - 0.75;
+                int4sub4 = tsub3(indsub) + 0.75;
+                if  int4sub3 <= 0.5
+                    int4sub3 = 0.5;
+                elseif int4sub4 >= 2.5
+                    int4sub4 = 2.5;
+                end
+            else
+                int4sub3 = tsub3(indsub) - 0.1*deltaT;
+                int4sub4 = tsub3(indsub) + 0.1*deltaT;
+            end
         signal_name                     = 'eeg';
         signal_process1                  = 'CSP';
         signal_process2                  = 'pca';

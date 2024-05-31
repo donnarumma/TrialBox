@@ -81,7 +81,7 @@ std_class_test_acc = std(test_acc_class,0,1);
 
 
 ResultAcc.date = datetime('now');
-ResultAcc_class.method = method;
+ResultAcc.method = method;
 ResultAcc.subj = subj;
 ResultAcc.file = file;
 ResultAcc.train_name = train_name;

@@ -6,14 +6,14 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-for indsub = 9
+for indsub = 1
     signal_name                     = 'eeg_sound';
     signal_process                  = 'CSP';
 
     %% Extract and Arrange Data
     par.extractSound.signal_name    = signal_name;
     par.extractSound.InField        = 'train';
-    par.extractSound.it_end         = 2;
+    par.extractSound.it_end         = 2.5;
     [EEG_trials,fsample]            = extractSound(indsub,par.extractSound);
 
     % remapTypes

@@ -1,4 +1,4 @@
-% TEST_Sound_MultiEpoch_NoNSA.m
+% TEST_Sound_MultiEpoch_pipeline0.m
 
 
 % Specifics:
@@ -14,7 +14,7 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-for indsub=1:9
+for indsub=2
     % indsub = 9;
     % for irng=1:9
     %     par.irng = irng;
@@ -34,15 +34,12 @@ for indsub=1:9
         par.remapTypes.selection = {1,2};
 
         StartClass = unique([EEG_trials.trialType]);
-        % % Time Interpolation and selection Trials
-        % par.TimeSelect               = TimeSelectParams;
-        % par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
-        % par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
-        % par.TimeSelect.InField       = signal_name;
-        % par.TimeSelect.OutField      = signal_name;
-
-        % itr1 = par.TimeSelect.t1;
-        % itr2 = par.TimeSelect.t2;
+        % Time Interpolation and selection Trials
+        par.TimeSelect               = TimeSelectParams;
+        par.TimeSelect.t1            = 1.7802 - 0.5; % in s from ZeroEvent time
+        par.TimeSelect.t2            = 1.7802 + 0.5; % in s from ZeroEvent time
+        par.TimeSelect.InField       = signal_name;
+        par.TimeSelect.OutField      = signal_name;
 
         % Filter Bank
         par.FilterBankCompute            = FilterBankComputeParams();
@@ -59,11 +56,11 @@ for indsub=1:9
         par.epochCompute.OutField           = signal_name;
         par.epochCompute.fample             = fsample;
         par.epochCompute.t_epoch            = 0.5; % duration of a single intervals in s
-        par.epochCompute.overlap_percent    = 50; % in percentage
+        par.epochCompute.overlap_percent    = 0; % in percentage
 
 
         % par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute','eeg_overlap'};
-        par.exec.funname ={'remapTypes','FilterBankCompute','epochCompute'};
+        par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute','epochCompute'};
         [EEG_trials,out.epochCompute] = run_trials(EEG_trials,par);
         itr1 = round(out.epochCompute.epochCompute.time_intervals(:,1),2);
         itr2 = round(out.epochCompute.epochCompute.time_intervals(:,2),2);
@@ -90,10 +87,12 @@ for indsub=1:9
             indices = training(cvp,i);
             test = (indices == 0);
             train = ~test;
-            
+
             par.multiEEG.Infield = signal_name;
             EEG_train = multiEEG(EEG_trials(train),par.multiEEG);
             EEG_test = multiEEG(EEG_trials(test),par.multiEEG);
+           
+
             % % Bootstrap
             % par.BootStrapData               = BootStrapDataParams;
             % par.BootStrapData.N             = 100;
@@ -101,7 +100,6 @@ for indsub=1:9
             % par.BootStrapData.OutField      = signal_name;
             % EEG_train                       = BootStrapData(EEG_train,par.BootStrapData);
             % EEG_train = EEG_train';
-
 
             Label_train(i).Iter = [EEG_test.trialType]';
             %% Step 2. perform CSP
@@ -282,7 +280,7 @@ for indsub=1:9
 
         % Update Tab Result
         params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-        params.updateTab.name       = 'Sound_MultiEpoch_NoNSA';
+        params.updateTab.name       = 'Sound_MultiEpoch_pipeline0';
         params.updateTab.sheetnames = 'QDA';
 
         updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -290,7 +288,7 @@ for indsub=1:9
         params.updateTab.sheetnames = 'KappaQDA';
         updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-        params.updateTab.name     = 'Sound_MultiEpoch_class_NoNSA';
+        params.updateTab.name     = 'Sound_MultiEpoch_class_pipeline0';
         params.updateTab.sheetnames = 'QDA';
         updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -306,14 +304,14 @@ for indsub=1:9
 
         %% Update Tab Result
         params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-        params.updateTab.name       = 'Sound_MultiEpoch_NoNSA';
+        params.updateTab.name       = 'Sound_MultiEpoch_pipeline0';
         params.updateTab.sheetnames = 'KNN';
         updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
         params.updateTab.sheetnames = 'KappaKNN';
         updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-        params.updateTab.name     = 'Sound_MultiEpoch_class_NoNSA';
+        params.updateTab.name     = 'Sound_MultiEpoch_class_pipeline0';
         params.updateTab.sheetnames = 'KNN';
         updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -329,14 +327,14 @@ for indsub=1:9
 
         %% Update Tab Result
         params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-        params.updateTab.name       = 'Sound_MultiEpoch_NoNSA';
+        params.updateTab.name       = 'Sound_MultiEpoch_pipeline0';
         params.updateTab.sheetnames = 'NBPW';
         updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
         params.updateTab.sheetnames = 'KappaNBPW';
         updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-        params.updateTab.name     = 'Sound_MultiEpoch_class_NoNSA';
+        params.updateTab.name     = 'Sound_MultiEpoch_class_pipeline0';
         params.updateTab.sheetnames = 'NBPW';
         updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
     % end
