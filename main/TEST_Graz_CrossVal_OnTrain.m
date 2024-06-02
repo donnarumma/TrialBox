@@ -3,7 +3,8 @@
 % Dataset eeegplanetion: "Leeb, R., Brunner, C., Müller-Putz, G., Schlögl, A., & Pfurtscheller, G. J. G. U. O. T. (2008). BCI Competition 2008–Graz data set B.
 %       Graz University of Technology, Austria, 16, 1-6."
 % Link for training data: www.bbci.de/competition/iv/ -> Download of data sets -> agree submit -> Data sets 2a: ‹4-class motor imagery>
-% Link for test data: www.bbci.de/competition/iv/ -> News -> Results of the
+% Link for test data: www.bbci.de/competition/iv/ ->
+%  News -> Results of the
 % BCI Competition IV -> True Labels of Competition's Evaluation Sets -> Data sets 2a:
 
 % Specifics:

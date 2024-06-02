@@ -50,10 +50,6 @@ mbq = minibatchqueue(dsTrain,numOutputs,            ...
     MiniBatchFormat     = "SSCB",                   ...
     PartialMiniBatch    = "discard");
 
-trailingAvgE            = [];
-trailingAvgSqE          = [];
-trailingAvgD            = [];
-trailingAvgSqD          = [];
 
 numIterationsPerEpoch   = ceil(nTrials / par.VAE.miniBatchSize);
 numIterations           = par.VAE.numEpochs * numIterationsPerEpoch;
@@ -65,6 +61,10 @@ monitor = trainingProgressMonitor(  ...
 
 
 % learning
+trailingAvgE            = [];
+trailingAvgSqE          = [];
+trailingAvgD            = [];
+trailingAvgSqD          = [];
 epoch                   = 0;
 iteration               = 0;
 % Loop over epochs.
@@ -120,11 +120,12 @@ mbqTest = minibatchqueue(dsTest,numOutputs,     ...
 
 XTest_rec               = modelPredictions(netE,netD,mbqTest);
 
-%% 
+%% errors
 errorsTrain             = errors(XTrain,XTrain_rec);
 errorsTest              = errors(XTest,XTest_rec);
 errorXTest              = errorsTrain.RMSE;
 errorXTrain             = errorsTest.RMSE;
+
 %% plot reconstructions
 col             = [0.5,0.5,0.7]; % col borders
 hmShow          = 49;
