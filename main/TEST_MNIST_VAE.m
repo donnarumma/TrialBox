@@ -1,6 +1,7 @@
-% function TEST_MNIST_VAE
+function   TEST_MNIST_VAE(ifplot)
+% function TEST_MNIST_VAE(ifplot)
 %--------------------------------------------------------------------------
-
+if ~exist('ifplot','var'); ifplot=true; end
 %--------------------------------------------------------------------------
 %% load MNIST in Matlab
 [XTrain,YTrain,anglesTrain] = digitTrain4DArrayData;
@@ -10,6 +11,7 @@
 % nChannels x nTimes x nTrials 
 X3dTrain                    = squeeze(XTrain);
 X3dTest                     = squeeze(XTest);
+nTimes                      = size(X3dTrain,2); % should be the same as test
 time                        = 1:nTimes;
 xfld                        = 'time';
 InField                     = 'MNIST'; 
@@ -43,9 +45,14 @@ end
 %% learn network model: encoder (netE) and decoder (netD)
 par.vaeModel                        = vaeModelParams();
 par.vaeModel.miniBatchSize          = 128;
+par.vaeModel.graphplot              = ifplot;
 % par.vaeModel.numEpochs            = 10;
 par.vaeModel.InField                = 'MNIST';
 [data_trials_train, out.vaeModel]   = vaeModel(data_trials_train,par.vaeModel);
+
+ref         = datetime('now','Format','yyyyMMddHHmmss');
+fn          = sprintf('~/TESTS/MNIST/vae/%s_%s.mat',mfilename,ref);
+save(fn,'out','par')
 
 %% Encode manifold
 par.vaeEncode                       = vaeEncodeParams();
@@ -54,12 +61,13 @@ par.vaeEncode.InField               = 'MNIST';
 par.vaeEncode.OutField              = 'vae';
 par.vaeEncode.miniBatchSize         = par.vaeModel.miniBatchSize;
 par.vaeEncode.MBnumOutputs          = par.vaeModel.MBnumOutputs;
-% train
+% train8
 data_trials_train                   = vaeEncode(data_trials_train,par.vaeEncode);
 % test
 data_trials_test                    = vaeEncode(data_trials_test ,par.vaeEncode);
+ 
 %% Decode manifold
-par.vaeEncode                       = vaeDecodeParams();
+par.vaeDecode                       = vaeDecodeParams();
 par.vaeDecode.netD                  = out.vaeModel.netD;
 par.vaeDecode.exec                  = true;
 par.vaeDecode.InField               = 'vae';
@@ -72,36 +80,24 @@ data_trials_train                   = vaeDecode(data_trials_train,par.vaeDecode)
 % test
 data_trials_test                    = vaeDecode(data_trials_test ,par.vaeDecode);
 
-%%
 %% reconstruction error
-% train
-% nChannels x nTimes x nTrials
-X3dTrain_rec                = cat(3,data_trials_train.MNIST_rec);
-% nTrials x nChannels x nTimes
-X3dTrain_rec                = permute(X3dTrain_rec,[3,1,2]);
-% nTrials x nChannels*nTimes
-XdataTrain                  = reshape(X3dTrain    ,size(X3dTrain,1)    ,size(X3dTrain,2)    *size(X3dTrain,3));
-XdataTrain_rec              = reshape(X3dTrain_rec,size(X3dTrain_rec,1),size(X3dTrain_rec,2)*size(X3dTrain_rec,3));
-errorTrains                 = errors(XdataTrain_rec,XdataTrain);
-errorXTrain                 = errorTrains.RMSE;
-% test
-X3dTest_rec                 = cat(3,data_trials_test.MNIST_rec);
-% nTrials x nChannels x nTimes
-X3dTest_rec                 = permute(X3dTest_rec,[3,1,2]);
-% nTrials x nChannels*nTimes
-XdataTest                   = reshape(X3dTest    ,size(X3dTest,1)    ,size(X3dTest,2)    *size(X3dTest,3));
-XdataTest_rec               = reshape(X3dTest_rec,size(X3dTest_rec,1),size(X3dTest_rec,2)*size(X3dTest_rec,3));
-errorTests                  = errors(XdataTest_rec,XdataTest);
-errorXTest                  = errorTests.RMSE;
-% errorXTest                  = RMSError(XdataTest_rec,XdataTest);
-out.errorXTrain             = errorXTrain;
-out.errorXTest              = errorXTest;
-disp(out)
+par.reconstructionErrors                        = reconstructionErrorsParams();
+par.reconstructionErrors.FieldReconstructed     = 'MNIST_rec';
+par.reconstructionErrors.FieldTarget            = 'MNIST';
+out.errorsTrain                                 = reconstructionErrors(data_trials_train,par.reconstructionErrors);
+out.errorsTest                                  = reconstructionErrors(data_trials_test, par.reconstructionErrors);
+errorXTrain                                     = out.errorsTrain.RMSE;
+errorXTest                                      = out.errorsTest.RMSE;
+fprintf('Train error: %g\n',errorXTrain)
+fprintf('Test  error: %g\n',errorXTest)
+
 %% plot TRAIN
-isplot                      = true;
-hfg.plot_Montage            = figure('visible',isplot);
+hfg.trainRec                = figure('visible',ifplot);
+hmShow                      = 49;
+
 par.plot_Montage            = plot_MontageParams;
-par.plot_Montage.hfig       = hfg.plot_Montage;   
+par.plot_Montage.hfig       = hfg.trainRec;
+par.plot_Montage.hmShow     = randperm(length(data_trials_train),hmShow);
 tcl=tiledlayout(1,2, 'Padding', 'compact', 'TileSpacing', 'tight');
 nexttile
 par.plot_Montage.InField    ='MNIST';
@@ -113,8 +109,10 @@ hfg.plot_Montage            = plot_Montage(data_trials_train,par.plot_Montage);
 title('Reconstructed')
 sgtitle(sprintf('TRAIN: RMS=%.2f',errorXTrain))
 %% plot TEST
+hfg.testRec                 = figure('visible',ifplot);
 par.plot_Montage            = plot_MontageParams;
-par.plot_Montage.hfig       = figure;   
+par.plot_Montage.hfig       = hfg.testRec;   
+par.plot_Montage.hmShow     = randperm(length(data_trials_test),hmShow);
 tcl=tiledlayout(1,2, 'Padding', 'compact', 'TileSpacing', 'tight');
 nexttile
 par.plot_Montage.InField    ='MNIST';

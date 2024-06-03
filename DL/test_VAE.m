@@ -97,7 +97,11 @@ while epoch < par.VAE.numEpochs && ~monitor.Stop
         monitor.Progress = 100*iteration/numIterations;
     end
 end
-
+vaeM.netE   = netE;
+vaeM.netD   = netD;
+ref         = datetime('now','Format','yyyyMMddHHmmss');
+fn          = sprintf('~/TESTS/MNIST/vae/%s_%s.mat',mfilename,ref);
+save(fn,'vaeM')
 %% train
 dsTrain                 = arrayDatastore(XTrain,IterationDimension=4);
 numOutputs              = 1;
@@ -148,13 +152,17 @@ ImgTest         = squeeze (XTest(:,:,:,idx));
 ImgTestRec      = squeeze (XTest_rec(:,:,:,idx));
 figure;
 subplot(1,2,1)
-montage (ImgTest, 'BorderSize', [1,1], 'BackgroundColor', col);
+montage (ImgTest,    'BorderSize', [1,1], 'BackgroundColor', col);
 title('Original');
 subplot(1,2,2);
 montage (ImgTestRec, 'BorderSize', [1,1], 'BackgroundColor', col);
 title('Reconstructed');
 sgtitle(sprintf('Test (RMS: %.4f)',errorXTest))
 return
+%%
+Y = modelPredictions(netE,netD,mbq);
+fprintf('ciccio\n');
+%%
 
 function X = preprocessMiniBatch(dataX)
 

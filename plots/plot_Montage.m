@@ -10,12 +10,15 @@ else
 end 
 InField         = par.InField;
 col             = par.col;
-hmShow          = par.hmShow;
-
+numObservations = length(data_trials);
+if numel(par.hmShow)==1
+    hmShow          = par.hmShow;
+    idx             = randperm(numObservations,hmShow);
+else
+    idx             = par.hmShow;
+end
 % nChannels x nTimes x nTrials
 Img_rec         = cat(3,data_trials.(InField)); 
-numObservations = length(data_trials);
-idx             = randperm(numObservations,hmShow);
 
 montage (Img_rec(:,:,idx), 'BorderSize', [1,1], 'BackgroundColor', col);
 

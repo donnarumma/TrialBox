@@ -11,7 +11,10 @@ X3d                     = cat(3,data_trials.(InField));                     % nC
 
 X4d                     = reshape(X3d,size(X3d,1),size(X3d,2),1,size(X3d,3)); % nTrials x nChannels x 1 x nTimes
 [nCells, nTimes, nChannels, nTrials] = size(X4d);
-
+if canUseGPU
+    fprintf('Using GPU\n');
+    X4d = gpuArray(X4d);
+end
 nValids                 = round(nTrials*par.validPercent/100);
 iTrials                 = randperm(nTrials);
 iValid                  = iTrials(1:nValids);
@@ -71,11 +74,14 @@ netD                    = dlnetwork(layersD);
 numIterationsPerEpoch   = ceil(nTrials / par.miniBatchSize);
 numIterations           = par.numEpochs * numIterationsPerEpoch;
 
-monitor                 = trainingProgressMonitor(  ...
+if par.graphplot
+    monitor             = trainingProgressMonitor(  ...
                                                     Metrics             = "Loss",   ...
                                                     Info                = "Epoch",  ...
                                                     XLabel              = "Iteration");
-
+else
+    monitor.Stop        = false;
+end
 % learning
 trailingAvgE            = [];
 trailingAvgSqE          = [];
@@ -115,11 +121,17 @@ while epoch < par.numEpochs && ~monitor.Stop
             XValidbatch     = next(mbqValid);
             validloss       = dlfeval(@modelLoss,netE,netD,XValidbatch);
         end
-
-        % Update the training progress monitor. 
-        recordMetrics(monitor,iteration,Loss=loss);
-        updateInfo(monitor,Epoch=epoch + " of " + par.numEpochs);
-        monitor.Progress    = 100*iteration/numIterations;
+        
+        if par.graphplot
+            % Update the training progress monitor. 
+            recordMetrics(monitor,iteration,Loss=loss);
+            updateInfo(monitor,Epoch=epoch + " of " + par.numEpochs);
+            
+            monitor.Progress    = 100*iteration/numIterations;
+        end
+    end
+    if ~par.graphplot
+        fprintf('Epoch %g: it=%g/%g | Loss: %g\n',epoch,iteration,numIterations,loss);
     end
 end
 
