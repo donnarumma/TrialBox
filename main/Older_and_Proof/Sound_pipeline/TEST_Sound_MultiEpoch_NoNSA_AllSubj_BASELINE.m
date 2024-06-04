@@ -1,4 +1,4 @@
-% TEST_Sound_MultiEpoch_NoNSA_AllSubj.m
+% TEST_Baseline_NoNSA_AllSubj.m
 
 
 % Specifics:
@@ -15,7 +15,7 @@ par.irng = 10;
 rng(par.irng);
 
 
-signal_name                     = 'eeg_sound';
+signal_name                     = 'eeg_baseline';
 signal_process                  = 'CSP';
 
 EEG_sub = struct();
@@ -23,7 +23,7 @@ for indsub=1:9
     %% Extract and Arrange Data
     par.extractSound.signal_name    = signal_name;
     par.extractSound.InField        = 'train';
-    par.extractSound.it_end         = 2.5;
+    par.extractSound.it_end         = 1;
     par.extractSound.multiEpoch     = true;
     [EEG_sub(indsub).trials,fsample]            = extractSound(indsub,par.extractSound);
 end
@@ -55,16 +55,16 @@ par.FilterBankCompute.OutField   = signal_name;
 par.FilterBankCompute.FilterBank = 'One';
 par.FilterBankCompute.fsample    = fsample;
 
-%% epochCompute
-par.epochCompute                    = epochComputeParams();
-par.epochCompute.InField            = signal_name;
-par.epochCompute.OutField           = signal_name;
-par.epochCompute.fample             = fsample;
-par.epochCompute.t_epoch            = 0.5; % duration of a single intervals in s
-par.epochCompute.overlap_percent    = 0; % in percentage
+% %% epochCompute
+% par.epochCompute                    = epochComputeParams();
+% par.epochCompute.InField            = signal_name;
+% par.epochCompute.OutField           = signal_name;
+% par.epochCompute.fample             = fsample;
+% par.epochCompute.t_epoch            = 0.5; % duration of a single intervals in s
+% par.epochCompute.overlap_percent    = 0; % in percentage
 
 
-par.exec.funname ={'remapTypes','FilterBankCompute','epochCompute'};
+par.exec.funname ={'remapTypes','FilterBankCompute'};
 [EEG_trials,out.epochCompute] = run_trials(EEG_trials,par);
 itr1 = round(out.epochCompute.epochCompute.time_intervals(:,1),2);
 itr2 = round(out.epochCompute.epochCompute.time_intervals(:,2),2);
@@ -264,7 +264,7 @@ resultQDA.test.kappaValue = NaN;
 
 % Update Tab Result
 params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-params.updateTab.name       = 'Sound_MultiEpoch_NoNSA_AllSubj';
+params.updateTab.name       = 'Baseline_NoNSA_AllSubj';
 params.updateTab.sheetnames = 'QDA';
 
 updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -272,7 +272,7 @@ updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
 params.updateTab.sheetnames = 'KappaQDA';
 updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-params.updateTab.name     = 'Sound_MultiEpoch_class_NoNSA_AllSubj';
+params.updateTab.name     = 'Baseline_class_NoNSA_AllSubj';
 params.updateTab.sheetnames = 'QDA';
 updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -288,14 +288,14 @@ resultKNN.test.kappaValue = NaN;
 
 %% Update Tab Result
 params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-params.updateTab.name       = 'Sound_MultiEpoch_NoNSA_AllSubj';
+params.updateTab.name       = 'Baseline_NoNSA_AllSubj';
 params.updateTab.sheetnames = 'KNN';
 updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
 params.updateTab.sheetnames = 'KappaKNN';
 updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-params.updateTab.name     = 'Sound_MultiEpoch_class_NoNSA_AllSubj';
+params.updateTab.name     = 'Baseline_class_NoNSA_AllSubj';
 params.updateTab.sheetnames = 'KNN';
 updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -311,13 +311,13 @@ resultNB.test.kappaValue = NaN;
 
 %% Update Tab Result
 params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-params.updateTab.name       = 'Sound_MultiEpoch_NoNSA_AllSubj';
+params.updateTab.name       = 'Baseline_NoNSA_AllSubj';
 params.updateTab.sheetnames = 'NB';
 updated_Result_tableAccNB = updateTab(ResultNB_Acc,params.updateTab);
 
 params.updateTab.sheetnames = 'KappaNB';
 updated_Result_tableKappaNB = updateTab(ResultNB_Kappa,params.updateTab);
 
-params.updateTab.name     = 'Sound_MultiEpoch_class_NoNSA_AllSubj';
+params.updateTab.name     = 'Baseline_class_NoNSA_AllSubj';
 params.updateTab.sheetnames = 'NB';
 updated_Resultclass_tableAccNB = updateTab(ResultNB_class_Acc,params.updateTab);

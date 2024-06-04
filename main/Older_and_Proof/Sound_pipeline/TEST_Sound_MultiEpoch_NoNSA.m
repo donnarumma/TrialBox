@@ -14,7 +14,7 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-for indsub=1:9
+for indsub=1
     % indsub = 9;
     % for irng=1:9
     %     par.irng = irng;
@@ -50,7 +50,7 @@ for indsub=1:9
         par.FilterBankCompute.OutField   = signal_name;
         % par.FilterBankCompute.f_min      = 0.1; % min frequency range in Hz
         % par.FilterBankCompute.f_max      = 49.5;
-        par.FilterBankCompute.FilterBank = 'One';
+        par.FilterBankCompute.FilterBank = 'EEGbands';
         par.FilterBankCompute.fsample    = fsample;
 
         %% epochCompute
@@ -59,7 +59,7 @@ for indsub=1:9
         par.epochCompute.OutField           = signal_name;
         par.epochCompute.fample             = fsample;
         par.epochCompute.t_epoch            = 0.5; % duration of a single intervals in s
-        par.epochCompute.overlap_percent    = 50; % in percentage
+        par.epochCompute.overlap_percent    = 0; % in percentage
 
 
         % par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute','eeg_overlap'};
@@ -107,7 +107,7 @@ for indsub=1:9
             %% Step 2. perform CSP
             % CSP Dictionary evaluation on train
             par.cspModel                  = cspModelParams;
-            par.cspModel.m                = 14;
+            par.cspModel.m                = 2;
             par.cspModel.InField          = signal_name;
             par.cspModel.OutField         = signal_process;
 

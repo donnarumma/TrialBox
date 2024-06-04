@@ -1,4 +1,4 @@
-% TEST_Graz_1VS1_pipeline0.m
+% TEST_Graz_OnTest_NoNSA.m
 
 % Dataset eeegplanetion: "Leeb, R., Brunner, C., Müller-Putz, G., Schlögl, A., & Pfurtscheller, G. J. G. U. O. T. (2008). BCI Competition 2008–Graz data set B.
 %       Graz University of Technology, Austria, 16, 1-6."
@@ -14,63 +14,54 @@
 
 clear; close all;
 
-par.irng = 10;
+% par.irng = 10;
+% rng(par.irng);
+subj=1:9;
+for i=randi(50,1,5)
+    par.irng = i;
 rng(par.irng);
+    for indsub=2:9
 
-%
-% subi    = 8;
-% subj    = 1;
+        signal_name                     = 'eeg';
+        signal_process                  = 'CSP';
 
+        %% Extract and Arrange TRAIN Data
+        par.extractGraz.signal_name                  = signal_name;
+        par.extractGraz.InField                      = 'train';
+        [EEG_train,fsample] = extractGraz(indsub,par.extractGraz);
 
-t_s4s = [0.8998,1.5429,1.3018,1.0606,1.4626,1.2214,1.3822,1.3018,1.5429]';
+        StartClass = unique([EEG_train.trialType]);
+        % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
+        par.TimeSelect               = TimeSelectParams;
+        par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
+        par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
+        par.TimeSelect.InField       = signal_name;
+        par.TimeSelect.OutField      = signal_name;
+        par.TimeSelect.dt            = 1;
 
-% subij=[subi,subj;subj,subi];
-% itsub1 = [t_s4s(subi);t_s4s(subj)];
-%
-% itsub2 = [t_s4s(subi); t_s4s(subj)];
+        itr1 = par.TimeSelect.t1;
+        itr2 = par.TimeSelect.t2;
 
-for indsub1 = 1:2
-    for indsub2 = 1:8
-    signal_name                     = 'eeg';
-    signal_process                  = 'CSP';
-    %% Extract and Arrange TRAIN Data
-    par.extractGraz.signal_name                  = signal_name;
-    par.extractGraz.InField                      = 'train';
-    [EEG_train,fsample] = extractGraz(indsub1,par.extractGraz);
+        % Filter Bank
+        par.FilterBankCompute            = FilterBankComputeParams();
+        par.FilterBankCompute.InField    = signal_name;
+        par.FilterBankCompute.OutField   = signal_name;
+        par.FilterBankCompute.attenuation = 10;
+        par.FilterBankCompute.FilterBank = 'Nine';
+        par.FilterBankCompute.fsample    = fsample;
 
-    StartClass = unique([EEG_train.trialType]);
-    % Time Interpolation and selection Trials [0.75;2.5] from CUE (Motor Imagery Interval)
-    par.TimeSelect               = TimeSelectParams;
-    par.TimeSelect.t1            = t_s4s(indsub1,1) - 0.75; % in s from ZeroEvent time
-    par.TimeSelect.t2            = t_s4s(indsub1,1) + 0.75; % in s from ZeroEvent time
-    par.TimeSelect.InField       = signal_name;
-    par.TimeSelect.OutField      = signal_name;
-    par.TimeSelect.dt            = 1;
+        par.exec.funname ={'TimeSelect','FilterBankCompute'};
+        EEG_train =run_trials(EEG_train,par);
 
-    itr1 = par.TimeSelect.t1;
-    itr2 = par.TimeSelect.t2;
-
-    % Filter Bank
-    par.FilterBankCompute            = FilterBankComputeParams();
-    par.FilterBankCompute.InField    = signal_name;
-    par.FilterBankCompute.OutField   = signal_name;
-    par.FilterBankCompute.attenuation = 10;
-    par.FilterBankCompute.FilterBank = 'Nine';
-    par.FilterBankCompute.fsample    = fsample;
-
-    par.exec.funname ={'TimeSelect','FilterBankCompute'};
-    EEG_train =run_trials(EEG_train,par);
-
-    
         %% Extract and Arrange Test Data
         par.extractGraz.signal_name                  = signal_name;
         par.extractGraz.InField                      = 'test';
-        [EEG_test,fsample] = extractGraz(indsub2,par.extractGraz);
+        [EEG_test,fsample] = extractGraz(indsub,par.extractGraz);
 
-        % Time Interpolation and selection Trials [0.75;2.5] from CUE (Motor Imagery Interval)
+        % Time Interpolation and selection Trials [0.5;2.5] from CUE (Motor Imagery Interval)
         par.TimeSelect               = TimeSelectParams;
-        par.TimeSelect.t1            = t_s4s(indsub1,1) - 0.75; % in s from ZeroEvent time
-        par.TimeSelect.t2            = t_s4s(indsub1,1) + 0.75; % in s from ZeroEvent time
+        par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
+        par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
         par.TimeSelect.InField       = signal_name;
         par.TimeSelect.OutField      = signal_name;
         par.TimeSelect.dt            = 1;
@@ -146,13 +137,13 @@ for indsub1 = 1:2
                 [EEG_test,resSVC.test]          = mdlPredict(EEG_test,par.mdlPredict);
 % Save Result
                 % create Tab Result
-                params.createStructResult.subj       = indsub1;
+                params.createStructResult.subj       = indsub;
                 params.createStructResult.method     = 'CSP';
                 params.createStructResult.file       = 'Graz';
-                params.createStructResult.train_name = strcat('AT','_',string(indsub1));
+                params.createStructResult.train_name = strcat('AT','_',string(indsub));
                 params.createStructResult.train_tr1  = itr1;
                 params.createStructResult.train_tr2  = itr2;
-                params.createStructResult.test_name  = strcat('AE','_',string(indsub2));
+                params.createStructResult.test_name  = strcat('AE','_',string(indsub));
                 params.createStructResult.test_ts1   = its1;
                 params.createStructResult.test_ts2   = its2;
                 params.createStructResult.m             = par.cspModel.m;
@@ -169,17 +160,15 @@ for indsub1 = 1:2
                 [ResultSVC_kappa,ResultSVC_Acc,ResultSVC_class_Acc] = createStructResult(resSVC,params.createStructResult);
                 % Update Tab Result
                 params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-                params.updateTab.name               = 'Graz_1VS1_pipeline0';
+                params.updateTab.name               = 'Graz_OnTest_NoNSA';
                 params.updateTab.sheetnames         = 'SVC';
                 updated_Result_tableAccSVC          = updateTab(ResultSVC_Acc,params.updateTab);
 
                 params.updateTab.sheetnames         = 'KappaSVC';
                 updated_Result_tableKappaSVC        = updateTab(ResultSVC_kappa,params.updateTab);
 
-                params.updateTab.name               = 'Graz_1VS1_class_pipeline0';
+                params.updateTab.name               = 'Graz_OnTest_NoNSA_class';
                 params.updateTab.sheetnames         = 'SVC';
                 updated_Resultclass_tableAccSVC     = updateTab(ResultSVC_class_Acc,params.updateTab);
-
-               clear out resSVC
     end
 end

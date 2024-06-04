@@ -19,11 +19,11 @@ rng(par.irng);
 
 % select the case: 1 2 3 4
 
-for c=4
+for c=3:4
 
     [tsub1,tsub3] = caseSelect(c);
 
-    for indsub = 1:9
+    for indsub = 5
 
         if c==1
             int4sub1 = tsub1(indsub) - 0.75;
@@ -72,7 +72,7 @@ for c=4
             par.FilterBankCompute               = FilterBankComputeParams();
             par.FilterBankCompute.InField       = signal_name;
             par.FilterBankCompute.OutField      = signal_name;
-            par.FilterBankCompute.attenuation   = 10; % one HyperParam
+            par.FilterBankCompute.attenuation   = 20; % one HyperParam
             par.FilterBankCompute.FilterBank    = 'Nine';
             par.FilterBankCompute.fsample       = fsample;
 

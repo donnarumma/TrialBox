@@ -18,9 +18,9 @@ par.irng = 10;
 rng(par.irng);
 
 tsub1 = [0.8998	1.5429	1.3018	1.0606	1.4626	1.2214	1.3822	1.3018	1.5429];
-subj = 3:9;
+subj = 1:9;
 
-for indsub=3:9
+for indsub=2:9
 
     signal_name                     = 'eeg';
     signal_process                  = 'CSP';
@@ -78,7 +78,7 @@ for indsub=3:9
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
     par.TimeSelect.dt            = 1;
-    
+
     par.exec.funname ={'TimeSelect'};
     EEG_test =run_trials(EEG_test,par);
 
@@ -141,73 +141,23 @@ for indsub=3:9
     V_train = out.miEncode.V;
     [EEG_test, out]=run_trials(EEG_test,par);
     V_test = out.miEncode.V;
-
     %% Step 3. Model Classification on CSP
-    % qdaModel
-    par.qdaModel                      = qdaModelParams;
-    par.qdaModel.InField              = 'CSP';
-    par.qdaModel.numIterations        = 100;
-    par.qdaModel.kfold                = 5;
-    [~, outQDA]               = qdaModel(EEG_train,par.qdaModel);
+    % svcModel
+    par.svcModel                      = svcModelParams;
+    par.svcModel.InField              = 'CSP';
+    par.svcModel.numIterations        = 100;
+    par.svcModel.kfold                = 5;
+    [~, outSVC]                       = svcModel(EEG_train,par.svcModel);
 
-    % predictQDA
+    % predictSVC
     par.mdlPredict                  = mdlPredictParams;
     par.mdlPredict.InField          = 'CSP';
-    par.mdlPredict.OutField         = 'QDApred';
-    par.mdlPredict.ProbField        = 'QDAProb';
-    par.mdlPredict.mdl              = outQDA.mdl;
-    [EEG_train,resQDA.train]        = mdlPredict(EEG_train,par.mdlPredict);
-    [EEG_test,resQDA.test]          = mdlPredict(EEG_test,par.mdlPredict);
+    par.mdlPredict.OutField         = 'SVCpred';
+    par.mdlPredict.ProbField        = 'SVCProb';
+    par.mdlPredict.mdl              = outSVC.mdl;
+    [EEG_train,resSVC.train]        = mdlPredict(EEG_train,par.mdlPredict);
+    [EEG_test,resSVC.test]          = mdlPredict(EEG_test,par.mdlPredict);
 
-    % knnModel
-    par.knnModel                      = knnModelParams;
-    par.knnModel.InField              = 'CSP';
-    par.knnModel.numIterations        = 100;
-    par.knnModel.kfold                = 5;
-    [~, outKNN]                       = knnModel(EEG_train,par.knnModel);
-
-    % predictKNN
-    par.mdlPredict                  = mdlPredictParams;
-    par.mdlPredict.InField          = 'CSP';
-    par.mdlPredict.OutField         = 'KNNpred';
-    par.mdlPredict.ProbField        = 'KNNProb';
-    par.mdlPredict.mdl              = outKNN.mdl;
-    [EEG_train,resKNN.train]        = mdlPredict(EEG_train,par.mdlPredict);
-    [EEG_test,resKNN.test]          = mdlPredict(EEG_test,par.mdlPredict);
-
-    %% Naive Bayes Parzen Window
-    % fitNBPW
-    par.fitNBPW                     = fitNBPWParams;
-    par.fitNBPW.labs_train          = [EEG_train.trialType]';
-    par.fitNBPW.labs_test           = [EEG_train.trialType]';
-    [pred_train,outNBPW.train]      = fitNBPW(V_train,V_train,par.fitNBPW);
-
-    par.fitNBPW                 = fitNBPWParams;
-    par.fitNBPW.labs_train      = [EEG_train.trialType]';
-    par.fitNBPW.labs_test       = [EEG_test.trialType]';
-    [pred_test,outNBPW.test]    = fitNBPW(V_train,V_test,par.fitNBPW);
-
-    % predictNBPW Train
-    par.predictNBPW                  = predictNBPWParams;
-    par.predictNBPW.InField          = 'CSP';
-    par.predictNBPW.OutField         = 'NBPWpred';
-    par.predictNBPW.labs_pred        = pred_train;
-
-    [EEG_train,resNBPW.train]     = predictNBPW(EEG_train,par.predictNBPW);
-    % KappaValue on Train NBPW
-    Cmatrxix_train = confusionmat([EEG_train.trialType]', pred_train);
-    resNBPW.train.kappaValue  = kappaModel(Cmatrxix_train);
-
-    % predictNBPW Test
-    par.predictNBPW                  = predictNBPWParams;
-    par.predictNBPW.InField          = 'CSP';
-    par.predictNBPW.OutField         = 'NBPWpred';
-    par.predictNBPW.labs_pred        = pred_test;
-
-    [EEG_test,resNBPW.test]       = predictNBPW(EEG_test,par.predictNBPW);
-    % KappaValue on Test NBPW
-    Cmatrxix_test = confusionmat([EEG_test.trialType]', pred_test);
-    resNBPW.test.kappaValue  = kappaModel(Cmatrxix_test);
 
     % Save Result
     % create Tab Result
@@ -230,48 +180,19 @@ for indsub=3:9
     params.createStructResult.TotalFeatures = TotalFeatures;
     params.createStructResult.kfold         = 0;
 
-    % QDA Accuracy save
-    [ResultQDA_kappa,ResultQDA_Acc,ResultQDA_class_Acc] = createStructResult(resQDA,params.createStructResult);
+    % SVC Accuracy save
+    [ResultSVC_kappa,ResultSVC_Acc,ResultSVC_class_Acc] = createStructResult(resSVC,params.createStructResult);
     % Update Tab Result
     params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
     params.updateTab.name               = 'Graz_OnTest_pipeline0';
-    params.updateTab.sheetnames         = 'QDA';
-    updated_Result_tableAccQDA          = updateTab(ResultQDA_Acc,params.updateTab);
+    params.updateTab.sheetnames         = 'SVC';
+    updated_Result_tableAccsvc          = updateTab(ResultSVC_Acc,params.updateTab);
 
-    params.updateTab.sheetnames         = 'KappaQDA';
-    updated_Result_tableKappaQDA        = updateTab(ResultQDA_kappa,params.updateTab);
+    params.updateTab.sheetnames         = 'KappaSVC';
+    updated_Result_tableKappaSVC        = updateTab(ResultSVC_kappa,params.updateTab);
 
-    params.updateTab.name               = 'Graz_OnTest_pipeline0_class';
-    params.updateTab.sheetnames         = 'QDA';
-    updated_Resultclass_tableAccQDA     = updateTab(ResultQDA_class_Acc,params.updateTab);
+    params.updateTab.name               = 'Graz_OnTest_class_pipeline0';
+    params.updateTab.sheetnames         = 'SVC';
+    updated_Resultclass_tableAccSVC     = updateTab(ResultSVC_class_Acc,params.updateTab);
 
-    % KNN Accuracy save
-    [ResultKNN_kappa,ResultKNN_Acc,ResultKNN_class_Acc] = createStructResult(resKNN,params.createStructResult);
-    % Update Tab Result
-    params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name               = 'Graz_OnTest_pipeline0';
-    params.updateTab.sheetnames         = 'KNN';
-    updated_Result_tableAccKNN          = updateTab(ResultKNN_Acc,params.updateTab);
-
-    params.updateTab.sheetnames         = 'KappaKNN';
-    updated_Result_tableKappaKNN        = updateTab(ResultKNN_kappa,params.updateTab);
-
-    params.updateTab.name               = 'Graz_OnTest_pipeline0_class';
-    params.updateTab.sheetnames         = 'KNN';
-    updated_Resultclass_tableAccKNN     = updateTab(ResultKNN_class_Acc,params.updateTab);
-
-    % NBPW Accuracy save
-    [ResultNBPW_kappa,ResultNBPW_Acc,ResultNBPW_class_Acc] = createStructResult(resNBPW,params.createStructResult);
-    % Update Tab Result
-    params.updateTab.dir                = 'D:\TrialBox_Results_excel\Graz_dataset';
-    params.updateTab.name               = 'Graz_OnTest_pipeline0';
-    params.updateTab.sheetnames         = 'NBPW';
-    updated_Result_tableAccNBPW         = updateTab(ResultNBPW_Acc,params.updateTab);
-
-    params.updateTab.sheetnames         = 'KappaNBPW';
-    updated_Result_tableKappaNBPW       = updateTab(ResultNBPW_kappa,params.updateTab);
-
-    params.updateTab.name               = 'Graz_OnTest_pipeline0_class';
-    params.updateTab.sheetnames         = 'NBPW';
-    updated_Resultclass_tableAccNBPW    = updateTab(ResultNBPW_class_Acc,params.updateTab);
 end

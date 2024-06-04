@@ -13,8 +13,8 @@ clear; close all;
 
 par.irng = 10;
 rng(par.irng);
-
-for indsub=2
+itsub1 = 1.5374;
+for indsub=1
     % indsub = 9;
     % for irng=1:9
     %     par.irng = irng;
@@ -36,8 +36,8 @@ for indsub=2
         StartClass = unique([EEG_trials.trialType]);
         % Time Interpolation and selection Trials
         par.TimeSelect               = TimeSelectParams;
-        par.TimeSelect.t1            = 1.7802 - 0.5; % in s from ZeroEvent time
-        par.TimeSelect.t2            = 1.7802 + 0.5; % in s from ZeroEvent time
+        par.TimeSelect.t1            = itsub1 - 0.5; % in s from ZeroEvent time
+        par.TimeSelect.t2            = itsub1 + 0.5; % in s from ZeroEvent time
         par.TimeSelect.InField       = signal_name;
         par.TimeSelect.OutField      = signal_name;
 
@@ -47,7 +47,7 @@ for indsub=2
         par.FilterBankCompute.OutField   = signal_name;
         % par.FilterBankCompute.f_min      = 0.1; % min frequency range in Hz
         % par.FilterBankCompute.f_max      = 49.5;
-        par.FilterBankCompute.FilterBank = 'One';
+        par.FilterBankCompute.FilterBank = 'EEGbands';
         par.FilterBankCompute.fsample    = fsample;
 
         %% epochCompute
@@ -59,9 +59,9 @@ for indsub=2
         par.epochCompute.overlap_percent    = 0; % in percentage
 
 
-        % par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute','eeg_overlap'};
         par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute','epochCompute'};
         [EEG_trials,out.epochCompute] = run_trials(EEG_trials,par);
+
         itr1 = round(out.epochCompute.epochCompute.time_intervals(:,1),2);
         itr2 = round(out.epochCompute.epochCompute.time_intervals(:,2),2);
 
@@ -105,7 +105,7 @@ for indsub=2
             %% Step 2. perform CSP
             % CSP Dictionary evaluation on train
             par.cspModel                  = cspModelParams;
-            par.cspModel.m                = 14;
+            par.cspModel.m                = 2;
             par.cspModel.InField          = signal_name;
             par.cspModel.OutField         = signal_process;
 

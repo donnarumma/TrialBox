@@ -1,4 +1,4 @@
-% TEST_Sound_MultiEpoch_pipeline1.m
+% TEST_Baseline_NoNSA.m
 
 
 % Specifics:
@@ -14,21 +14,18 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-itsub1 = 1.1326;
-
-
-for indsub=3
+for indsub=1:9
     % indsub = 9;
     % for irng=1:9
     %     par.irng = irng;
     %     rng(par.irng);
-        signal_name                     = 'eeg_sound';
+        signal_name                     = 'eeg_baseline';
         signal_process                  = 'CSP';
 
         %% Extract and Arrange Data
         par.extractSound.signal_name    = signal_name;
         par.extractSound.InField        = 'train';
-        par.extractSound.it_end         = 2.5;
+        par.extractSound.it_end         = 1;
         par.extractSound.multiEpoch     = true;
         [EEG_trials,fsample]            = extractSound(indsub,par.extractSound);
 
@@ -39,10 +36,13 @@ for indsub=3
         StartClass = unique([EEG_trials.trialType]);
         % Time Interpolation and selection Trials
         par.TimeSelect               = TimeSelectParams;
-        par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
-        par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
+        par.TimeSelect.t1            = 0.0; % in s from ZeroEvent time
+        par.TimeSelect.t2            = 1; % in s from ZeroEvent time
         par.TimeSelect.InField       = signal_name;
         par.TimeSelect.OutField      = signal_name;
+
+        itr1 = par.TimeSelect.t1;
+        itr2 = par.TimeSelect.t2;
 
         % Filter Bank
         par.FilterBankCompute            = FilterBankComputeParams();
@@ -50,34 +50,27 @@ for indsub=3
         par.FilterBankCompute.OutField   = signal_name;
         % par.FilterBankCompute.f_min      = 0.1; % min frequency range in Hz
         % par.FilterBankCompute.f_max      = 49.5;
-        par.FilterBankCompute.FilterBank = 'One';
+        par.FilterBankCompute.FilterBank = 'EEGbands';
         par.FilterBankCompute.fsample    = fsample;
 
-        %% epochCompute
-        par.epochCompute                    = epochComputeParams();
-        par.epochCompute.InField            = signal_name;
-        par.epochCompute.OutField           = signal_name;
-        par.epochCompute.fample             = fsample;
-        par.epochCompute.t_epoch            = 0.5; % duration of a single intervals in s
-        par.epochCompute.overlap_percent    = 0; % in percentage
+        % %% epochCompute
+        % par.epochCompute                    = epochComputeParams();
+        % par.epochCompute.InField            = signal_name;
+        % par.epochCompute.OutField           = signal_name;
+        % par.epochCompute.fample             = fsample;
+        % par.epochCompute.t_epoch            = 0.5; % duration of a single intervals in s
+        % par.epochCompute.overlap_percent    = 0; % in percentage
 
 
         % par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute','eeg_overlap'};
-        par.exec.funname ={'remapTypes','TimeSelect','FilterBankCompute','epochCompute'};
-        [EEG_trials1,out.epochCompute] = run_trials(EEG_trials,par);
-
-        par.TimeSelect.t1            = itsub1 - 0.5; % in s from ZeroEvent time
-        par.TimeSelect.t2            = itsub1 + 0.5; % in s from ZeroEvent time
-
-        itr1 = par.TimeSelect.t1 ;
-        itr2 = par.TimeSelect.t2 ;
-
-        EEG_trials2 = run_trials(EEG_trials,par);
-
+        par.exec.funname ={'remapTypes','FilterBankCompute'};
+        [EEG_trials,out.epochCompute] = run_trials(EEG_trials,par);
+        % itr1 = round(out.epochCompute.epochCompute.time_intervals(:,1),2);
+        % itr2 = round(out.epochCompute.epochCompute.time_intervals(:,2),2);
 
         % kfold-CrossValidation on the Train dataset
         kfoldSplit = 20;
-        labs = [EEG_trials1.trialType]'; %true labels
+        labs = [EEG_trials.trialType]'; %true labels
         cvp = cvpartition(labs,'kfold',kfoldSplit,'Stratify',true);
 
         resQDA          = struct();
@@ -97,13 +90,10 @@ for indsub=3
             indices = training(cvp,i);
             test = (indices == 0);
             train = ~test;
-             par.multiEEG.Infield = signal_name;
-            EEG_train1 = multiEEG(EEG_trials1(train),par.multiEEG);
-            EEG_test1 = multiEEG(EEG_trials1(test),par.multiEEG);
-     
-            EEG_train2 = multiEEG(EEG_trials2(train),par.multiEEG);
-            EEG_test2 = multiEEG(EEG_trials2(test),par.multiEEG);     
-           
+            
+            par.multiEEG.Infield = signal_name;
+            EEG_train = multiEEG(EEG_trials(train),par.multiEEG);
+            EEG_test = multiEEG(EEG_trials(test),par.multiEEG);
             % % Bootstrap
             % par.BootStrapData               = BootStrapDataParams;
             % par.BootStrapData.N             = 100;
@@ -113,46 +103,33 @@ for indsub=3
             % EEG_train = EEG_train';
 
 
+            Label_train(i).Iter = [EEG_test.trialType]';
             %% Step 2. perform CSP
             % CSP Dictionary evaluation on train
             par.cspModel                  = cspModelParams;
-            par.cspModel.m                = 14;
+            par.cspModel.m                = 2;
             par.cspModel.InField          = signal_name;
             par.cspModel.OutField         = signal_process;
 
-            [~,out.cspModel1] = cspModel(EEG_train1,par.cspModel);
-            [~,out.cspModel2] = cspModel(EEG_train2,par.cspModel);
+            [~,out.cspModel] = cspModel(EEG_train,par.cspModel);
 
             % CSP Encode on train and test data
             par.cspEncode                  = cspEncodeParams;
             par.cspEncode.InField          = signal_name;
             par.cspEncode.OutField         = signal_process;
-            par.cspEncode.W                = out.cspModel1.W;
+            par.cspEncode.W                = out.cspModel.W;
 
             par.exec.funname ={'cspEncode'};
-            EEG_train1 =run_trials(EEG_train1,par);
-            EEG_test1 =run_trials(EEG_test1,par);
+            EEG_train = run_trials(EEG_train,par);
+            EEG_test = run_trials(EEG_test,par);
 
-            par.cspEncode.W                = out.cspModel2.W;
-            EEG_train2 =run_trials(EEG_train2,par);
-            EEG_test2 =run_trials(EEG_test2,par);
-
-            EEG_train = [EEG_train1;EEG_train2];
-
-            for iTr =1:length(EEG_train)
-                EEG_train(iTr).trialId = iTr;
-            end
-            EEG_test = [EEG_test1;EEG_test2];
-            for iTr =1:length(EEG_test)
-                EEG_test(iTr).trialId = iTr;
-            end
-            Label_train(i).Iter = [EEG_test.trialType]';
             TotalFeatures = size(EEG_test(1).(signal_process),2);
 
             % Mutual Information
             par.miModel               = miModelParams;
             par.miModel.InField       = signal_process;
             par.miModel.m             = par.cspModel.m;
+            % par.miModel.k             = 5;
 
             [~, out.miModel]=miModel(EEG_train,par.miModel);
 
@@ -275,11 +252,11 @@ for indsub=3
         %% create Tab Result
         params.createStructResult.subj       = indsub;
         params.createStructResult.method     = 'CSP';
-        params.createStructResult.file       = 'Sound';
-        params.createStructResult.train_name = 'SoundTr';
+        params.createStructResult.file       = 'Baseline';
+        params.createStructResult.train_name = 'BaseTr';
         params.createStructResult.train_tr1  = itr1;
         params.createStructResult.train_tr2  = itr2;
-        params.createStructResult.test_name  = 'SoundTr';
+        params.createStructResult.test_name  = 'BaseTr';
         params.createStructResult.test_ts1   = itr1;
         params.createStructResult.test_ts2   = itr2;
         params.createStructResult.m             = par.cspModel.m;
@@ -305,7 +282,7 @@ for indsub=3
 
         % Update Tab Result
         params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-        params.updateTab.name       = 'Sound_MultiEpoch_pipeline1';
+        params.updateTab.name       = 'Baseline_NoNSA';
         params.updateTab.sheetnames = 'QDA';
 
         updated_Result_tableAccQDA = updateTab(ResultQDA_Acc,params.updateTab);
@@ -313,7 +290,7 @@ for indsub=3
         params.updateTab.sheetnames = 'KappaQDA';
         updated_Result_tableKappaQDA = updateTab(ResultQDA_Kappa,params.updateTab);
 
-        params.updateTab.name     = 'Sound_MultiEpoch_class_pipeline1';
+        params.updateTab.name     = 'Baseline_class_NoNSA';
         params.updateTab.sheetnames = 'QDA';
         updated_Resultclass_tableAccQDA = updateTab(ResultQDA_class_Acc,params.updateTab);
 
@@ -329,14 +306,14 @@ for indsub=3
 
         %% Update Tab Result
         params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-        params.updateTab.name       = 'Sound_MultiEpoch_pipeline1';
+        params.updateTab.name       = 'Baseline_NoNSA';
         params.updateTab.sheetnames = 'KNN';
         updated_Result_tableAccKNN = updateTab(ResultKNN_Acc,params.updateTab);
 
         params.updateTab.sheetnames = 'KappaKNN';
         updated_Result_tableKappaKNN = updateTab(ResultKNN_Kappa,params.updateTab);
 
-        params.updateTab.name     = 'Sound_MultiEpoch_class_pipeline1';
+        params.updateTab.name     = 'Baseline_class_NoNSA';
         params.updateTab.sheetnames = 'KNN';
         updated_Resultclass_tableAccKNN = updateTab(ResultKNN_class_Acc,params.updateTab);
 
@@ -352,14 +329,14 @@ for indsub=3
 
         %% Update Tab Result
         params.updateTab.dir        = 'D:\TrialBox_Results_excel\Sound_dataset';
-        params.updateTab.name       = 'Sound_MultiEpoch_pipeline1';
+        params.updateTab.name       = 'Baseline_NoNSA';
         params.updateTab.sheetnames = 'NBPW';
         updated_Result_tableAccNBPW = updateTab(ResultNBPW_Acc,params.updateTab);
 
         params.updateTab.sheetnames = 'KappaNBPW';
         updated_Result_tableKappaNBPW = updateTab(ResultNBPW_Kappa,params.updateTab);
 
-        params.updateTab.name     = 'Sound_MultiEpoch_class_pipeline1';
+        params.updateTab.name     = 'Baseline_class_NoNSA';
         params.updateTab.sheetnames = 'NBPW';
         updated_Resultclass_tableAccNBPW = updateTab(ResultNBPW_class_Acc,params.updateTab);
     % end

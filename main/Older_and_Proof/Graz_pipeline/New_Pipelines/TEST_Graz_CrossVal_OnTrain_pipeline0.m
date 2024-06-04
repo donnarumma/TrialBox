@@ -17,9 +17,10 @@ clear; close all;
 par.irng = 10;
 rng(par.irng);
 
-subs        = 1;
+tsub1 = [0.8998	1.5429	1.3018	1.0606	1.4626	1.2214	1.3822	1.3018	1.5429];
 
-for indsub=subs
+
+for indsub=2:9
 
     signal_name                     = 'eeg';
     signal_process                  = 'CSP';
@@ -30,13 +31,27 @@ for indsub=subs
     [EEG_trials,fsample]            = extractGraz(indsub,par.extractGraz);
 
     StartClass = unique([EEG_trials.trialType]);
+
     % Time Interpolation and selection Trials [0.75;2.5] from CUE (Motor Imagery Interval)
     par.TimeSelect               = TimeSelectParams;
     par.TimeSelect.t1            = 0.5; % in s from ZeroEvent time
-    par.TimeSelect.t2            = 0.8998+0.5; % in s from ZeroEvent time
+    par.TimeSelect.t2            = 2.5; % in s from ZeroEvent time
     par.TimeSelect.InField       = signal_name;
     par.TimeSelect.OutField      = signal_name;
     par.TimeSelect.dt            = 1;
+
+
+   par.exec.funname ={'TimeSelect'};
+    EEG_trials =run_trials(EEG_trials,par);
+
+
+    % Time Interpolation and selection Trials [0.75;2.5] from CUE (Motor Imagery Interval)
+    par.TimeSelect               = TimeSelectParams;
+    par.TimeSelect.t1            = tsub1(indsub)-0.75; % in s from ZeroEvent time
+    par.TimeSelect.t2            = tsub1(indsub)+0.75; % in s from ZeroEvent time
+    par.TimeSelect.InField       = signal_name;
+    par.TimeSelect.OutField      = signal_name;
+    % par.TimeSelect.dt            = 1;
 
     itr1                         = par.TimeSelect.t1;
     itr2                         = par.TimeSelect.t2;
@@ -154,6 +169,23 @@ for indsub=subs
 
         LabpredictKNN(i).Iter = [EEG_test.KNNpred]';
 
+        % svcModel
+        par.svcModel                      = svcModelParams;
+        par.svcModel.InField              = 'CSP';
+        par.svcModel.numIterations        = 100;
+        par.svcModel.kfold                = 5;
+        [~, outSVC]                       = svcModel(EEG_train,par.svcModel);
+
+        % predictSVC
+        par.mdlPredict                  = mdlPredictParams;
+        par.mdlPredict.InField          = 'CSP';
+        par.mdlPredict.OutField         = 'SVCpred';
+        par.mdlPredict.ProbField        = 'SVCProb';
+        par.mdlPredict.mdl              = outSVC.mdl;
+        [EEG_train,resSVC.train]        = mdlPredict(EEG_train,par.mdlPredict);
+        [EEG_test,resSVC.test]          = mdlPredict(EEG_test,par.mdlPredict);
+
+    LabpredictKNN(i).Iter = [EEG_test.KNNpred]';
         % fitNBPW
         par.fitNBPW                     = fitNBPWParams;
         par.fitNBPW.labs_train          = [EEG_train.trialType]';
