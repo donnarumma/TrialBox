@@ -15,6 +15,10 @@ if canUseGPU
 end
 
 Z2d = predict(par.netE,X4d)';       % nComponents x 1
+if isgpuarray(Z2d)
+    Z2d=gather(Z2d);
+end
+
 for iTrial=1:nTrials
     data_trials(iTrial).(OutField)          = Z2d(:,iTrial);
    

@@ -15,7 +15,9 @@ if canUseGPU
 end
 % decode manifold
 X3d         = squeeze(predict(par.netD,Z2d));
-
+if isgpuarray(X3d)
+    X3d=gather(X3d);
+end
 for iTrial=1:nTrials
     data_trials(iTrial).(OutField)          = X3d(:,:,iTrial);
     time                                    = data_trials(iTrial).([xfld InField]);

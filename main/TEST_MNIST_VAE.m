@@ -119,17 +119,17 @@ par.plot_Montage            = plot_MontageParams;
 par.plot_Montage.hfig       = hfg.trainRec;
 par.plot_Montage.hmShow     = randperm(length(data_trials_train),hmShow);
 tcl=tiledlayout(1,2, 'Padding', 'compact', 'TileSpacing', 'tight');
-% plot reconstructed
-nexttile(tcl)
-par.plot_Montage.InField    ='MNIST_rec';
-plot_Montage(data_trials_train,par.plot_Montage); 
-title('Reconstructed')
 % plot original
 nexttile(tcl)
 par.plot_Montage.InField    ='MNIST';
 plot_Montage(data_trials_train,par.plot_Montage); 
 title('Original')
 sgtitle(sprintf('TRAIN: RMS=%.2f',errorXTrain))
+% plot reconstructed
+nexttile(tcl)
+par.plot_Montage.InField    ='MNIST_rec';
+plot_Montage(data_trials_train,par.plot_Montage); 
+title('Reconstructed')
 par.plot_Montage.hfig       = [];
 %% plot TEST
 hfg.testRec                 = figure('visible',ifplot);
