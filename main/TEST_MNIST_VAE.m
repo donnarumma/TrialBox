@@ -1,9 +1,24 @@
-function   TEST_MNIST_VAE(ifplot)
-% function TEST_MNIST_VAE(ifplot)
+function   out = TEST_MNIST_VAE(pms)
+% function out = TEST_MNIST_VAE(pms)
 %--------------------------------------------------------------------------
-if ~exist('ifplot','var'); ifplot=true; end
+if nargin < 1
+    pms.ifplot      = true;
+    pms.root_dir    = '~/TESTS/MNIST/vae/';
+    pms.model_file  = false;
+    pms.numEpochs   = 150;
+end
+ifplot                      = pms.ifplot;
+root_dir                    = pms.root_dir;
+model_file                  = pms.model_file;
+numEpochs                   = pms.numEpochs;
+ref                         = datetime('now','Format','yyyyMMddHHmmss');
+save_dir                    = sprintf('%s%s/',root_dir,ref);
+description                 = mfilename;
+out.ref                     = ref; 
+out.root_dir                = root_dir;
 %--------------------------------------------------------------------------
-%% load MNIST in Matlab
+
+%% load MNIST Dataset sample in Matlab
 [XTrain,YTrain,anglesTrain] = digitTrain4DArrayData;
 [XTest, YTest, anglesTest ] = digitTest4DArrayData;
 
@@ -42,45 +57,49 @@ for iTrial=1:nTrials_test
     data_trials_test(iTrial).test            = false;
 end
 
-%% learn network model: encoder (netE) and decoder (netD)
+%% learn autoencoder network model: encoder (netE) and decoder (netD)
+if model_file
+    lmodel=load(model_file);
+    netE    = lmodel.out.vaeModel.netE;
+    netD    = lmodel.out.vaeModel.netD;
+else
+    netE    = [];
+    netD    = [];
+end
+
 par.vaeModel                        = vaeModelParams();
 par.vaeModel.miniBatchSize          = 128;
+par.vaeModel.numLatentChannels      = 32; % dimension of the manifold
 par.vaeModel.graphplot              = ifplot;
-% par.vaeModel.numEpochs            = 10;
+par.vaeModel.numEpochs              = numEpochs;
 par.vaeModel.InField                = 'MNIST';
+par.vaeModel.netE                   = netE;
+par.vaeModel.netD                   = netD;
 [data_trials_train, out.vaeModel]   = vaeModel(data_trials_train,par.vaeModel);
 
-ref         = datetime('now','Format','yyyyMMddHHmmss');
-fn          = sprintf('~/TESTS/MNIST/vae/%s_%s.mat',mfilename,ref);
-save(fn,'out','par')
-
-%% Encode manifold
+%% Encode manifold in numLatentChannels dimension
 par.vaeEncode                       = vaeEncodeParams();
 par.vaeEncode.netE                  = out.vaeModel.netE;
 par.vaeEncode.InField               = 'MNIST';
 par.vaeEncode.OutField              = 'vae';
-par.vaeEncode.miniBatchSize         = par.vaeModel.miniBatchSize;
-par.vaeEncode.MBnumOutputs          = par.vaeModel.MBnumOutputs;
-% train8
+% train
 data_trials_train                   = vaeEncode(data_trials_train,par.vaeEncode);
 % test
 data_trials_test                    = vaeEncode(data_trials_test ,par.vaeEncode);
  
-%% Decode manifold
+%% Decode manifold into the original space
 par.vaeDecode                       = vaeDecodeParams();
 par.vaeDecode.netD                  = out.vaeModel.netD;
 par.vaeDecode.exec                  = true;
 par.vaeDecode.InField               = 'vae';
 par.vaeDecode.OutField              = 'MNIST_rec';
 par.vaeDecode.xfld                  = 'time';
-par.vaeDecode.miniBatchSize         = par.vaeModel.miniBatchSize;
-par.vaeDecode.MBnumOutputs          = par.vaeModel.MBnumOutputs;
 % train
 data_trials_train                   = vaeDecode(data_trials_train,par.vaeDecode);
 % test
 data_trials_test                    = vaeDecode(data_trials_test ,par.vaeDecode);
 
-%% reconstruction error
+%% reconstruction error (train and test)
 par.reconstructionErrors                        = reconstructionErrorsParams();
 par.reconstructionErrors.FieldReconstructed     = 'MNIST_rec';
 par.reconstructionErrors.FieldTarget            = 'MNIST';
@@ -92,6 +111,7 @@ fprintf('Train error: %g\n',errorXTrain)
 fprintf('Test  error: %g\n',errorXTest)
 
 %% plot TRAIN
+% hfig for train
 hfg.trainRec                = figure('visible',ifplot);
 hmShow                      = 49;
 
@@ -99,38 +119,48 @@ par.plot_Montage            = plot_MontageParams;
 par.plot_Montage.hfig       = hfg.trainRec;
 par.plot_Montage.hmShow     = randperm(length(data_trials_train),hmShow);
 tcl=tiledlayout(1,2, 'Padding', 'compact', 'TileSpacing', 'tight');
-nexttile
-par.plot_Montage.InField    ='MNIST';
-hfg.plot_Montage            = plot_Montage(data_trials_train,par.plot_Montage); 
-title('Original')
+% plot reconstructed
 nexttile(tcl)
 par.plot_Montage.InField    ='MNIST_rec';
-hfg.plot_Montage            = plot_Montage(data_trials_train,par.plot_Montage); 
+plot_Montage(data_trials_train,par.plot_Montage); 
 title('Reconstructed')
+% plot original
+nexttile(tcl)
+par.plot_Montage.InField    ='MNIST';
+plot_Montage(data_trials_train,par.plot_Montage); 
+title('Original')
 sgtitle(sprintf('TRAIN: RMS=%.2f',errorXTrain))
+par.plot_Montage.hfig       = [];
 %% plot TEST
 hfg.testRec                 = figure('visible',ifplot);
 par.plot_Montage            = plot_MontageParams;
 par.plot_Montage.hfig       = hfg.testRec;   
 par.plot_Montage.hmShow     = randperm(length(data_trials_test),hmShow);
 tcl=tiledlayout(1,2, 'Padding', 'compact', 'TileSpacing', 'tight');
-nexttile
+% plot original
+nexttile(tcl)
 par.plot_Montage.InField    ='MNIST';
-hfg.plot_Montage            = plot_Montage(data_trials_test,par.plot_Montage); 
+plot_Montage(data_trials_test,par.plot_Montage); 
 title('Original')
-nexttile
+% plot Reconstructed
+nexttile(tcl)
 par.plot_Montage.InField    ='MNIST_rec';
-hfg.plot_Montage            = plot_Montage(data_trials_test,par.plot_Montage); 
+plot_Montage(data_trials_test,par.plot_Montage); 
 title('Reconstructed')
 sgtitle(sprintf('TEST: RMS=%.2f',errorXTest))
- 
+par.plot_Montage.hfig       = [];
 %% plot hfg
 if ~ifplot
-    save_dir                    = '~/TESTS/MNIST/vae/';
-    description                 = mfilename;
     par.hfigPrint               = hfigPrintParams();
-    par.hfigPrint.pdf_file      = [save_dir filesep description '.pdf'];
+    % save pdf with time ref
+    par.hfigPrint.pdf_file      = sprintf('%s%s_%s.pdf',save_dir,description,ref);%[save_dir filesep  description '_' ref '.pdf'];
     par.hfigPrint.save_dir      = save_dir; 
     hfigPrint(hfg,par.hfigPrint)
 end
+%% save learned model
+model_file                      = sprintf('%s%s_%s.mat',save_dir,description,ref);
+if ~isfolder(save_dir); mkdir(save_dir); end
+save(model_file,'out','par')
+out.model_file                  = model_file;
+
 return

@@ -10,7 +10,7 @@ catch
     wm          = 100;
     nSubfigures = 4;
     file_type   ='pdf';
-    ltx_dir     = [SEP 'tmp' SEP num2str(randi(10^6,1,1)) SEP];
+    ltx_dir     = [tmpdir SEP num2str(randi(10^6,1,1)) SEP];
 end
 imgfiles        = dir([source_dir SEP '*.' file_type]);
 nFiles          = length(imgfiles);

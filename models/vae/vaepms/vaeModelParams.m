@@ -12,6 +12,8 @@ par.MBnumOutputs        = 1;
 par.validPercent        = 0;
 par.validationFrequency = 1;
 par.graphplot           = true;
+par.netE                = [];
+par.netD                = [];
 try
     fnames=fieldnames(parSource);
     for in=1:length(fnames)
