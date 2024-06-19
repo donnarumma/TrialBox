@@ -1,6 +1,5 @@
 function hfig = SubGridPlot(data,par)
 
-
 % Creazione della griglia di plot
 hfig = figure;
 imagesc(data); % Visualizza la matrice con colori
@@ -8,22 +7,38 @@ colormap(jet); % Utilizza la scala di colori jet (puoi usare 'gray' per la scala
 % colormap("gray");
 colorbar; % Aggiunge una barra dei colori per riferimento
 axis square; % Mantiene l'asse quadrato
+hold on; % Mantiene la grafica attuale per aggiungere patch
 % Aggiungi il titolo e spostalo più in alto possibile
 t = title(par.title);
 set(t, 'Units', 'normalized'); % Imposta l'unità a 'normalized' per un posizionamento più facile
 titlePosition = get(t, 'Position');
 titlePosition(2) = titlePosition(2) + 0.05; % Sposta il titolo verso l'alto
 set(t, 'Position', titlePosition);
-% Aggiunge i valori all'interno delle celle
+
+% Aggiunge le etichette degli assi
+xlabel('Train (Model)'); % Sostituisci con il titolo desiderato
+ylabel('Train (Encode)'); % Sostituisci con il titolo desiderato
+
+% Aggiunge i valori all'interno delle celle con colore personalizzato per i negativi
 for i = 1:9
     for j = 1:9
-        text(j, i, num2str(data(i, j), '%.2f'), 'HorizontalAlignment', 'center', 'Color', 'w');
+        value = data(i, j);
+        if value < 0
+            % Colore personalizzato per i valori negativi
+                        rectangle('Position', [j-0.5, i-0.5, 1, 1], 'FaceColor', 'black', 'EdgeColor', 'none'); % Colore nero
+            % rectangle('Position', [j-0.5, i-0.5, 1, 1], 'FaceColor', [0.5 0 0.5 0.5], 'EdgeColor', 'none'); % Colore porpora con trasparenza
+            textColor = 'white'; % Colore del testo
+        else
+            textColor = 'white'; % Colore standard per i valori positivi
+        end
+        text(j, i, num2str(value, '%.2f'), 'HorizontalAlignment', 'center', 'Color', textColor);
     end
 end
 
 % Aggiunge le coordinate al bordo della griglia
 set(gca, 'XTick', 1:9, 'XTickLabel', 1:9, 'YTick', 1:9, 'YTickLabel', 1:9);
 axis off
+
 % Aggiunge le etichette delle combinazioni (facoltativo)
 for i = 1:9
     for j = 1:9
@@ -33,7 +48,7 @@ for i = 1:9
     end
 end
 
-% t = title(par.title);
-% set(t, 'Position', get(t, 'Position') + [0, 1, 0]); % Sposta il titolo verso l'alto
-% xlabel('Test');
-% ylabel('Train');
+hold off; % Termina la grafica attuale
+
+end
+
