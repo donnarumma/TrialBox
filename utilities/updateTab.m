@@ -50,8 +50,22 @@ existing_table = struct2table(existing_table);
 % for i = 1:numel(missing_columns)
 %     new_table.(missing_columns{i}) = NaN(size(new_table, 1), 1);
 % end
-updated_table = [existing_table; new_table];
+try
+    updated_table = [existing_table; new_table];
+catch
+    new_table = table2struct(new_table);
+    existing_table = table2struct(existing_table);
+            for i=1:length(new_table)
+                new_table(i).train_start =  sprintf('%s', num2str(existing_table(i).train_start));
+                new_table(i).train_stop =  sprintf('%s', num2str(existing_table(i).train_stop));
+                new_table(i).test_start =  sprintf('%s', num2str(existing_table(i).test_start));
+                new_table(i).test_stop =  sprintf('%s', num2str(existing_table(i).test_stop));
+            end
+    new_table = struct2table(new_table);
+    existing_table = struct2table(existing_table);
 
+    updated_table = [existing_table; new_table];
+end
 % Save Table with new Results
 % XLSX
 % writetable(updated_table, filename, 'Sheet', sheetnames, 'WriteMode', 'append');
