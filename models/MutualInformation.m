@@ -1,4 +1,4 @@
-function Ind_sel = MutualInformation(data,label,sel_class,m,k)
+function [Ind_sel,position_Ind,ind_com] = MutualInformation(data,label,sel_class,m,k)
 
 % function Ind_final = MIBIF_decode(V,label,m,k)
 % MIBIV: Mutual Information-Based Best Individual Feature (MIBIV)
@@ -68,5 +68,5 @@ else
 end
 
 % final indexes
-Ind_sel = unique([ind_sel ind_com]);
+[Ind_sel,position_Ind] = unique([ind_sel ind_com]);
 end
