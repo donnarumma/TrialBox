@@ -1,4 +1,4 @@
-function Ind_sel = MutualInformation(data,label,sel_class,m,k)
+function [Ind_sel,position_Ind,ind_com,Entr_sel] = MutualInformation(data,label,sel_class,m,k)
 
 % function Ind_final = MIBIF_decode(V,label,m,k)
 % MIBIV: Mutual Information-Based Best Individual Feature (MIBIV)
@@ -56,7 +56,7 @@ for j = 1:len_Vi
 end
 
 % Features selection
-[~, ind] = sort(I); %ind dimensions: num_filter*num_channel
+[Entr, ind] = sort(I); %ind dimensions: num_filter*num_channel
 
 % selected indexes (first k features in descending order)
 ind_sel = ind(end-(k-1):end); %Starting from the bottom, it takes the K_MIBIV features with the highest informative content.
@@ -68,5 +68,6 @@ else
 end
 
 % final indexes
-Ind_sel = unique([ind_sel ind_com]);
+[Ind_sel,position_Ind] = unique([ind_sel ind_com]);
+Entr_sel = Entr(Ind_sel);
 end

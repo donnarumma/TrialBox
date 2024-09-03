@@ -11,13 +11,19 @@ data_train = cat(1,data.(InField));
 labs_train = [data.trialType]';
 class = unique(labs_train);
 n_class = length(class);
-Ind_final = cell(n_class,1);
+Ind_MI = cell(n_class,1);
+Pos_IndMI = cell(n_class,1);
+Ind_compl = cell(n_class,1);
+Entr_sel = cell(n_class,1);
 for ncl=1:n_class
     start_index = (ncl - 1) * size(data_train,2)/n_class + 1;
     end_index = ncl * size(data_train,2)/n_class;
-    Ind_final{ncl} = MutualInformation(data_train(:,start_index:end_index,:),labs_train,ncl,par.m,par.k);
+    [Ind_MI{ncl},Pos_IndMI{ncl},Ind_compl{ncl},Entr_sel{ncl}] = MutualInformation(data_train(:,start_index:end_index,:),labs_train,ncl,par.m,par.k);
 end
 
-out.IndMI = Ind_final;
+out.IndMI = Ind_MI;
+out.Pos_IndMI = Pos_IndMI;
+out.Ind_compl = Ind_compl;
+out.Entr_sel = Entr_sel;
 % execinfo
 if ~isempty(execinfo); out.exectime=toc(t); fprintf('Function: %s | Time Elapsed: %.2f s\n',mfilename,out.exectime); end
