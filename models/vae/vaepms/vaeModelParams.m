@@ -7,7 +7,6 @@ par.miniBatchSize       = 128;
 par.learnRate           = 1e-3;
 par.numLatentChannels   = 32;
 par.kernsize            = 3;
-par.projsize            = 7;                
 par.MBnumOutputs        = 1;
 par.validPercent        = 0;
 par.validationFrequency = 1;
