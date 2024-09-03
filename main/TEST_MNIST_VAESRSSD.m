@@ -1,5 +1,5 @@
 %--------------------------------------------------------------------------
-% function TEST_MNIST_SRSSD
+% function TEST_MNIST_VAESRSSD
 %--------------------------------------------------------------------------
 %% load MNIST in Matlab
 [XTrain,YTrain,anglesTrain] = digitTrain4DArrayData;
@@ -22,42 +22,38 @@ XdataTest                   = XdataTest';
 logLambdaA          =-7;%[-8,-6];
 % lambdaAtom = 10^-5;
 % lambdaCoeff = 0.5;
-logLambdaA          =-5;%[-8,-6]; %%
-logLambdaA          =-7;%[-8,-6];
-logLambdaA          =-6;%[-8,-6];
-logLambdaA          =-6;%[-8,-6];
-
+logLambdaA          =-5;%[-8,-6];
 
 lambdaARange        = 10.^logLambdaA;
 lambdaCRange        = 1.5;%0.9;%0.5; % 0.02,0.8
-nAtoms              = 100;
+nAtoms              = 32;
 
-par.srssdModel      = srssdModelParams();
-par.srssdModel.r    = nAtoms; % dictionary size
-
+par.vaesrssdModel      = srssdModelParams();
+par.vaesrssdModel      = vaeModelParams(par.vaesrssdModel);
+par.vaesrssdModel.nAtoms=nAtoms;
+par.vaesrssdModel.r    = nAtoms; % dictionary size
+par.vaesrssdModel.numLatentChannels = nAtoms;
+par.vaesrssdModel.graphplot=false;
 %%
 % 2D struct Jenhatton
 mode.rectangle      = true; 
 mode.pi4            = true;
-% par.srssdModel.spG  = get_groups( mode, [nChannels nTimes] );
+par.vaesrssdModel.spG  = get_groups( mode, [nChannels nTimes] );
 % srssd
 % selectedStruct      = 'ContinuousTemporal';
 % structureType  = {'SingleDof','ContinuousTemporal','FixedTemporal','SingleDofCT'};
-selectedStruct          = 'SingleDofCT';
-% selectedStruct          = 'SingleDof';
+% selectedStruct          = 'SingleDofCT';
+% par.srssdModel.spG      = setActionSPG(nTimes,nChannels,selectedStruct);
 
-par.srssdModel.spG      = setActionSPG(nTimes,nChannels,selectedStruct);
-
-par.srssdModel.eta      = 1; % default 0
-par.srssdModel.lambda   = 10.^logLambdaA; % lambdaARange -> Regolarization with respect to atoms
-par.srssdModel.lambda2  = lambdaCRange;   % lambdaCRange -> Regolarization with respect to Coefficients
+par.vaesrssdModel.eta      = 1; % default 0
+par.vaesrssdModel.lambda   = 10.^logLambdaA; % lambdaARange -> Regolarization with respect to atoms
+par.vaesrssdModel.lambda2  = lambdaCRange;   % lambdaCRange -> Regolarization with respect to Coefficients
 InField = 'MNIST'; 
-par.srssdModel.InField  = InField;
+par.vaesrssdModel.InField  = InField;
 %% 
 time    = 1:nTimes;
 xfld    = 'time';
 labels  = unique(YTrain);
-data_trials=struct;
 for iTrial=1:nTrials
     data_trials(iTrial).(InField)       = X3dTrain(:,:,iTrial);
     data_trials(iTrial).([xfld InField])= time;
@@ -67,7 +63,7 @@ for iTrial=1:nTrials
     data_trials(iTrial).train           = true;
     data_trials(iTrial).test            = false;
 end
-data_trials_test=struct;
+
 for iTrial=1:size(X3dTest,3)
     data_trials_test(iTrial).(InField)  = X3dTest(:,:,iTrial);
     data_trials_test(iTrial).([xfld InField])= time;
@@ -84,11 +80,11 @@ end
 % fprintf('Learning srssd Model...'); t=tic; 
 % [Manifold, Dsrssd, Wsrssd]  = sr_ssd(XdataTrain, spG, par.srssdModel);
 % fprintf('Elapsed time %.2f s\n',toc(t));
-save(['TEST_SRSSD_' selectedStruct '.mat']);
+
 % Dsrssd -> nChannels*nTimes x nAtoms
 % Wsrssd -> nAtoms x nChannels*nTimes  ????
 %% srssdModel 
-[~,out.srssdModel]          = srssdModel(data_trials,par.srssdModel);
+[~,out.srssdModel]          = vaesrssdModel(data_trials,par.vaesrssdModel);
 %% manifold construction by Coding Matrix with srssdEncode -> see sim_sr_ssd to an alternative
 par.srssdEncode             = srssdEncodeParams;
 par.srssdEncode.InField     = 'MNIST';

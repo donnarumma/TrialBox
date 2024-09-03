@@ -9,6 +9,7 @@ explained               = nan(nAtoms,1);
 
 X_data                  = [data_trials.(InField)];
 par.Model.exec          = 0;
+par.Model.exec          = 0;
 par.Model.InField       = InField;
     
 for iAtom = 1:nAtoms

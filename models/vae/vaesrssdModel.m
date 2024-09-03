@@ -1,5 +1,5 @@
-function   [data_trials, out]=vaeModel(data_trials,par)
-% function [data_trials, out]=vaeModel(data_trials,par)
+function   [data_trials, out]=vaesrssdModel(data_trials,par)
+% function [data_trials, out]=vaesrssdModel(data_trials,par)
 execinfo                = par.exec;
 if ~isempty(execinfo); t=tic; fprintf('Function: %s ',mfilename); end
 
@@ -65,21 +65,21 @@ end
                         
 % decoder net
 if isempty(par.netD)
-    xsize = ceil(nCells/4); 
-    ysize = ceil(nTimes/4); 
-    xdiff = xsize*4-nCells;
-    ydiff = ysize*4-nTimes;
-    xcrop=[ceil(xdiff/2),floor(xdiff/2)+1];
-    ycrop=[ceil(ydiff/2),floor(ydiff/2)+1];
+    % projectionSize          = [par.projsize, par.projsize, 2*par.numLatentChannels];
+    % layersD                 = [
+    %                             featureInputLayer(par.numLatentChannels),                                               ...
+    %                             projectAndReshapeLayer(projectionSize),                                                 ...
+    %                             transposedConv2dLayer(par.kernsize,2*par.numLatentChannels,Cropping="same",Stride=2),   ...
+    %                             reluLayer,                                                                              ...
+    %                             transposedConv2dLayer(par.kernsize,  par.numLatentChannels,Cropping="same",Stride=2),   ...
+    %                             reluLayer,                                                                              ...
+    %                             transposedConv2dLayer(par.kernsize,nChannels,Cropping="same"),                          ...
+    %                             sigmoidLayer];
+    % projectionSize          = [par.projsize, par.projsize, 2*par.numLatentChannels];
     layersD                 = [
-                                featureInputLayer(par.numLatentChannels),                                               ...
-                                projectAndReshapeLayer([xsize,ysize,2*par.numLatentChannels]),                                                 ...
-                                transposedConv2dLayer(par.kernsize,2*par.numLatentChannels,Cropping='same',Stride=2),   ...
-                                reluLayer,                                                                              ...
-                                transposedConv2dLayer(par.kernsize,  par.numLatentChannels,Cropping=[xcrop,ycrop],Stride=2),   ...
-                                reluLayer,                                                                              ...
-                                transposedConv2dLayer(par.kernsize,nChannels,Cropping="same"),                          ...
-                                sigmoidLayer];
+                                featureInputLayer(par.numLatentChannels), ...
+                                projectionLayer(imageSize),              ...projectAndReshapeLayer(imageSize), ... 
+                                ];
     netD                    = dlnetwork(layersD);
 else
     netD                    = par.netD;
@@ -119,7 +119,7 @@ while epoch < par.numEpochs && ~monitor.Stop
         Xbatch = next(mbqTrain);
 
         % Evaluate loss and gradients
-        [loss,gradientsE,gradientsD] = dlfeval(@modelLoss,netE,netD,Xbatch);
+        [loss,gradientsE,gradientsD] = dlfeval(@modelLoss,netE,netD,Xbatch,par);
         
         % Update learnable parameters
         [netE,trailingAvgE,trailingAvgSqE]      = adamupdate(netE, ...
@@ -160,7 +160,7 @@ function   X = preprocessMiniBatch(dataX)
     X                       = cat(4,dataX{:});
 end
 
-function   [loss,gradientsE,gradientsD] = modelLoss(netE,netD,Xdata)
+function   [loss,gradientsE,gradientsD] = modelLoss(netE,netD,Xdata,par)
 % function [loss,gradientsE,gradientsD] = modelLoss(netE,netD,Xdata)
     % Forward through encoder.
     [Zdata,mu,logSigmaSq]   = forward(netE,Xdata);
@@ -169,17 +169,49 @@ function   [loss,gradientsE,gradientsD] = modelLoss(netE,netD,Xdata)
     Ypred                   = forward(netD,Zdata);
     
     % Calculate loss and gradients.
-    loss                    = elboLoss(Ypred,Xdata,mu,logSigmaSq);
+    loss                    = elboLossSrssd(Ypred,Xdata,Zdata,mu,logSigmaSq, ...
+                                            netD.Layers(2).Weights,par);
     [gradientsE,gradientsD] = dlgradient(loss,netE.Learnables,netD.Learnables);
 end
 
-function   loss = elboLoss(Ypred,Xbatch,mu,logSigmaSq)
+function   loss = elboLossSrssd( Ypred, Xbatch, Zdata, mu, logSigmaSq, ...
+                                 Dsrssd, par)
 % function loss = elboLoss(Ypred,Xbatch,mu,logSigmaSq)
-    % Reconstruction loss.
-    reconstructionLoss = mse(Ypred,Xbatch);
+    % reconstruction in the original space
+    % nAtoms % Number of dictionary elements
+    [nCells, nTimes,~, nTrials]  = size(Ypred);
+    spG_squared         = par.spG.^2;
+    % Xbatch_e = squeeze(extractdata(Xbatch)); Ypred_e = squeeze(extractdata(Ypred)); Zdata_e             = extractdata(Zdata); 
+    % logSigmaSq_e = extractdata(logSigmaSq); mu_e = extractdata(mu);
+    
+    % loss1       = norm( Xbatch_e - Ypred_e, 'fro' )^2 / norm( Xbatch_e, 'fro' )^2;
+    loss1       = mse(Ypred,Xbatch);
     % KL divergence.
-    KL = -0.5 * sum(1 + logSigmaSq - mu.^2 - exp(logSigmaSq),1);
-    KL = mean(KL);
-    % Combined loss.
-    loss = reconstructionLoss + KL;
+    KL          = -0.5 * sum(1 + logSigmaSq - mu.^2 - exp(logSigmaSq),1);
+    KL          = mean(KL);
+    loss1       = loss1 + KL;
+    
+    % reconstruction in the manifold space
+    % loss2      = norm( U - X*C', 'fro' ) ^2 / (n*r)*par.eta;
+    
+    % Omega_approx
+    [inv_Zeta, Eta] = mexUpdateEta( reshape(Dsrssd,[nCells*nTimes,par.nAtoms]), spG_squared, par );
+    norm_eta        = sum( sum( Eta .^ 2, 1, 'omitnan' ) .^ (1/2) ); 
+    quadratic_term  = sum( sum( reshape(Dsrssd.^2, [nCells*nTimes,par.nAtoms]) .* inv_Zeta, 1,'omitnan') );   
+    loss3           = 0.5 * quadratic_term + 0.5 * norm_eta;
+    
+    % loss            = loss1 + par.lambda *loss3;
+    % return
+   
+    % constraint on manifold
+    loss4           = sum(abs(Zdata(:)))/(nTrials*par.nAtoms); % 'OmegaU'
+     
+    % Combined loss
+    loss            = loss1;                    % ? + classical value KL
+    % loss            = loss + loss2;
+    loss            = loss + par.lambda *loss3; % structure
+    loss            = loss + par.lambda2*loss4; % ? sparsity on Zdata? necessity of abs?
+    fprintf('Loss1: %g | Loss3: %g | Loss4 %g | Loss3*lamba: %g | Loss4*lamba: %g\n',loss1, loss3, loss4,loss3*par.lambda,loss4*par.lambda2);
+    return
+    % loss            = dlarray(loss,'CB');
 end
