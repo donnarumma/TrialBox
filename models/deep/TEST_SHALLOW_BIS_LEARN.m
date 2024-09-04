@@ -4,7 +4,7 @@
 pms.ifplot      = true;
 pms.root_dir    = '~/TESTS/MNIST/deep/';
 pms.model_file  = false;
-pms.numEpochs   = 150;
+pms.numEpochs   = 10;
 
 ifplot                      = pms.ifplot;
 root_dir                    = pms.root_dir;
@@ -77,6 +77,7 @@ net                             = SCNBisLearn(data_trials_train,par.shallow);
 labels_trainvalid       = categorical([data_trials_train.trialType])';
 X3d                     = cat(3,data_trials_train.(InField));                     % nCells x nTimes x nTrials
 X4d                     = reshape(X3d,size(X3d,1),size(X3d,2),1,size(X3d,3)); % nTrials x nChannels x 1 x nTimes
+X4d                     = permute(X4d,[3,2,1,4]);                             % nChannels x nTrials x nCells x nTimes
 XTrain                  = X4d(:,:,:,par.shallow.log_train);
 TTrain                  = labels_trainvalid(par.shallow.log_train);
 YTrain                  = classify(net,XTrain);
@@ -96,6 +97,8 @@ end
 labels_test             = categorical([data_trials_test.trialType])';
 X3dTest                 = cat(3,data_trials_test.(InField));                     % nCells x nTimes x nTrials
 X4dTest                 = reshape(X3dTest,size(X3dTest,1),size(X3dTest,2),1,size(X3dTest,3)); % nTrials x nChannels x 1 x nTimes
+X4dTest                 = permute(X4dTest,[3,2,1,4]);                             % nChannels x nTrials x nCells x nTimes
+
 XTest                   = X4dTest;
 TTest                   = labels_test;
 YTest                   = classify(net,XTest);
