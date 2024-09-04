@@ -67,19 +67,24 @@ par.shallow                     = shallowLearnParams();
 par.shallow.log_valid           = seq(1:1000);          
 par.shallow.log_train           = seq(1001:end);
 par.shallow.numLatentChannels   = 32; % dimension of the manifold
-par.shallow.numEpochs           = 5;%150;
+par.shallow.numEpochs           = 150;
 par.shallow.InField             = 'MNIST';
 
 % net                             = shallowLearn(data_trials_train,par.shallow);
-net                             = SCNBisLearn(data_trials_train,par.shallow);
-% net                             = SCNLearn_03(data_trials_train,par.shallow);
+% net                             = SCNBisLearn(data_trials_train,par.shallow);
+net                             = LSTMLearn(data_trials_train,par.shallow);
 
 %% Accuracy on Training
 labels_trainvalid       = categorical([data_trials_train.trialType])';
 X3d                     = cat(3,data_trials_train.(InField));                     % nCells x nTimes x nTrials
-X4d                     = reshape(X3d,size(X3d,1),size(X3d,2),1,size(X3d,3)); % nTrials x nChannels x 1 x nTimes
-X4d                     = permute(X4d,[3,2,1,4]);                             % nChannels x nTrials x nCells x nTimes
-XTrain                  = X4d(:,:,:,par.shallow.log_train);
+X3d                     = permute(X3d,[2,1,3]);                             % nChannels x nTrials x nCells x nTimes
+
+XTrain                  = X3d(:,:,par.shallow.log_train);
+for iTr=1:length(par.shallow.log_train)
+    XTr{iTr}=XTrain(:,:,iTr);
+end
+XTrain                  = XTr;
+
 TTrain                  = labels_trainvalid(par.shallow.log_train);
 YTrain                  = classify(net,XTrain);
 accTrain                = mean(YTrain==TTrain);
@@ -87,7 +92,12 @@ fprintf('Accuracy on Train: %g\n',accTrain)
 
 %% Accuracy on Validation
 if ~isempty(par.shallow.log_valid)
-    XValid                  = X4d(:,:,:,par.shallow.log_valid);
+    XValid                  = X3d(:,:,par.shallow.log_valid);
+    for iVa=1:length(par.shallow.log_valid)
+        XVa{iVa}=XValid(:,:,iVa);
+    end
+    XValid                  = XVa;
+
     TValid                  = labels_trainvalid(par.shallow.log_valid);
     YValid                  = classify(net,XValid);
     accValid                = mean(YValid==TValid);
@@ -97,11 +107,14 @@ end
 %% Accuracy on Test
 labels_test             = categorical([data_trials_test.trialType])';
 X3dTest                 = cat(3,data_trials_test.(InField));                     % nCells x nTimes x nTrials
-X4dTest                 = reshape(X3dTest,size(X3dTest,1),size(X3dTest,2),1,size(X3dTest,3)); % nTrials x nChannels x 1 x nTimes
-X4dTest                 = permute(X4dTest,[3,2,1,4]);                             % nChannels x nTrials x nCells x nTimes
+X3dTest                 = permute(X3dTest,[2,1,3]);                             % nChannels x nTrials x nCells x nTimes
 
-XTest                   = X4dTest;
+for iTe=1:length(data_trials_test)
+    XTe{iTe}=X3dTest(:,:,iTe);
+end
+XTest                   = XTe;
+
 TTest                   = labels_test;
 YTest                   = classify(net,XTest);
-accTest                = mean(YTest==TTest);
+accTest                 = mean(YTest==TTest);
 fprintf('Accuracy on Test: %g\n',accTest)
