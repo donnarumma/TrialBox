@@ -19,7 +19,7 @@ rng(par.irng);
 
 numLatChan = 40;
 
-for indsub=1:9
+for indsub=1
     
     attenuation = 10;
 
