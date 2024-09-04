@@ -60,7 +60,7 @@ end
 %% Learn Shallow Conv Net
 nTrials                         = length(data_trials_train);
 seq                             = randperm(nTrials);
-par.shallow                     = shallowLearnParams();%vaeModelParams();
+par.shallow                     = shallowLearnParams();
 %no validation
 % par.shallow.log_valid         = [];
 % par.shallow.log_train         = 1:5000;
