@@ -81,7 +81,7 @@ X3d                     = permute(X3d,[2,1,3]);                             % nC
 
 XTrain                  = X3d(:,:,par.shallow.log_train);
 for iTr=1:length(par.shallow.log_train)
-    XTr{iTr}=XTrain(:,:,iTr);
+    XTr{iTr}=XTrain(:,:,iTr)';
 end
 XTrain                  = XTr;
 
@@ -94,7 +94,7 @@ fprintf('Accuracy on Train: %g\n',accTrain)
 if ~isempty(par.shallow.log_valid)
     XValid                  = X3d(:,:,par.shallow.log_valid);
     for iVa=1:length(par.shallow.log_valid)
-        XVa{iVa}=XValid(:,:,iVa);
+        XVa{iVa}=XValid(:,:,iVa)';
     end
     XValid                  = XVa;
 
@@ -110,7 +110,7 @@ X3dTest                 = cat(3,data_trials_test.(InField));                    
 X3dTest                 = permute(X3dTest,[2,1,3]);                             % nChannels x nTrials x nCells x nTimes
 
 for iTe=1:length(data_trials_test)
-    XTe{iTe}=X3dTest(:,:,iTe);
+    XTe{iTe}=X3dTest(:,:,iTe)';
 end
 XTest                   = XTe;
 
