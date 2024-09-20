@@ -1,6 +1,6 @@
 from braindecode.datasets import MOABBDataset
 
-subject_id = 1
+subject_id = 9
 dataset = MOABBDataset(dataset_name="BNCI2014_001", subject_ids=[subject_id])
 
 from numpy import multiply
