@@ -19,7 +19,7 @@ for i = 1:length(data_trials)
         for k = 1:length(field_names)
             field_name = field_names{k};
             if strcmp(field_name, Infield)
-                data_out(counter,1).(field_name) = squeeze(current_eeg(j, :, :));
+                data_out(counter,1).(field_name) = squeeze(current_eeg(j, :, :,:));
             else
                 data_out(counter,1).(field_name) = data_trials(i).(field_name);
             end

@@ -23,9 +23,9 @@ for i = 1:n_epoch
     end_time = min(t_total, start_time + t_epoch);
     time_intervals(i, :) = [start_time, end_time];
 end
-
+dim_fs = length(num2str(fsample));
 % Genera gli intervalli di tempo per ciascuna epoca
-n_bin= floor(min((time_intervals(:,2).*fsample) - (time_intervals(:,1).*fsample)));
+n_bin= floor(round(min((time_intervals(:,2).*fsample) - (time_intervals(:,1).*fsample)),dim_fs));
 bin_intervals = zeros(n_epoch, 2);
 for i = 1:n_epoch
     start_bin = 1 + (i - 1) * floor(n_bin - (n_bin * overlap_percent/100));

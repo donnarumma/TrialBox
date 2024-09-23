@@ -27,5 +27,5 @@ for nTrials = 1:size(data_trials,1)
     end
     data_out(nTrials).(InField) = EEG_final;
 end
-out.time_intervals = time_intervals(max(sizetime)).T;
+out.time_intervals = time_intervals(nTrials).T;
 if ~isempty(execinfo); out.exectime=toc(t); fprintf('Time Elapsed: %.2f s\n',out.exectime); end
