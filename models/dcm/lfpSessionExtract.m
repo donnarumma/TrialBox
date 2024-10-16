@@ -69,8 +69,9 @@ rsfactor     = 0.2;
 Hz           = 1:64;
 
 LFP          = cell(1,NTrials);
+JXYEXY       = cell(1,NTrials);
 for indTrial     = 1:NTrials
-    LFP{indTrial} = Trials(indTrial).LFP(selIndex,:)'; % time length x number of sources
+    LFP{indTrial}   = Trials(indTrial).LFP(selIndex,:)'; % time length x number of sources
 end
 out.LFP      = LFP;
 out.Trials   = Trials;

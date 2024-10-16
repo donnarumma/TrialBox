@@ -18,6 +18,7 @@ for iTrial=1:nTrials
     % data_trials(iTrial).(TField)    =session_data.Trials(iTrial).RawTime(2:end);
     data_trials(iTrial).(TField)    =session_data.Trials(iTrial).RawTime;
     data_trials(iTrial).(InField)   =session_data.LFP{iTrial}';
+    data_trials(iTrial).JXYEXY      =session_data.Trials(iTrial).JXYEXY;
     data_trials(iTrial).dt          =session_data.dt;
     data_trials(iTrial).selIndex    =session_data.selIndex;
     data_trials(iTrial).iLFP_K      =session_data.iLFP_K;
