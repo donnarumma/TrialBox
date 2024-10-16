@@ -3,7 +3,7 @@ function   DCM=BATTAGLIA_CSD(par)
 
 ifserver    = par.ifserver;
 whichmodel  = par.whichmodel;
-isdemo      = par.isdemo;
+isel        = par.isdemo; %getSelectionIndexes(1,1:3);
 dmode       = par.dmode;
 selS        = par.selS;
 selK        = par.selK;
@@ -14,8 +14,8 @@ save_dir    = par.save_dir;%    = '~/TESTS/SAPIENZA/DCM2/';
 % -> spm_csd_demo
 %% Extract a data session
 session_name        = par.session_name;
-% session_data        = session_extractCSD(session_name,dmode,selS,selK);
-session_data        = csdSessionExtract(session_name,dmode,selS,selK);
+session_data        = session_extractCSD(session_name,dmode,selS,selK);
+% session_data        = csdSessionExtract(session_name,dmode,selS,selK);
 if isempty(session_data)
     DCM=[];
     return
@@ -23,20 +23,19 @@ end
 %%
 xY.y                = session_data.CSD;
 xU.X                = session_data.klabels;
-NConds              = size(xU.X,2);         % number of conditions
+NConds              = size(xU.X,2);         % number of all conditions
 nSources            = size(xY.y{1},2);      % number of Areas
 nChannels           = nSources;             % number of total channels
 [~, Labels]         = getLabel(1:24);
 add=['_D' num2str(dmode) '_S' num2str(selS) '_K' num2str(selK)];
 %% test on subset of trials
 add = [add '_C'];
-isel                = isdemo;%getSelectionIndexes(1,1:3);
 iTrials             = any(xU.X(:,isel),2);
 iConds              = sum(xU.X(iTrials,:))>0;
 xU.X                = xU.X(iTrials,iConds);
 xY.y                = xY.y(iTrials);
 Labels              = Labels(iConds);
-NConds              = size(xU.X,2);           % number of conditions
+NConds              = size(xU.X,2);           % number of reduced conditions
 for ic=find(iConds)
     add=[add '_' num2str(ic)];
 end

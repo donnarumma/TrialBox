@@ -1,4 +1,4 @@
-%% function TEST_BATTAGLIA_CSD
+%% function TEST_BATTAGLIA_CSD_PLUS
 clear all
 rng(10)
 %% check if is on server
@@ -26,6 +26,9 @@ end
 fprintf('Saving in %s\n',par.BATTAGLIA_CSD.save_dir);
 par.BATTAGLIA_CSD.session_name  = session_name;
 par.BATTAGLIA_CSD.whichmodel    = 7;        % Self Model   
+
+
+session_data = BattagliaArrangeTrials(par);
 %% Monkey S Action model prior
 fprintf('Monkey S Action model prior\n')
 par.BATTAGLIA_CSD.isdemo        = getSelectionIndexes(idir,1);  % get S Action Trials (1)

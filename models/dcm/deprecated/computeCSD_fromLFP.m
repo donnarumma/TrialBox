@@ -1,5 +1,5 @@
 function   CSD=computeCSD_fromLFP(LFP,Hz,dt,ARp,rsfactor)
-% function Trials=computeCSD_fromLFP(Trials)
+% function CSD=computeCSD_fromLFP(Trials)
 % t=tic;
 % ARp          = 8; 
 % rsfactor     = 0.2;
