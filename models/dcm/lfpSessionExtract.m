@@ -23,9 +23,12 @@ end
 Raw_H        = EXTRACT_LFP(Raw_H, Raw_E, params);
 
 tstart       = -0.7;
-tend         =  0.7;
+tend         =  1.5; %0.7;
 TA           = 2024; % align at Target Appears (periferic)
 Trials       = Donnarumma_Align_Trials(Raw_H, TA, tstart,tend);
+
+Trials       = RTextract(Trials);
+Trials       = ETextract(Trials); 
 
 fprintf('Extracting session %s - Chamber: %s\n',session_name,Trials(1).Chamber);
 

@@ -12,6 +12,7 @@ TField          = 'tLFP';
 Trials          = session_data.Trials;
 nTrials         = length(Trials);
 data_trials=struct;
+[~,Labels] = getJointMonkeysLabels(1:24);
 for iTrial=1:nTrials
     %data_trials(iTrial).CSD         =permute(session_data.CSD{iTrial},[2,3,1]);
     %data_trials(iTrial).(['H' 'CSD']) =session_data.Hz;
@@ -19,6 +20,7 @@ for iTrial=1:nTrials
     data_trials(iTrial).(TField)    =session_data.Trials(iTrial).RawTime;
     data_trials(iTrial).(InField)   =session_data.LFP{iTrial}';
     data_trials(iTrial).JXYEXY      =session_data.Trials(iTrial).JXYEXY;
+    data_trials(iTrial).timeJXYEXY  =session_data.Trials(iTrial).timeJXYEXY;
     data_trials(iTrial).dt          =session_data.dt;
     data_trials(iTrial).selIndex    =session_data.selIndex;
     data_trials(iTrial).iLFP_K      =session_data.iLFP_K;
@@ -30,6 +32,11 @@ for iTrial=1:nTrials
     data_trials(iTrial).session_name=par.session_name;
     data_trials(iTrial).trialId     =iTrial;
     data_trials(iTrial).trialType   =find(session_data.klabels(iTrial,:));
+    data_trials(iTrial).trialName   =Labels{data_trials(iTrial).trialType};
     data_trials(iTrial).klabels     =session_data.klabels(iTrial,:);
+    data_trials(iTrial).RT_S        =session_data.Trials(iTrial).RT_S;
+    data_trials(iTrial).RT_K        =session_data.Trials(iTrial).RT_K;
+    data_trials(iTrial).ET          =session_data.Trials(iTrial).ET;
+    data_trials(iTrial).timeET      =session_data.Trials(iTrial).timeET;
 end
 

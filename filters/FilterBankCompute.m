@@ -13,8 +13,8 @@ for in=1:length(data)
         data(in).(OutField) = FiltBankEEGbands(data(in).(InField), par);
     elseif strcmp(par.FilterBank,'Nine')
         data(in).(OutField) = FiltBankNine(data(in).(InField), par);
-    elseif strcmp(par.FilterBank,'Var')
-        data(in).(OutField) = FiltBankVar(data(in).(InField), par);
+    elseif strcmp(par.FilterBank,'Prior')
+        data(in).(OutField) = FiltBankPrior(data(in).(InField), par);
     end
     data(in).([xfld OutField])=data(in).([xfld InField]);
 end
