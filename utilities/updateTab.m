@@ -7,10 +7,18 @@ function updated_table = updateTab(data,params)
 dir = params.dir;
 name = params.name;
 sheetnames = params.sheetnames;
+
+[~, namedir] = system('cat /etc/os-release | grep -w NAME');
+if contains(namedir, 'Ubuntu')
+    sep = '/';
+else
+    sep ='\';
+end
+
 % % CSV
 % filename = [dir,'\',name,'.csv'];
 % XLSX
-filename = [dir,'\',name,'.xlsx'];
+filename = [dir,sep,name,'.xlsx'];
 
 try
     existing_table = readtable(filename,'Sheet', sheetnames);

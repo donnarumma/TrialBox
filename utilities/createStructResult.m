@@ -27,40 +27,44 @@ catch
     indMi = 0;
 end
 
-% KappaValue
-train_kappa_m = nan(length(res),1);
-test_kappa_m = nan(length(res),1);
-for i=1:length(res)
-    train_kappa_m(i) = res(i).train.kappaValue;
-    test_kappa_m(i) = res(i).test.kappaValue;
-end
+if par.kappa == 1
+    % KappaValue
+    train_kappa_m = nan(length(res),1);
+    test_kappa_m = nan(length(res),1);
+    for i=1:length(res)
+        train_kappa_m(i) = res(i).train.kappaValue;
+        test_kappa_m(i) = res(i).test.kappaValue;
+    end
 
-ResultKappa.date = datetime('now');
-ResultKappa.method = method;
-ResultKappa.subj = subj;
-ResultKappa.file = file;
-ResultKappa.train_name = train_name;
-ResultKappa.train_start = tr1;
-ResultKappa.train_stop = tr2;
-ResultKappa.train_Kappa_mean = mean(train_kappa_m);
-ResultKappa.train_Kappa_std = std(train_kappa_m);
-ResultKappa.test_name = test_name;
-ResultKappa.test_start = ts1;
-ResultKappa.test_stop = ts2;
-ResultKappa.test_Kappa_mean = mean(test_kappa_m);
-ResultKappa.test_Kappa_std = std(test_kappa_m);
-ResultKappa.m = m;
-for ncl=1:length(class)
-    class_name = sprintf('Class%d',ncl);
-    ResultKappa.(class_name) = class{ncl};
+    ResultKappa.date = datetime('now');
+    ResultKappa.method = method;
+    ResultKappa.subj = subj;
+    ResultKappa.file = file;
+    ResultKappa.train_name = train_name;
+    ResultKappa.train_start = tr1;
+    ResultKappa.train_stop = tr2;
+    ResultKappa.train_Kappa_mean = mean(train_kappa_m);
+    ResultKappa.train_Kappa_std = std(train_kappa_m);
+    ResultKappa.test_name = test_name;
+    ResultKappa.test_start = ts1;
+    ResultKappa.test_stop = ts2;
+    ResultKappa.test_Kappa_mean = mean(test_kappa_m);
+    ResultKappa.test_Kappa_std = std(test_kappa_m);
+    ResultKappa.m = m;
+    for ncl=1:length(class)
+        class_name = sprintf('Class%d',ncl);
+        ResultKappa.(class_name) = class{ncl};
+    end
+    ResultKappa.indMi = indMi;
+    ResultKappa.Filter = par.Filter;
+    ResultKappa.attenuation = par.attenuation;
+    ResultKappa.TotalFeatures = par.TotalFeatures;
+    ResultKappa.nFeatures= n_Features;
+    ResultKappa.kfold_Splitdata = par.kfold;
+    ResultKappa.irng = par.irng;
+else
+    ResultKappa = [];
 end
-ResultKappa.indMi = indMi;
-ResultKappa.Filter = par.Filter;
-ResultKappa.attenuation = par.attenuation;
-ResultKappa.TotalFeatures = par.TotalFeatures;
-ResultKappa.nFeatures= n_Features;
-ResultKappa.kfold_Splitdata = par.kfold;
-ResultKappa.irng = par.irng;
 
 % Accuracy
 train_acc_m = nan(length(res),1);

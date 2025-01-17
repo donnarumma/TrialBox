@@ -19,13 +19,18 @@ for nTrials = 1:size(data_trials,1)
     [n_epoch,time_intervals(nTrials).T,bin_intervals] = computeEpochIntervals(size(data_trials(nTrials).(InField),2)/fsample,t_epoch,overlap_percent,fsample);
     sizetime(nTrials,1) = size(time_intervals(nTrials).T,1);
     eeg_trial = data_trials(nTrials).(InField);
+    time_trial = data_trials(nTrials).(strcat('time',InField));
     EEG_final = NaN(n_epoch,num_chan,lengEpoch,num_filt);
+    time_final = NaN(n_epoch,lengEpoch);
     for nEp = 1:n_epoch
         id_start = bin_intervals(nEp,1);
         id_stop = bin_intervals(nEp,2);
         EEG_final(nEp,:,:,:)= eeg_trial(:,id_start:id_stop,:);
+        time_final(nEp,:) = time_trial(id_start:id_stop);
     end
     data_out(nTrials).(InField) = EEG_final;
+    data_out(nTrials).(strcat('time',InField)) = time_final;
+    data_out(nTrials).(strcat('time_old',InField)) = time_trial;
 end
 out.time_intervals = time_intervals(nTrials).T;
 if ~isempty(execinfo); out.exectime=toc(t); fprintf('Time Elapsed: %.2f s\n',out.exectime); end

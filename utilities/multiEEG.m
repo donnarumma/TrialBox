@@ -12,7 +12,7 @@ for i = 1:length(data_trials)
     field_names = fieldnames(data_trials);
 
     current_eeg = data_trials(i).(Infield);
-
+    current_time = data_trials(i).(strcat('time',Infield));
     num_slices = size(current_eeg, 1);
 
     for j = 1:num_slices
@@ -20,6 +20,7 @@ for i = 1:length(data_trials)
             field_name = field_names{k};
             if strcmp(field_name, Infield)
                 data_out(counter,1).(field_name) = squeeze(current_eeg(j, :, :,:));
+                data_out(counter,1).(strcat('time',Infield)) = current_time(j, :);
             else
                 data_out(counter,1).(field_name) = data_trials(i).(field_name);
             end
