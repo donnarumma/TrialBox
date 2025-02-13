@@ -23,8 +23,8 @@ for iTrial = 1:nTrials
 
     [~,itstart]  = min(abs(data_trials(iTrial).([xfld InField]) - t1));
     [~,itstop]   = min(abs(data_trials(iTrial).([xfld InField]) - t2));
-    data_trials(iTrial).(OutField)         = data_trials(iTrial).(InField)(:,itstart:itstop);
-    data_trials(iTrial).([xfld OutField])  = data_trials(iTrial).([xfld InField])(itstart:itstop);
+    data_trials(iTrial).(OutField)         = data_trials(iTrial).(InField)(:,itstart:itstop-1);
+    data_trials(iTrial).([xfld OutField])  = data_trials(iTrial).([xfld InField])(itstart:itstop-1);
     
     if dt>0
         n_var                                   = size(data_trials(iTrial).(InField),1);

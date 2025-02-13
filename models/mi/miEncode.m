@@ -13,7 +13,7 @@ data_project        = cat(1,data.(InField));
 
 NTrials             = size(data_project,1);
 
-class = unique([data.trialType]');
+class = par.nclass;
 n_class = length(class);
 data_class = cell(n_class,1);
 for ncl=1:n_class
