@@ -43,6 +43,8 @@ if isfield(existing_table, 'train_start')
             existing_table(i).train_stop =  sprintf('%s  ', num2str(existing_table(i).train_stop));
             existing_table(i).test_start =  sprintf('%s  ', num2str(existing_table(i).test_start));
             existing_table(i).test_stop =  sprintf('%s  ', num2str(existing_table(i).test_stop));
+            existing_table(i).ProbabilityMean  =  sprintf('%s  ', num2str(existing_table(i).ProbabilityMean));
+
         end
     end
 end
