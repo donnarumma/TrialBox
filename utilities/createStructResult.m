@@ -1,6 +1,7 @@
 function [ResultKappa,ResultAcc,ResultAcc_class] = createStructResult(res,par)
 
-subj = par.subj;
+subjTrain = par.subjTrain;
+subjTest  = par.subjTest;
 file = par.file;
 % train_interval = [tr1 tr2];
 train_name = par.train_name;
@@ -38,7 +39,8 @@ if par.kappa == 1
 
     ResultKappa.date = datetime('now');
     ResultKappa.method = method;
-    ResultKappa.subj = subj;
+    ResultKappa.subjTrain = subjTrain;
+    ResultKappa.subjTest = subjTest;
     ResultKappa.file = file;
     ResultKappa.train_name = train_name;
     ResultKappa.train_start = tr1;
@@ -86,7 +88,8 @@ std_class_test_acc = std(test_acc_class,0,1);
 
 ResultAcc.date = datetime('now');
 ResultAcc.method = method;
-ResultAcc.subj = subj;
+ResultAcc.subjTrain = subjTrain;
+ResultAcc.subjTest = subjTest;
 ResultAcc.file = file;
 ResultAcc.train_name = train_name;
 ResultAcc.train_start = tr1;
@@ -128,7 +131,8 @@ end
 
 ResultAcc_class.date = datetime('now');
 ResultAcc_class.method = method;
-ResultAcc_class.subj = subj;
+ResultAcc_class.subjTrain = subjTrain;
+ResultAcc_class.subjTest = subjTest;
 ResultAcc_class.file = file;
 ResultAcc_class.train_name = train_name;
 ResultAcc_class.train_start = tr1;
