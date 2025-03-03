@@ -70,6 +70,8 @@ catch
                 new_table(i).train_stop =  sprintf('%s', num2str(existing_table(i).train_stop));
                 new_table(i).test_start =  sprintf('%s', num2str(existing_table(i).test_start));
                 new_table(i).test_stop =  sprintf('%s', num2str(existing_table(i).test_stop));
+                new_table(i).ProbabilityMean  =  sprintf('%s', num2str(existing_table(i).ProbabilityMean));
+
             end
     new_table = struct2table(new_table);
     existing_table = struct2table(existing_table);
