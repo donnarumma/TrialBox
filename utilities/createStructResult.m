@@ -106,7 +106,10 @@ for ncl=1:length(class)
     class_name = sprintf('Class%d',ncl);
     ResultAcc.(class_name) = class{ncl};
 end
-ResultAcc.ProbabilityMean = sprintf('[%.2f,%.2f]',par.ProbMean);
+formatStr = ['[', repmat('%.2f,', 1, length(par.ProbMean))];
+formatStr = formatStr(1:end-1);
+formatStr = [formatStr, ']'];
+ResultAcc.ProbabilityMean = sprintf(formatStr, par.ProbMean);
 ResultAcc.indMi = indMi;
 ResultAcc.Filter = par.Filter;
 ResultAcc.attenuation = par.attenuation;
@@ -153,7 +156,10 @@ for ncl=1:length(class)
     class_name = sprintf('Class%d',ncl);
     ResultAcc_class.(class_name) = class{ncl};
 end
-ResultAcc_class.ProbabilityMean = sprintf('[%.2f,%.2f]',par.ProbMean);
+formatStr = ['[', repmat('%.2f,', 1, length(par.ProbMean))];
+formatStr = formatStr(1:end-1);
+formatStr = [formatStr, ']'];
+ResultAcc_class.ProbabilityMean = sprintf(formatStr, par.ProbMean);
 ResultAcc_class.indMi = indMi;
 ResultAcc_class.Filter = par.Filter;
 ResultAcc_class.attenuation = par.attenuation;

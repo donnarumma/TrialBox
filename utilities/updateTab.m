@@ -35,7 +35,7 @@ end
 new_table = struct2table(data);
 existing_table = table2struct(existing_table);
 
-if isfield(existing_table, 'train_start')
+if isfield(existing_table, 'train_start') || isfield(existing_table, 'ProbabilityMean')
 
     if ~ischar(existing_table(1).train_start)
         for i=1:length(existing_table)
