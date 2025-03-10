@@ -71,15 +71,15 @@ end
 % Accuracy
 train_acc_m = nan(length(res),1);
 train_acc_class = nan(length(res),length(res(1).train.Accuracy_class));
-train_rec_m = nan(length(res),1);
-train_prec_m = nan(length(res),1);
-train_F1score_m = nan(length(res),1);
+train_rec_m = nan(length(res),length(res(1).train.Recall));
+train_prec_m = nan(length(res),length(res(1).train.Precision));
+train_F1score_m = nan(length(res),length(res(1).train.F1score));
 train_BalAcc_m = nan(length(res),1);
 test_acc_m = nan(length(res),1);
 test_acc_class = nan(length(res),length(res(1).test.Accuracy_class));
-test_rec_m = nan(length(res),1);
-test_prec_m = nan(length(res),1);
-test_F1score_m = nan(length(res),1);
+test_rec_m = nan(length(res),length(res(1).test.Recall));
+test_prec_m = nan(length(res),length(res(1).test.Precision));
+test_F1score_m = nan(length(res),length(res(1).test.F1score));
 test_BalAcc_m = nan(length(res),1);
 for i=1:length(res)
     train_acc_m(i) = res(i).train.Accuracy;
@@ -87,13 +87,13 @@ for i=1:length(res)
     test_acc_m(i) = res(i).test.Accuracy;
     test_acc_class(i,:) = res(i).test.Accuracy_class;
     if isfield(res(i).train, 'Recall')
-        train_rec_m(i) = res(i).train.Recall;
-        train_prec_m(i) = res(i).train.Precision;
-        train_F1score_m(i) = res(i).train.F1score;
+        train_rec_m(i,:) = res(i).train.Recall;
+        train_prec_m(i,:) = res(i).train.Precision;
+        train_F1score_m(i,:) = res(i).train.F1score;
         train_BalAcc_m(i) = res(i).train.AccuracyBalanced;
-        test_rec_m(i) = res(i).test.Recall;
-        test_prec_m(i) = res(i).test.Precision;
-        test_F1score_m(i) = res(i).test.F1score;
+        test_rec_m(i,:) = res(i).test.Recall;
+        test_prec_m(i,:) = res(i).test.Precision;
+        test_F1score_m(i,:) = res(i).test.F1score;
         test_BalAcc_m(i) = res(i).test.AccuracyBalanced;
     end
 end
@@ -114,7 +114,7 @@ ResultAcc.train_start = tr1;
 ResultAcc.train_stop = tr2;
 ResultAcc.train_Acc_mean = mean(train_acc_m);
 ResultAcc.train_Acc_std = std(train_acc_m);
-if isfield(res(i).train, 'Recall')
+if isfield(res(1).train, 'Recall')
     ResultAcc.train_Recall_mean = mean(train_rec_m);
     ResultAcc.train_Recall_std = std(train_rec_m);
     ResultAcc.train_Precision_mean = mean(train_prec_m);
