@@ -27,6 +27,7 @@ try
     % accuracy
     Accuracy            = sum(y_pred == labs)/length(labs)*100;
     Accuracy_class(1,:) = accuracy4classes(labs,y_pred);
+
 catch
 end
 data_out                = data_in;

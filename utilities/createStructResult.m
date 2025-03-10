@@ -71,13 +71,31 @@ end
 % Accuracy
 train_acc_m = nan(length(res),1);
 train_acc_class = nan(length(res),length(res(1).train.Accuracy_class));
+train_rec_m = nan(length(res),1);
+train_prec_m = nan(length(res),1);
+train_F1score_m = nan(length(res),1);
+train_BalAcc_m = nan(length(res),1);
 test_acc_m = nan(length(res),1);
 test_acc_class = nan(length(res),length(res(1).test.Accuracy_class));
+test_rec_m = nan(length(res),1);
+test_prec_m = nan(length(res),1);
+test_F1score_m = nan(length(res),1);
+test_BalAcc_m = nan(length(res),1);
 for i=1:length(res)
     train_acc_m(i) = res(i).train.Accuracy;
     train_acc_class(i,:) = res(i).train.Accuracy_class;
     test_acc_m(i) = res(i).test.Accuracy;
     test_acc_class(i,:) = res(i).test.Accuracy_class;
+    if isfield(res(i).train, 'Recall')
+        train_rec_m(i) = res(i).train.Recall;
+        train_prec_m(i) = res(i).train.Precision;
+        train_F1score_m(i) = res(i).train.F1score;
+        train_BalAcc_m(i) = res(i).train.AccuracyBalanced;
+        test_rec_m(i) = res(i).test.Recall;
+        test_prec_m(i) = res(i).test.Precision;
+        test_F1score_m(i) = res(i).test.F1score;
+        test_BalAcc_m(i) = res(i).test.AccuracyBalanced;
+    end
 end
 
 mean_class_train_acc = mean(train_acc_class,1);
@@ -96,11 +114,31 @@ ResultAcc.train_start = tr1;
 ResultAcc.train_stop = tr2;
 ResultAcc.train_Acc_mean = mean(train_acc_m);
 ResultAcc.train_Acc_std = std(train_acc_m);
+if isfield(res(i).train, 'Recall')
+    ResultAcc.train_Recall_mean = mean(train_rec_m);
+    ResultAcc.train_Recall_std = std(train_rec_m);
+    ResultAcc.train_Precision_mean = mean(train_prec_m);
+    ResultAcc.train_Precision_std = std(train_prec_m);
+    ResultAcc.train_F1score_mean = mean(train_F1score_m);
+    ResultAcc.train_F1_score_std = std(train_F1score_m);
+    ResultAcc.train_BalancedAccuracy_mean = mean(train_BalAcc_m);
+    ResultAcc.train_BalancedAccuracy_std = std(train_BalAcc_m);
+end
 ResultAcc.test_name = test_name;
 ResultAcc.test_start = ts1;
 ResultAcc.test_stop = ts2;
 ResultAcc.test_Acc_mean = mean(test_acc_m);
 ResultAcc.test_Acc_std = std(test_acc_m);
+if isfield(res(i).test, 'Recall')
+    ResultAcc.test_Recall_mean = mean(test_rec_m);
+    ResultAcc.test_Recall_std = std(test_rec_m);
+    ResultAcc.test_Precision_mean = mean(test_prec_m);
+    ResultAcc.test_Precision_std = std(test_prec_m);
+    ResultAcc.test_F1score_mean = mean(test_F1score_m);
+    ResultAcc.test_F1score_std = std(test_F1score_m);
+    ResultAcc.test_BalancedAccuracy_mean = mean(test_BalAcc_m);
+    ResultAcc.test_BalancedAccuracy_std = std(test_BalAcc_m);
+end
 ResultAcc.m = m;
 for ncl=1:length(class)
     class_name = sprintf('Class%d',ncl);
