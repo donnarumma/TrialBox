@@ -13,7 +13,7 @@ for ifld = 1:length(nfields)
     fname  = nfields{ifld};
     hfig_e = hfg.(fname);
     for iopt=1:length(OPTIONS)
-        t   hfigPrint= tic;
+        t   = tic;
         if sub_dir
             add=upper(OPTIONS{iopt});
         else
