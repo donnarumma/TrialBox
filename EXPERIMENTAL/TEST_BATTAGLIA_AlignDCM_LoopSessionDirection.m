@@ -13,16 +13,21 @@ if ~isonserver
 else
     test_dirALL    ='/home/frosolone/BATTAGLIA_REULTS/AlignDCM';
 end
-Frontal_sessCoher = {'SK022';'SK025';'SK033';'SK035';'SK036';'SK038';'SK042';'SK043'}; % Frontal
-    % 'SK047';...,
-Parietal_sessCoher = {'SK051';'SK059';'SK060';'SK062';'SK065';'SK069';'SK074'};  % Parietal
-
-sessions = Frontal_sessCoher;
+% Frontal_sessCoher = {'SK022';'SK025';'SK033';'SK035';'SK036';'SK038';'SK042';'SK043'}; % Frontal
+%     % 'SK047';...,
+% Parietal_sessCoher = {'SK051';'SK059';'SK060';'SK062';'SK065';'SK069';'SK074'};  % Parietal
+% 
+% sessions = Frontal_sessCoher;
 % sessions = Parietal_sessCoher;
 % sessions = [Frontal_sessCoher;Parietal_sessCoher];
 
+sessions = {'SK033'};
+session_dir = 1; % Solo S
+% session_dir = 6; % Solo K
+% session_dir = 4; % Joint
+
 for numsess = 1:length(sessions)
-    for loopDir = 1:8
+    for loopDir = session_dir
         % fixed parameters
         session_name                    = sessions{numsess}; % session name
         idir                            = loopDir;        % directions -> 1-8
