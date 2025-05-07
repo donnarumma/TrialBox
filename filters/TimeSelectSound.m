@@ -1,5 +1,6 @@
 function   [data_trials, out] = TimeSelectSound(data_trials,par)
 
+%% t2 è variabile da trial a trial
 execinfo=par.exec;
 if ~isempty(execinfo); t=tic; fprintf('Function: %s ', mfilename); end
 

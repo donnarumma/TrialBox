@@ -38,5 +38,6 @@ for iTrial=1:nTrials
     data_trials(iTrial).RT_K        =session_data.Trials(iTrial).RT_K;
     data_trials(iTrial).ET          =session_data.Trials(iTrial).ET;
     data_trials(iTrial).timeET      =session_data.Trials(iTrial).timeET;
+    data_trials(iTrial).Event       =session_data.Trials(iTrial).Event;
 end
 

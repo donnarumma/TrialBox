@@ -1,4 +1,4 @@
-function filtered_data= FiltBankOne(data_eeg, par)
+function [filtered_data,hd]= FiltBankOneSaveHD(data_eeg, par)
 % function filtered_data= FiltBankOne(data_eeg, par)
 
 % FiltBankOne decomposes the EEG into single frequency pass bands using
@@ -37,10 +37,10 @@ elseif strcmp(par.TypeFilter,'Butterworth')
 end
 
 [sos,g] = zp2sos(z,p,k);
-% try hd = par.hd;
-% catch
+try hd = par.hd1;
+catch
     hd = dfilt.df2sos(sos,g);
-% end
+end
 % filtering each eeg from different channels/trials/runs
 for j = 1:size(data_eeg,1)
     filtered_data(j,:,1) = filtfilt(hd.sosMatrix,hd.ScaleValues,data_eeg(j,:));
