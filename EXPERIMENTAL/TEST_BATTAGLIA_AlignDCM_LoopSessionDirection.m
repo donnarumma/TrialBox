@@ -85,6 +85,9 @@ for numsess = 1:length(sessions)
             if isempty(Tduration_ind)
                 Tduration_ind = find(time_app-abs(tEnd)>0,1,'First');
             end
+            if time_app(Tduration_ind)>tEnd
+                Tduration_ind = find(time_app-abs(tEnd)>0,1,'First');
+            end
             t_in = time_app(zero_ind)+tStart;
             tStart_ind =  find(time_app-tStart>=0,1,'first');
             New_Time = time_app(tStart_ind:Tduration_ind);
@@ -108,6 +111,9 @@ for numsess = 1:length(sessions)
             ET_time = time_app(zero_ind)+data_trials(iTrial).ET;
             Tduration_ind = find(time_app-abs(ET_time)>0,1,'First');
             if isempty(Tduration_ind)
+                Tduration_ind = find(time_app-abs(tEnd)>0,1,'First');
+            end
+            if time_app(Tduration_ind)>tEnd
                 Tduration_ind = find(time_app-abs(tEnd)>0,1,'First');
             end
             t_in = time_app(zero_ind)+tStart;
