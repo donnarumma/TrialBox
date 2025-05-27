@@ -23,80 +23,85 @@ catch
 end
 % specify network (connections)
 %--------------------------------------------------------------------------
-switch whichmodel
-    case 1
-        A{1}  = tril(ones(nSo,nSo),-1);       % a forward connection
-        A{2}  = triu(ones(nSo,nSo),+1);       % a backward connection
-        A{3}  = sparse(nSo,nSo);              % lateral connections
-    case 2
-        % iss inihibitory spiny stellate 
-        % ip  inhibitory piramidals
-        % ii  inhibitory interneurons 
-        % 
-        A{1}  = ones(nSo,nSo)-eye(nSo);       % iss <-> iss
-        A{2}  = ones(nSo,nSo)-eye(nSo);       %  ip <->  ip + ii <-> ii
-        A{3}  = sparse(nSo,nSo);              % iss <-> iss + ip <-> ip + ii <-> ii -- empty 
-    case 3
-        % only A{3} 
-        A{1}  = sparse(nSo,nSo);
-        A{2}  = sparse(nSo,nSo);
-        A{3}  = ones(nSo,nSo)-eye(nSo);
-    case 4
-        % only A{3} with autoconnections                
-        A{1}  = sparse(nSo,nSo);
-        A{2}  = sparse(nSo,nSo);
-        A{3}  = ones(nSo,nSo);
-    case 5 
-        % only B interactions
-        A{1}  = sparse(nSo,nSo);
-        A{2}  = sparse(nSo,nSo);
-        A{3}  = sparse(nSo,nSo);
-    case 6
-        % autoconnections A{3}
-        A{1}  = sparse(nSo,nSo);
-        A{2}  = sparse(nSo,nSo);
-        A{3}  = eye(nSo,nSo);
-    case 7
-        % autoconnections A + B
-        A{1}  = eye(nSo,nSo);
-        A{2}  = eye(nSo,nSo);
-        A{3}  = eye(nSo,nSo);
-    case 8
-        % connections A
-        A{1}  = ones(nSo,nSo);
-        A{2}  = ones(nSo,nSo);
-        A{3}  = ones(nSo,nSo);
-    case 9
-        % all autoconnections
-        A{1}  = ones(nSo,nSo)-eye(nSo);
-        A{2}  = ones(nSo,nSo)-eye(nSo);
-        A{3}  = ones(nSo,nSo)-eye(nSo);
-    case 10
-        % autoconnections A + interactions B
-        A{1}  = eye(nSo,nSo);
-        A{2}  = eye(nSo,nSo);
-        A{3}  = eye(nSo,nSo);
-
-end
-
-try
-    nCo    = nConditions;
+try 
+    A=par.A;
+    B=par.B;
+    C=par.C;
 catch
-    nCo    = 2;                             % number of conditions
-end
-B           = cell(1,nCo);                  % trial-specific modulation -> see spm_gen_Q
-for iCo=1:nCo
-    if whichmodel==7
-        B{iCo}  = eye(nSo);
-    else
-        B{iCo}  = ones(nSo,nSo)-eye(nSo); 
+    switch whichmodel
+        case 1
+            A{1}  = tril(ones(nSo,nSo),-1);       % a forward connection
+            A{2}  = triu(ones(nSo,nSo),+1);       % a backward connection
+            A{3}  = sparse(nSo,nSo);              % lateral connections
+        case 2
+            % iss inihibitory spiny stellate 
+            % ip  inhibitory piramidals
+            % ii  inhibitory interneurons 
+            % 
+            A{1}  = ones(nSo,nSo)-eye(nSo);       % iss <-> iss
+            A{2}  = ones(nSo,nSo)-eye(nSo);       %  ip <->  ip + ii <-> ii
+            A{3}  = sparse(nSo,nSo);              % iss <-> iss + ip <-> ip + ii <-> ii -- empty 
+        case 3
+            % only A{3} 
+            A{1}  = sparse(nSo,nSo);
+            A{2}  = sparse(nSo,nSo);
+            A{3}  = ones(nSo,nSo)-eye(nSo);
+        case 4
+            % only A{3} with autoconnections                
+            A{1}  = sparse(nSo,nSo);
+            A{2}  = sparse(nSo,nSo);
+            A{3}  = ones(nSo,nSo);
+        case 5 
+            % only B interactions
+            A{1}  = sparse(nSo,nSo);
+            A{2}  = sparse(nSo,nSo);
+            A{3}  = sparse(nSo,nSo);
+        case 6
+            % autoconnections A{3}
+            A{1}  = sparse(nSo,nSo);
+            A{2}  = sparse(nSo,nSo);
+            A{3}  = eye(nSo,nSo);
+        case 7
+            % autoconnections A + B
+            A{1}  = eye(nSo,nSo);
+            A{2}  = eye(nSo,nSo);
+            A{3}  = eye(nSo,nSo);
+        case 8
+            % connections A
+            A{1}  = ones(nSo,nSo);
+            A{2}  = ones(nSo,nSo);
+            A{3}  = ones(nSo,nSo);
+        case 9
+            % all autoconnections
+            A{1}  = ones(nSo,nSo)-eye(nSo);
+            A{2}  = ones(nSo,nSo)-eye(nSo);
+            A{3}  = ones(nSo,nSo)-eye(nSo);
+        case 10
+            % autoconnections A + interactions B
+            A{1}  = eye(nSo,nSo);
+            A{2}  = eye(nSo,nSo);
+            A{3}  = eye(nSo,nSo);
+    
     end
+    
+    try
+        nCo    = nConditions;
+    catch
+        nCo    = 2;                             % number of conditions
+    end
+    B           = cell(1,nCo);                  % trial-specific modulation -> see spm_gen_Q
+    for iCo=1:nCo
+        if whichmodel==7
+            B{iCo}  = eye(nSo);
+        else
+            B{iCo}  = ones(nSo,nSo)-eye(nSo); 
+        end
+    end
+    if nCo==1  %% WARNING if more trials of a unique type, B is unused
+        B{1}=sparse(nSo,nSo);
+    end
+    C           = speye(nSo,nSo);               % sources receiving innovations
 end
-if nCo==1  %% WARNING if more trials of a unique type, B is unused
-    B{1}=sparse(nSo,nSo);
-end
-C           = speye(nSo,nSo);               % sources receiving innovations
- 
 % get priors
 %--------------------------------------------------------------------------
 if ~donlfp 

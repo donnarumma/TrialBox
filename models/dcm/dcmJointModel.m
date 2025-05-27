@@ -32,6 +32,7 @@ xU.name             = Labels;
 if ~isempty(par.custom_model)
     par.custom_model         =str2func(par.custom_model);
 end
+pms             = par;
 pms.nConditions = NConds;
 pms.nSources    = nSources;
 pms.nChannels   = nChannels;
