@@ -33,6 +33,21 @@ if strcmp(par.method,'Maximum')
         selK          = [];
         return
     end
+elseif strcmp(par.method,'all')
+    try
+    validIdx_S = find(vLFP_S & dLFP); % Indici posizionali relativi a 1:5
+    validIdx_K = find(vLFP_K & dLFP); % Indici posizionali relativi a 6:10
+
+    depthS = Depth(validIdx_S); % Valori non NaN gruppo 1-5
+    depthK = Depth(validIdx_K); % Valori non NaN gruppo 6-10
+    selS = 1:length(validIdx_S);
+    selK = 1:length(validIdx_K);
+    catch
+        selS          = [];
+        selK          = [];
+        return
+    end
+
 % elseif strcmp(par.method, 'Similar')
 %     try
 %         % Estraggo i valori validi (non NaN) per i due gruppi con i loro indici originali
