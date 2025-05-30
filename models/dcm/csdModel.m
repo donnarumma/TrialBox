@@ -142,4 +142,12 @@ M.Hz        = (1:64)';
 M.Nmax      = 256;
 M.nograph   = 1;              % no plot
 
+% case nChannels > nSources
+if nSources<nChannels
+    M.pE.L=par.L;
+    M.pC.L=par.L*mean(pC.L);
+    M.g         = 'spm_gx_multiERP';
+end
+
+
 M_CSD       = M;

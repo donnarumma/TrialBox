@@ -14,16 +14,20 @@ for iTrial=1:nTrials
     xY.y{iTrial}    = data_trials(iTrial).(InField);
     xU.X(iTrial,:)  = data_trials(iTrial).klabels;
 end
-NConds              = size(xU.X,2);         % number of conditions
-nSources            = size(xY.y{1},2);      % number of Areas
-nChannels           = nSources;             % number of total channels
+nConds              = size(xU.X,2);         % number of conditions
+nChannels           = size(xY.y{1},2);      % number of total channels
+try
+    nSources        = size(par.L,2);        % number of Areas
+catch
+    nSources        = nChannels;            % number of Areas are equal to channels
+end
 %% test on subset of trials
 iTrials             = any(xU.X(:,isel),2);
 iConds              = sum(xU.X(iTrials,:))>0;
 xU.X                = xU.X(iTrials,iConds);
 xY.y                = xY.y(iTrials);
 Labels              = Labels(iConds);
-NConds              = size(xU.X,2);           % number of conditions
+nConds              = size(xU.X,2);           % number of conditions
 %%
 xU.name             = Labels; 
 
@@ -33,7 +37,7 @@ if ~isempty(par.custom_model)
     par.custom_model         =str2func(par.custom_model);
 end
 pms             = par;
-pms.nConditions = NConds;
+pms.nConditions = nConds;
 pms.nSources    = nSources;
 pms.nChannels   = nChannels;
 pms.whichmodel  = par.whichmodel;
