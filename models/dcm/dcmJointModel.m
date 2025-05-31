@@ -1,6 +1,6 @@
 function   DCM=dcmJointModel(data_trials,par)
 % function DCM=dcmJointModel(data_trials,par)
-fprintf('Function: %s ',mfilename);
+texec=tic; fprintf('Function: %s ',mfilename);
 
 % -> spm_csd_demo
 %% Extract a data session
@@ -120,7 +120,7 @@ DCM.xY.U    = [];
 DCM.xY.Hz   = M_CSD.Hz;
 DCM.xY.name={'monkey S'  'monkey K'};
 
-exectime=toc(t); fprintf('| Time Elapsed: %.2f s\n',exectime);
+exectime=toc(texec); fprintf('| Time Elapsed: %.2f s\n',exectime);
 DCM.exectime=exectime;
 return
 nf          = ['LFP_M' num2str(whichmodel) '_' session_name add];
