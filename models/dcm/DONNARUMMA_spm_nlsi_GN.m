@@ -1,4 +1,4 @@
-function [Ep,Cp,Eh,Free,L,dFdp,dFdpp,FF,Epp,pC] = DONNARUMMA_spm_nlsi_GN(M,U,Y)
+function [Ep,Cp,Eh,F,L,dFdp,dFdpp,FF,Epp,pC] = DONNARUMMA_spm_nlsi_GN(M,U,Y)
 % Bayesian inversion of nonlinear models - Gauss-Newton/Variational Laplace
 % FORMAT [Ep,Cp,Eh,F] = spm_nlsi_GN(M,U,Y)
 %
@@ -99,6 +99,7 @@ function [Ep,Cp,Eh,Free,L,dFdp,dFdpp,FF,Epp,pC] = DONNARUMMA_spm_nlsi_GN(M,U,Y)
 % Karl Friston
 % $Id: spm_nlsi_GN.m 7279 2018-03-10 21:22:44Z karl $
 
+isdebug=M.debug;
 % options
 %--------------------------------------------------------------------------
 try, M.nograph; catch, M.nograph = 0;   end
@@ -158,7 +159,7 @@ end
 %--------------------------------------------------------------------------
 IS  = spm_funcheck(IS);
 
-% parameter update eqation
+% paramter update eqation
 %--------------------------------------------------------------------------
 if isfield(M,'f'), M.f = spm_funcheck(M.f);  end
 if isfield(M,'g'), M.g = spm_funcheck(M.g);  end
@@ -270,7 +271,7 @@ end
 
 % unpack covariance
 %--------------------------------------------------------------------------
-if isstruct(pC)
+if isstruct(pC);
     pC = spm_diag(spm_vec(pC));
 end
 
@@ -303,7 +304,6 @@ C.F   = -Inf;                                   % free energy
 v     = -4;                                     % log ascent rate
 dFdh  = zeros(nh,1);
 dFdhh = zeros(nh,nh);
-fprintf('EM procedure started\n');
 for k = 1:M.Nmax
     
     % time
@@ -377,9 +377,10 @@ for k = 1:M.Nmax
     
     % M-step: Fisher scoring scheme to find h = max{F(p,h)}
     %======================================================================
-    for m = 1:8
-        exectime=tic;fprintf('Entering M-step %g/%g',i,nh);         
-            
+    for m = 1:M.mstep
+        if isdebug
+            texec=tic; fprintf('M-step %g/%g',m,M.mstep);
+        end
         % precision and conditional covariance
         %------------------------------------------------------------------
         iS    = sparse(0);
@@ -394,17 +395,23 @@ for k = 1:M.Nmax
         % precision operators for M-Step
         %------------------------------------------------------------------
         for i = 1:nh
-            fprintf(' Entering precision %g/%g',i,nh)
+            if i==1 && isdebug
+                fprintf('Entering precision %g/%g' ,i,nh);
+            end
+            % texec=tic; fprintf('Iter %g/%g',i,nh);
             P{i}   = Q{i}*exp(h(i));
             PS{i}  = P{i}*S;
             P{i}   = kron(speye(nq),P{i});
             JPJ{i} = real(J'*P{i}*J);
+            % fprintf(' | Elapsed time is %g seconds.\n',toc(texec));
         end
         
         % derivatives: dLdh = dL/dh,...
         %------------------------------------------------------------------
         for i = 1:nh
-            fprintf(' Entering derivatives %g/%g',i,nh)           
+            if i==1 && isdebug
+                fprintf('Entering derivatives %g/%g' ,i,nh);
+            end
             dFdh(i,1)      =   trace(PS{i})*nq/2 ...
                 - real(e'*P{i}*e)/2 ...
                 - spm_trace(Cp,JPJ{i})/2;
@@ -431,8 +438,9 @@ for k = 1:M.Nmax
         %------------------------------------------------------------------
         dF    = dFdh'*dh;
         if dF < 1e-2, break, end
-       
-        fprintf(' | Elapsed Time %g seconds',toc(exectime))
+        if isdebug
+            fprintf(' | Elapsed time is %g seconds.\n',toc(texec));
+        end
     end
     
     
@@ -444,28 +452,28 @@ for k = 1:M.Nmax
     L(1) = spm_logdet(iS)*nq/2  - real(e'*iS*e)/2 - ny*log(8*atan(1))/2;            ...
     L(2) = spm_logdet(ipC*Cp)/2 - p'*ipC*p/2;
     L(3) = spm_logdet(ihC*Ch)/2 - d'*ihC*d/2;
-    Free = sum(L);
+    F    = sum(L);
     
     % record increases and reference log-evidence for reporting
     %----------------------------------------------------------------------
     try
         F0;
         if ~M.noprint
-            fprintf(' actual: %.3e (%.2f sec)\n',full(Free - C.F),toc(tStart))
+            fprintf(' actual: %.3e (%.2f sec)\n',full(F - C.F),toc(tStart))
         end
     catch
-        F0 = Free;
+        F0 = F;
     end
     
     % if F has increased, update gradients and curvatures for E-Step
     %----------------------------------------------------------------------
-    if Free > C.F || k < 3
+    if F > C.F || k < 3
         
         % accept current estimates
         %------------------------------------------------------------------
         C.p   = p;
         C.h   = h;
-        C.F   = Free;
+        C.F   = F;
         C.L   = L;
         C.Cp  = Cp;
         
@@ -579,8 +587,6 @@ for k = 1:M.Nmax
         fprintf(' FreeEnergy: %-6.3e', C.F);                    %% DONNARUMMA
         if nargout>7
             FF(end+1)=C.F; %% DONNARUMMA ADDED
-        end
-        if nargout>8
             Epp{end+1}=Ep; %% DONNARUMMA ADDED
         end
     end
@@ -603,5 +609,5 @@ end
 Ep     = spm_unvec(spm_vec(pE) + V*C.p(ip),pE);
 Cp     = V*C.Cp(ip,ip)*V';
 Eh     = C.h;
-Free   = C.F; 
+F      = C.F; 
 L      = C.L;
