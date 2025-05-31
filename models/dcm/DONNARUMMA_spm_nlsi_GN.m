@@ -378,7 +378,8 @@ for k = 1:M.Nmax
     % M-step: Fisher scoring scheme to find h = max{F(p,h)}
     %======================================================================
     for m = 1:8
-        
+        exectime=tic;fprintf('Entering M-step %g/%g',i,nh);         
+            
         % precision and conditional covariance
         %------------------------------------------------------------------
         iS    = sparse(0);
@@ -393,6 +394,7 @@ for k = 1:M.Nmax
         % precision operators for M-Step
         %------------------------------------------------------------------
         for i = 1:nh
+            fprintf(' Entering precision %g/%g',i,nh)
             P{i}   = Q{i}*exp(h(i));
             PS{i}  = P{i}*S;
             P{i}   = kron(speye(nq),P{i});
@@ -402,6 +404,7 @@ for k = 1:M.Nmax
         % derivatives: dLdh = dL/dh,...
         %------------------------------------------------------------------
         for i = 1:nh
+            fprintf(' Entering derivatives %g/%g',i,nh)           
             dFdh(i,1)      =   trace(PS{i})*nq/2 ...
                 - real(e'*P{i}*e)/2 ...
                 - spm_trace(Cp,JPJ{i})/2;
@@ -428,7 +431,8 @@ for k = 1:M.Nmax
         %------------------------------------------------------------------
         dF    = dFdh'*dh;
         if dF < 1e-2, break, end
-        
+       
+        fprintf(' | Elapsed Time %g seconds',toc(exectime))
     end
     
     

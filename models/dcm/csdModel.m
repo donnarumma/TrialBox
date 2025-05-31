@@ -5,6 +5,7 @@ nChannels   = par.nChannels;
 whichmodel  = par.whichmodel; 
 customMode  = par.customMode;
 donlfp      = par.donlfp;  
+mstep       = par.mstep;
 
 % function M_CSD=csdModel(nConditions,nSources,nChannels,whichmodel,customMode,donlfp)
 % Ntrials: number of trials
@@ -149,5 +150,6 @@ if nSources<nChannels
     M.g         = 'spm_gx_multiERP';
 end
 
+M.mstep     = mstep;
 
 M_CSD       = M;
