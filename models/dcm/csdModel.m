@@ -6,6 +6,7 @@ whichmodel  = par.whichmodel;
 customMode  = par.customMode;
 donlfp      = par.donlfp;  
 mstep       = par.mstep;
+isdebug     = par.isdebug;
 
 % function M_CSD=csdModel(nConditions,nSources,nChannels,whichmodel,customMode,donlfp)
 % Ntrials: number of trials
@@ -151,5 +152,6 @@ if nSources<nChannels
 end
 
 M.mstep     = mstep;
+M.isdebug   = isdebug;
 
 M_CSD       = M;

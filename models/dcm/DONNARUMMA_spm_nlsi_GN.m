@@ -99,7 +99,7 @@ function [Ep,Cp,Eh,F,L,dFdp,dFdpp,FF,Epp,pC] = DONNARUMMA_spm_nlsi_GN(M,U,Y)
 % Karl Friston
 % $Id: spm_nlsi_GN.m 7279 2018-03-10 21:22:44Z karl $
 
-isdebug=M.debug;
+isdebug=M.isdebug;
 % options
 %--------------------------------------------------------------------------
 try, M.nograph; catch, M.nograph = 0;   end
