@@ -78,7 +78,7 @@ M_Sou.dipfit.type= 'LFP';
 
 M_Sou.U      = 1; 
 qp           = Ep;
-qp.L         = ones(1,M_Sou.l);        % set virtual electrode gain to unity
+qp.L         = M_Sou.pE.L;             % set virtual electrode gain to unity
 qp.b         = qp.b - 32;              % and suppress non-specific and
 qp.c         = qp.c - 32;              % specific channel noise
 

@@ -3,6 +3,7 @@ function   par = dcmJointModelParams(parSource)
 
 par.mstep       = 8;        % M-step: Fisher scoring scheme
 par.isdebug     = false;
+par.Nmax        = 128;
 try
     fnames=fieldnames(parSource);
     for in=1:length(fnames)
