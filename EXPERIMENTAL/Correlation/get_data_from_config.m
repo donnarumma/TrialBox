@@ -24,8 +24,8 @@ elseif config.condition == 3
     obs_neural = DATA.(subject_o).(cond_key).neural(new_indices, :);
     obs_label  = DATA.(subject_o).(cond_key).label(new_indices);
     obs_embed  = DATA.(subject_o).(cond_key).embed(new_indices, :);
-elseif config.condition == 4 
-    continue
+% elseif config.condition == 4 
+%     continue
     
 
 end

@@ -130,7 +130,7 @@ end
 % cond 4: sono tutte e 3 le condzioni precedenti messe insieme (da inserire)
 %%%%%%%%%%%%%%%%%%%%%%%%% LOAD DATA%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-config.condition =  3;
+config.condition =  1;
 config.active_subject = 's';
 config.obs_subject = 'k';
 
