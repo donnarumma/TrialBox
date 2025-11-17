@@ -57,24 +57,32 @@ fprintf('Extracting Total LFPs: %d \n indsS: %g:%g \n indsK: %g:%g\n', tot_el, r
 idx_empty = find(arrayfun(@(x) isempty(x.trialType), data_trials));
 
 if idx_empty ~= 0
-    Bad_session.name = session_name;
-    Bad_session.chamber = data_trials(idx_empty).Chamber;
-    Bad_session.trialsId = data_trials(idx_empty).trialId;
-    Bad_session.Trials = data_trials(idx_empty);
+    Bad_session.name        = session_name;
+    Bad_session.chamber     = data_trials(idx_empty).Chamber;
+    Bad_session.trialsId    = data_trials(idx_empty).trialId;
+    Bad_session.Trials      = data_trials(idx_empty);
 else
-    Bad_session.name = session_name;
-    Bad_session.chamber = data_trials.Chamber;
-    Bad_session.trialsId = [];
-    Bad_session.Trials = [];
+    Bad_session.name        = session_name;
+    Bad_session.chamber     = data_trials.Chamber;
+    Bad_session.trialsId    = [];
+    Bad_session.Trials      = [];
 end
-data_trials(idx_empty) = [];
+data_trials(idx_empty)      = [];
 
 %% Align LFP
+
 % find DeltaTime(LockEvent)=Time(LockEvent)-Time(AlignEvent);
 % DeltaTime = nan(length(data_trials,1);
 % for iTrial = 1:length(data_trials)
 %       DeltaTime=
 % end
+
+DeltaTime = NaN(length(data_trials),1);
+for iTrial=1:length(data_trials)
+    indLock             = find([data_trials(iTrial).Event] == LockEvent);
+    indAlign            = find([data_trials(iTrial).Event] == AlignEvent);
+    DeltaTime(iTrial)   = data_trials(iTrial).Event(indLock,3)-data_trials(iTrial).Event(indAlign,3);
+end
 par.alignBattaglia.AlignEvent   = AlignEvent;
 par.alignBattaglia.InField      = 'LFP';
 par.alignBattaglia.OutField     = 'LFP';
@@ -89,7 +97,7 @@ tEnd                    = 1;
 for iTrial=1:length(data_trials)
     time_app            = data_trials(iTrial).([dataxfld dataInField]);
     zero_ind            = find(time_app>=0,1,'first');
-    ET_time             = time_app(zero_ind)+data_trials(iTrial).ET; % + DeltaTime(iTrial);
+    ET_time             = time_app(zero_ind)+data_trials(iTrial).ET + DeltaTime(iTrial);
     Tduration_ind       = find(time_app-abs(ET_time)>0,1,'First');
     if isempty(Tduration_ind)
         Tduration_ind   = find(time_app-abs(tEnd)>0,1,'First');
@@ -97,7 +105,7 @@ for iTrial=1:length(data_trials)
     if time_app(Tduration_ind)>tEnd
         Tduration_ind   = find(time_app-abs(tEnd)>0,1,'First');
     end
-    % t_in                = time_app(zero_ind)+tStart;
+    % t_in              = time_app(zero_ind)+tStart;
     tStart_ind          = find(time_app-tStart>=0,1,'first');
     % New_Time = time_app(tStart_ind:Tduration_ind);
     data_trials(iTrial).(dataInField)             = data_trials(iTrial).(dataInField)(:,tStart_ind:Tduration_ind);
@@ -113,11 +121,10 @@ data_trials                     = alignBattaglia(data_trials,par.alignBattaglia)
 
 dataInField                     = 'JXYEXY';
 dataxfld                        = 'time';
-% tStart = 0;
 for iTrial=1:length(data_trials)
     time_app                    = data_trials(iTrial).([dataxfld dataInField]);
     zero_ind                    = find(time_app>=0,1,'first');
-    ET_time                     = time_app(zero_ind) + data_trials(iTrial).ET; % + TimeAlignEvent
+    ET_time                     = time_app(zero_ind) + data_trials(iTrial).ET + DeltaTime(iTrial);
     Tduration_ind               = find(time_app-abs(ET_time)>0,1,'First');
     if isempty(Tduration_ind)
         Tduration_ind           = find(time_app-abs(tEnd)>0,1,'First');
@@ -125,7 +132,7 @@ for iTrial=1:length(data_trials)
     if time_app(Tduration_ind)>tEnd
         Tduration_ind           = find(time_app-abs(tEnd)>0,1,'First');
     end
-    % t_in = time_app(zero_ind)+tStart;
+    %t_in = time_app(zero_ind)+tStart;
     tStart_ind                  =  find(time_app-tStart>=0,1,'first');
     % New_Time = time_app(tStart_ind:Tduration_ind);
     data_trials(iTrial).(dataInField)             = data_trials(iTrial).(dataInField)(:,tStart_ind:Tduration_ind);
