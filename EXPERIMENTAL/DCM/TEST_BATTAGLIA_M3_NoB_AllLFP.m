@@ -156,7 +156,9 @@ par.csdCompute.OutField                 = signal_process;
 par.csdCompute.rsfactor                 = 0.2;
 par.csdCompute.optrescale               = 3;%-1;
 % Grasso,Battaglia-Mayer Ph.D. Thesis, Hz restriction
-par.csdCompute.Hz                       = (1:12)';
+% ARp                                     = 4;
+par.csdCompute.Hz                       = (1:16)';
+% par.csdCompute.ARp                      = ARp;
 data_trials                             = csdCompute(data_trials,par.csdCompute);
 test_dir                                = [save_dir 'opt' num2str(par.csdCompute.optrescale) S];
 %% learning
@@ -187,6 +189,7 @@ C                                       = zeros(nSo,0);
 par.dcmJointModel.A                     = A;
 par.dcmJointModel.B                     = B;
 par.dcmJointModel.C                     = C;
+par.dcmJointModel.Hz                    = par.csdCompute.Hz;
 % par.dcmJointModel.Nmax=2;
 out.dcmJointModel.DCM                   = dcmJointModel(data_trials,par.dcmJointModel);
 %% save test

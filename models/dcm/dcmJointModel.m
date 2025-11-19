@@ -44,7 +44,7 @@ pms.nChannels   = nChannels;
 pms.whichmodel  = par.whichmodel;
 pms.customMode  = par.custom_model;
 pms.donlfp      = par.donlfp;
-
+pms.Hz          = par.Hz;
 M_CSD           = csdModel(pms);
 sim_fun         = str2func(M_CSD.IS);
 %%
