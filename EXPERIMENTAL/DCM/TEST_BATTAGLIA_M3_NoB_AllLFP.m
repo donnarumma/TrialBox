@@ -92,8 +92,8 @@ data_trials                     = alignBattaglia(data_trials,par.alignBattaglia)
 %% Align to success event
 dataInField             = 'LFP';
 dataxfld                = 'time';
-tStart                  = 0.2;
-tEnd                    = 1;
+tStart                  = 0;
+tEnd                    = 0.5;
 for iTrial=1:length(data_trials)
     time_app            = data_trials(iTrial).([dataxfld dataInField]);
     zero_ind            = find(time_app>=0,1,'first');
