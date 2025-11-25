@@ -1,56 +1,53 @@
+% function to compute correlation and control limit cases
 function metric_val = compute_metric(y_test, y_hat, y_train)
-    
-    y_test = y_test(:);
-    y_hat = y_hat(:);
+    % y_train rimane per compatibilità, qui non usato.
     if nargin < 3
         y_train = [];
     end
 
-    n = length(y_test);
+    % Vettori colonna
+    y_test = y_test(:);
+    y_hat  = y_hat(:);
 
-    % Caso generale: almeno due punti e varianze non nulle 
-    % okkio che con due punti la correlazione è 1 o -1
-    if n > 1 && std(y_test) > 0 && std(y_hat) > 0
-        metric_val = corr(y_test, y_hat, 'rows', 'complete');
-        return;
+    % 1) Usa solo coppie valide (pairwise complete).
+    %    Se dopo il filtro non resta nulla (nessuna coppa valida)
+    % → NaN (non 0).
+    valid  = ~isnan(y_test) & ~isnan(y_hat);
+    y_test = y_test(valid);
+    y_hat  = y_hat(valid);
 
-    % Caso speciale: più punti ma una varianza nulla (es. y_hat costante) 
-    elseif n > 1 && std(y_test) > 0
-        SS_res = sum((y_test - y_hat).^2);
-        SS_tot = sum((y_test - mean(y_test)).^2);
-        r2 = 1 - SS_res / SS_tot;
-        r_sign = sign((y_test - mean(y_test))' * (y_hat - mean(y_hat)));
-        metric_val = r_sign * r2;
-        return;
+    n   = length(y_test);
+    tol = 1e-12;
 
-    % Caso limite: un solo punto (loocv)
-   % Caso limite: un solo punto (loocv)
-    elseif n == 1
-        if ~isempty(y_train) && std(y_train) > 0
-            scale = std(y_train);
-        elseif std(y_hat) > 0
-            scale = std(y_hat);
+    %n <= 2 (r ±1 degenere con due punti)  → NaN
+    %    - var(y_test)==0 o var(y_hat)==0 → NaN
+    %    - altrimenti: Pearson r 
+    if n == 0
+        metric_val = NaN;
+
+    elseif n <= 2
+        metric_val = NaN;
+
+    else
+        sy = std(y_test);
+        sh = std(y_hat);
+
+        if sy <= tol || sh <= tol
+            metric_val = NaN;
+
         else
-            % caso estremo max abs val tra y_test y_hat e 1
-            scale = max(abs([y_test; y_hat; 1])); % mai 0
+        % Pearson corr (già filtrati i NaN sopra)
+            r = corr(y_test, y_hat);   
+        
+            % Clamp di sicurreza tra -1 e 1. (overshooting possibile)
+            if abs(r) > 1 && abs(abs(r) - 1) <= tol
+                r = sign(r);
+            end
+        
+            metric_val = r;
         end
 
-    err = abs(y_test - y_hat);
-    %% tentativo di imitare la correlazione 
-    % errore 0 ottengo 1, se è metà della scala ottengo 0 se è uguale alla 
-    % to dà 1 se previsione perfetta
-    % se err = scale/2 ottengo errore medio metric =0
-    % se err = scale erroe alto metric=-1
-    % da invertire
-    metric_val = 1 - 2 * err / scale;
-    % clamp tra -1 e 1
-    metric_val = max(-1, min(1, metric_val)); 
-    metric_val = double(metric_val); % <-- forza scalare
-    return;
-
-    % Caso degenere
-    else
-        metric_val = 0;
-        return;
     end
+
+    metric_val = double(metric_val);
 end
