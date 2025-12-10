@@ -1,32 +1,51 @@
 addpath("GOODCELLS\")
-addpath("SpikesExtracted\")
-%% Questa parte va automatizata (anonimizzata)
+%addpath("SpikesExtracted\")
+
 load('GoodCells_K.mat')
 load('GoodCells_S.mat')
-all_trials_22=load('SpikesExtracted\all_200_1000_frontalSK022H_SUA.mat')
-all_trials_33=load('SpikesExtracted\all_200_1000_frontalSK033H_SUA.mat')
-all_trials_25=load('SpikesExtracted\all_200_1000_frontalSK025H_SUA.mat')
-all_trials_35=load('SpikesExtracted\all_200_1000_frontalSK035H_SUA.mat')
-all_trials_36=load('SpikesExtracted\all_200_1000_frontalSK036H_SUA.mat')
-all_trials_38=load('SpikesExtracted\all_200_1000_frontalSK038H_SUA.mat')
-all_trials_42=load('SpikesExtracted\all_200_1000_frontalSK042H_SUA.mat')
-all_trials_43=load('SpikesExtracted\all_200_1000_frontalSK043H_SUA.mat')
-
-all_session={all_trials_22.data_trials,all_trials_25.data_trials, ...
-    all_trials_33.data_trials,all_trials_35.data_trials, ...
-    all_trials_36.data_trials,all_trials_38.data_trials, ...
-    all_trials_42.data_trials,all_trials_43.data_trials
-    }
-
+%% PATH AN PATTERNS WHOM REFER TO
+% next lines change according to path and data (name)
 session_list=[22,25,33,35,36,38,42,43]
-%%
-all_session_new={}
-all_dir=[]
-all_cond=[]
+path_="C:\Users\loren\Desktop\USB_Content\AI_PhD_Neuro_CNR\Empirics\GIT_stuff\dati_Mirco\last_oct_25\SpikesExtracted"
+cd(path_);
+f_pattern = 'all_0_100_*.mat';
 
+% MATCHING FILES
+M_files = dir(f_pattern);
+% patern of files to be loaded
+all_sessions = cell(1, length(session_list));
+for k = 1:length(M_files)
+    fullname = fullfile(M_files(k).folder, M_files(k).name);
+
+    fprintf('Loading %s\n', fullname);
+
+    loaded = load(fullname);
+    data_trials_ = loaded.data_trials;
+    % Extract sessio number with a not found warning
+    tokens = regexp(M_files(k).name, 'SK(\d+)H', 'tokens');
+    if isempty(tokens)
+        warning("File %s: can't find session number", M_files(k).name);
+        continue;
+    end
+    sess_num = str2double(tokens{1}{1});
+
+    idx = find(session_list == sess_num);
+
+    if isempty(idx)
+        warning('Session %d non è in session_list, salto.', sess_num);
+        continue;
+    end
+
+  data_trials_ = loaded.data_trials;
+  all_sessions{idx} = data_trials_;
+end
+
+%% 
+all_cond=[]
+all_dir=[]
 for k=1:numel(session_list)
-    all_cond= [all_cond, [all_session{k}.trialTypeCond]];
-    all_dir = [all_dir, [all_session{k}.trialTypeDir]];
+    all_cond= [all_cond, [all_sessions{k}.trialTypeCond]];
+    all_dir = [all_dir, [all_sessions{k}.trialTypeDir]];
 end
 max_dir=max(all_dir)
 min_dir=min(all_dir)
@@ -35,7 +54,7 @@ min_cond=min(all_cond)
 % tagghiamo le combo direzione condizione
 for k=1:numel(session_list)
     curr_sess_id=session_list(k)
-    curr_sess=all_session{k};
+    curr_sess=all_sessions{k};
     all_n_id=curr_sess(1).All_N_Identity
 
     % matching neuroni
@@ -46,6 +65,7 @@ for k=1:numel(session_list)
     [~,~,b_s]=intersect(Good_S(:,2:3),  all_n_id,'rows')
 
     N=numel(curr_sess)
+
     combo_counter = zeros(1, max_cond*max_dir); 
     for i = 1:N
         Spikes=curr_sess(i).Spikes;
@@ -60,7 +80,7 @@ for k=1:numel(session_list)
         curr_sess(i).K_spikes=Spikes(b_k,:);
 
     end
-    all_session_new{k}=curr_sess
+    all_sessions_new{k}=curr_sess
 end
             
 
@@ -114,6 +134,74 @@ K_matrix=[]
    end
  
 
+save( 'dati_mirco_15_11_k_partial','K_matrix')
+save( 'dati_mirco_15_11_s_partial','S_matrix')
 
+
+%% S
+K=1
+trial_id_s=ones(1,length(S_matrix))'
+for i =2:length(S_matrix)
+
+    if S_matrix(i-1,end)==S_matrix(i,end)
+        trial_id_s(i)=K;
+    else
+        K=K+1
+        trial_id_s(i)=K;
+        
+    end
+end
+%trial_id=trial_id'
+
+S_matrix=[S_matrix trial_id_s];
+
+s_active_neural=S_matrix(S_matrix(:,57)==1,1:56)
+s_active_trial_id=S_matrix(S_matrix(:,57)==1,59);
+s_active_trial=S_matrix(S_matrix(:,57)==1,58);
+
+s_passive_neural=S_matrix(S_matrix(:,57)==2,1:56);
+s_passive_trial_id=S_matrix(S_matrix(:,57)==2,59);
+s_passive_trial=S_matrix(S_matrix(:,57)==2,58);
+
+s_joint_neural=S_matrix(S_matrix(:,57)==3,1:56);
+s_joint_trial_id=S_matrix(S_matrix(:,57)==3,59);
+s_joint_trial=S_matrix(S_matrix(:,57)==3,58);
+
+save('dati_mirco_15_11_400_s',"s_active_neural","s_active_trial_id","s_active_trial", ...
+    "s_passive_neural","s_passive_trial_id","s_passive_trial", ...
+    "s_joint_neural","s_joint_trial_id","s_joint_trial")
+
+%% K
+K=1
+trial_id_k=ones(1,length(K_matrix))'
+for i =2:length(K_matrix)
+
+    if K_matrix(i-1,end)==K_matrix(i,end)
+        trial_id_k(i)=K;
+    else
+        K=K+1
+        trial_id_k(i)=K;
+        
+    end
+end
+%trial_id=trial_id'
+
+K_matrix=[K_matrix trial_id_k];
+
+k_passive_neural=K_matrix(K_matrix(:,54)==1,1:54)
+k_passive_trial_id=K_matrix(K_matrix(:,54)==1,56);
+k_passive_trial=K_matrix(K_matrix(:,54)==1,55);
+
+k_active_neural=K_matrix(K_matrix(:,54)==2,1:54);
+k_active_trial_id=K_matrix(K_matrix(:,54)==2,56);
+k_active_trial=K_matrix(K_matrix(:,54)==2,55);
+
+k_joint_neural=K_matrix(K_matrix(:,54)==3,1:54);
+k_joint_trial_id=K_matrix(K_matrix(:,54)==3,56);
+k_joint_trial=K_matrix(K_matrix(:,54)==3,55);
+
+save('dati_mirco_15_11_400_k',"k_active_neural","k_active_trial_id","k_active_trial", ...
+    "k_passive_neural","k_passive_trial_id","k_passive_trial", ...
+    "k_joint_neural","k_joint_trial_id","k_joint_trial")
 
 

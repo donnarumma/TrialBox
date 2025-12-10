@@ -9,7 +9,7 @@ filesep = '/';
 addpath("GOODCELLS\")
 addpath("Funzioni utili\")
 addpath("SKH_SUA_frontal_192\")
-interval = [0,100]; % Time max overall 3.1 s or 2.2
+interval = [0,50]; % Time max overall 3.1 s or 2.2
 
 selMonkey = 'all'; %%% either S, K (?) or all
 
@@ -45,7 +45,7 @@ for n_sess = 1:length(session_list)
     fprintf('Getting data from %s\n',session_name);
     
     S=    getSpikesJointAllNeurons(Trials);
-    fprintf('Elapsed time: %g s\n',toc(ti))
+    fprintf('Elapsed time: %g s\n',toc(tic))
     S=      getSuccessfullTrials(S,Trials);
     S=   getJointConditionTrials(S,Trials);
     S= getSolo_S_ConditionTrials(S,Trials);
