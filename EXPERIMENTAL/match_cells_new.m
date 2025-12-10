@@ -1,19 +1,30 @@
+clear dir 
+clearvars
+clear functions
+rehash
+
 addpath("GOODCELLS\")
-%addpath("SpikesExtracted\")
+addpath(genpath("SpikesExtracted\"))
 
 load('GoodCells_K.mat')
 load('GoodCells_S.mat')
-%% PATH AN PATTERNS WHOM REFER TO
-% next lines change according to path and data (name)
-session_list=[22,25,33,35,36,38,42,43]
-path_="C:\Users\loren\Desktop\USB_Content\AI_PhD_Neuro_CNR\Empirics\GIT_stuff\dati_Mirco\last_oct_25\SpikesExtracted"
-cd(path_);
-f_pattern = 'all_0_100_*.mat';
+path_=pwd
+% path ASSOLUTO alla cartella
+%path_ = "C:\Users\loren\Desktop\USB_Content\AI_PhD_Neuro_CNR\Empirics\GIT_stuff\dati_Mirco\last_oct_25\SpikesExtracted";
 
+f_pattern = 'SpikesExtracted\all_0_50_frontal*.mat';
+
+% QUI cambia tutto: usa il path assoluto
+M_files = dir(fullfile(path_, f_pattern));
+
+disp("FILE TROVATI:");
+disp({M_files.name});
 % MATCHING FILES
 M_files = dir(f_pattern);
 % patern of files to be loaded
 %% extract and put in a structure the above specified sessions
+session_list=[22,25,33,35,36,38,42,43]
+
 all_sessions = cell(1, length(session_list));
 for k = 1:length(M_files)
     fullname = fullfile(M_files(k).folder, M_files(k).name);
@@ -46,11 +57,20 @@ end
 % output a new list of sessions including new fields (correct neurons for
 % either monkey S and K)
 
-all_cond=[]
-all_dir=[]
-for k=1:numel(session_list)
-    all_cond= [all_cond, [all_sessions{k}.trialTypeCond]];
-    all_dir = [all_dir, [all_sessions{k}.trialTypeDir]];
+all_cond = [];
+all_dir  = [];
+
+for k = 1:numel(session_list)
+    
+    curr_sess = all_sessions{k};   % ← PRIMO PASSO: estrai la struct array
+    
+    if isempty(curr_sess)
+        error("Sessione %d vuota: all_sessions{%d} = []", session_list(k), k);
+    end
+    
+    % curr_sess è un array di struct → devi concatenare così:
+    all_cond = [all_cond, [curr_sess.trialTypeCond]];
+    all_dir  = [all_dir,  [curr_sess.trialTypeDir]];
 end
 max_dir=max(all_dir)
 min_dir=min(all_dir)
