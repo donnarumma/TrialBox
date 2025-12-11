@@ -62,13 +62,13 @@ all_dir  = [];
 
 for k = 1:numel(session_list)
     
-    curr_sess = all_sessions{k};   % ← PRIMO PASSO: estrai la struct array
+    curr_sess = all_sessions{k};   
     
     if isempty(curr_sess)
         error("Sessione %d vuota: all_sessions{%d} = []", session_list(k), k);
     end
     
-    % curr_sess è un array di struct → devi concatenare così:
+    % concatena
     all_cond = [all_cond, [curr_sess.trialTypeCond]];
     all_dir  = [all_dir,  [curr_sess.trialTypeDir]];
 end
@@ -111,6 +111,7 @@ end
 
 %% Generating S and K data matrix joining session
 all_tags = [];
+SS= {}
 for j = 1:numel(all_sessions_new)
     all_tags = [all_tags, [all_sessions_new{j}.tag]];
 end
@@ -131,107 +132,143 @@ for j = 1:numel(all_sessions_new)
                 S_final{cond, dir, tag} = [S_final{cond, dir, tag}; curr_sess(i).S_spikes];
                 K_final{cond, dir, tag} = [K_final{cond, dir, tag}; curr_sess(i).K_spikes];
             end
+end
+
+all_s = struct('trial_type_cond', [],'trial_type_dir',[],'tag_',[],'time_spikes',[], 'chamber_',[], 'S_Spikes', [], 'K_Spikes', [])
+prod=0
+for cc=1:max_cond
+        for  dd =1: max_dir
+            for tt=1:max_tag
+                S_s=[];
+                K_k=[];
+                prod=prod+1
+                for i =1:numel(all_sessions_new)
+                    sess=all_sessions_new{i};
+                    for j=1:numel(sess)
+                        mask_= (sess(j).trialTypeDir==dd) & (sess(j).tag==tt) & ...
+                        (sess(j).trialTypeCond==cc);            
+                        if mask_ 
+                        S_s=[S_s;sess(j).S_spikes];
+                        K_k=[K_k; sess(j).K_spikes]
+                 
+                        end
+                    end
+                   
+                
+                end
+                all_s(prod).S_Spikes=S_s
+                all_s(prod).K_Spikes=K_k;
+                all_s(prod).trial_type_cond=cc
+                all_ss(prod).trial_type_dir=dd;
+                all_s(prod).tag_=tt;
+       
         end
-  
-%%%%%% Matrices including Neural and Behavioral activity
-S_matrix=[]
-K_matrix=[]
-   for t=min_tag:max_tag
-       for c=min_cond:max_cond
-           for d=min_dir:max_dir
-               s_m=[]
-               k_m=[]
-               spikes_S=S_final{c,d,t}';
-               ll_S=size(spikes_S,1);
-               s_m=[spikes_S,ones(ll_S,1)*c ones(ll_S,1)*d];
-               S_matrix=[S_matrix;s_m];
-               
+    end
+end   
 
-               spikes_K=K_final{c,d,t}';
-               ll_K=size(spikes_K,1);
-               k_m=[spikes_K,ones(ll_K,1)*c ones(ll_K,1)*d];
-               K_matrix=[K_matrix;k_m];
-             
-           end
-       end
-   end
  
-%% Change to suit personal preferences
-save( 'dati_mirco_15_11_k_partial','K_matrix')
-save( 'dati_mirco_15_11_s_partial','S_matrix')
+save('all_Sessions.mat','all_s')
 
 
-%% S data arrangement to fit cebra
-K=1
-trial_id_s=ones(1,length(S_matrix))'
-for i =2:length(S_matrix)
-
-    if S_matrix(i-1,end)==S_matrix(i,end)
-        trial_id_s(i)=K;
-    else
-        K=K+1
-        trial_id_s(i)=K;
-        
-    end
-end
-%trial_id=trial_id'
-
-S_matrix=[S_matrix trial_id_s];
-
-S_matrix(:,end-1)
-% assuming condition is declared in the third to last col
-s_active_neural=S_matrix(S_matrix(:,end-2)==1,1:end-3)
-% assume trial counter is the last column
-s_active_trial_id=S_matrix(S_matrix(:,end-2)==1,end);
-% assume trial value (i.e. label) is the 2nd to last col
-s_active_trial=S_matrix(S_matrix(:,end-2)==1,end-1);
-
-s_passive_neural=S_matrix(S_matrix(:,end-2)==2,1:end-3);
-s_passive_trial_id=S_matrix(S_matrix(:,end-2)==2,end);
-s_passive_trial=S_matrix(S_matrix(:,end-2)==2,end-1);
-
-s_joint_neural=S_matrix(S_matrix(:,end-2)==3,1:end-3);
-s_joint_trial_id=S_matrix(S_matrix(:,end-2)==3,1:end);
-s_joint_trial=S_matrix(S_matrix(:,end-2)==3,end-1);
-
-% Change to suit personal preferences
-save('dati_mirco_15_11_400_s',"s_active_neural","s_active_trial_id","s_active_trial", ...
-    "s_passive_neural","s_passive_trial_id","s_passive_trial", ...
-    "s_joint_neural","s_joint_trial_id","s_joint_trial")
-
-%% K data arrangement to fit cebra
-K=1
-trial_id_k=ones(1,length(K_matrix))'
-for i =2:length(K_matrix)
-
-    if K_matrix(i-1,end)==K_matrix(i,end)
-        trial_id_k(i)=K;
-    else
-        K=K+1
-        trial_id_k(i)=K;
-        
-    end
-end
-%trial_id=trial_id'
-
-K_matrix=[K_matrix trial_id_k];
-
-k_passive_neural=K_matrix(K_matrix(:,end-2)==1,1:end-3)
-k_passive_trial_id=K_matrix(K_matrix(:,end-2)==1,end);
-k_passive_trial=K_matrix(K_matrix(:,end-2)==1,end-1);
-
-k_active_neural=K_matrix(K_matrix(:,end-2)==2,1:end-3);
-k_active_trial_id=K_matrix(K_matrix(:,end-2)==2,end);
-k_active_trial=K_matrix(K_matrix(:,end-2)==2,end-1);
-
-k_joint_neural=K_matrix(K_matrix(:,end-2)==3,1:end-3);
-k_joint_trial_id=K_matrix(K_matrix(:,end-2)==3,1:end);
-k_joint_trial=K_matrix(K_matrix(:,end-2)==3,end-1);
-
-% Change to suit personal preferences
-
-save('dati_mirco_15_11_400_k',"k_active_neural","k_active_trial_id","k_active_trial", ...
-    "k_passive_neural","k_passive_trial_id","k_passive_trial", ...
-    "k_joint_neural","k_joint_trial_id","k_joint_trial")
-
-
+% 
+% %%%%%% Matrices including Neural and Behavioral activity
+% S_matrix=[]
+% K_matrix=[]
+%    for t=min_tag:max_tag
+%        for c=min_cond:max_cond
+%            for d=min_dir:max_dir
+%                s_m=[]
+%                k_m=[]
+%                spikes_S=S_final{c,d,t}';
+%                ll_S=size(spikes_S,1);
+%                s_m=[spikes_S,ones(ll_S,1)*c ones(ll_S,1)*d];
+%                S_matrix=[S_matrix;s_m];
+% 
+% 
+%                spikes_K=K_final{c,d,t}';
+%                ll_K=size(spikes_K,1);
+%                k_m=[spikes_K,ones(ll_K,1)*c ones(ll_K,1)*d];
+%                K_matrix=[K_matrix;k_m];
+% 
+%            end
+%        end
+%    end
+% 
+% %% Change to suit personal preferences
+% save( 'dati_mirco_15_11_k_partial','K_matrix')
+% save( 'dati_mirco_15_11_s_partial','S_matrix')
+% 
+% %% S data arrangement to fit cebra
+% K=1
+% trial_id_s=ones(1,length(S_matrix))'
+% for i =2:length(S_matrix)
+% 
+%     if S_matrix(i-1,end)==S_matrix(i,end)
+%         trial_id_s(i)=K;
+%     else
+%         K=K+1
+%         trial_id_s(i)=K;
+% 
+%     end
+% end
+% %trial_id=trial_id'
+% 
+% S_matrix=[S_matrix trial_id_s];
+% 
+% S_matrix(:,end-1)
+% % assuming condition is declared in the third to last col
+% s_active_neural=S_matrix(S_matrix(:,end-2)==1,1:end-3)
+% % assume trial counter is the last column
+% s_active_trial_id=S_matrix(S_matrix(:,end-2)==1,end);
+% % assume trial value (i.e. label) is the 2nd to last col
+% s_active_trial=S_matrix(S_matrix(:,end-2)==1,end-1);
+% 
+% s_passive_neural=S_matrix(S_matrix(:,end-2)==2,1:end-3);
+% s_passive_trial_id=S_matrix(S_matrix(:,end-2)==2,end);
+% s_passive_trial=S_matrix(S_matrix(:,end-2)==2,end-1);
+% 
+% s_joint_neural=S_matrix(S_matrix(:,end-2)==3,1:end-3);
+% s_joint_trial_id=S_matrix(S_matrix(:,end-2)==3,1:end);
+% s_joint_trial=S_matrix(S_matrix(:,end-2)==3,end-1);
+% 
+% % Change to suit personal preferences
+% save('dati_mirco_15_11_400_s',"s_active_neural","s_active_trial_id","s_active_trial", ...
+%     "s_passive_neural","s_passive_trial_id","s_passive_trial", ...
+%     "s_joint_neural","s_joint_trial_id","s_joint_trial")
+% 
+% %% K data arrangement to fit cebra
+% K=1
+% trial_id_k=ones(1,length(K_matrix))'
+% for i =2:length(K_matrix)
+% 
+%     if K_matrix(i-1,end)==K_matrix(i,end)
+%         trial_id_k(i)=K;
+%     else
+%         K=K+1
+%         trial_id_k(i)=K;
+% 
+%     end
+% end
+% %trial_id=trial_id'
+% 
+% K_matrix=[K_matrix trial_id_k];
+% 
+% k_passive_neural=K_matrix(K_matrix(:,end-2)==1,1:end-3)
+% k_passive_trial_id=K_matrix(K_matrix(:,end-2)==1,end);
+% k_passive_trial=K_matrix(K_matrix(:,end-2)==1,end-1);
+% 
+% k_active_neural=K_matrix(K_matrix(:,end-2)==2,1:end-3);
+% k_active_trial_id=K_matrix(K_matrix(:,end-2)==2,end);
+% k_active_trial=K_matrix(K_matrix(:,end-2)==2,end-1);
+% 
+% k_joint_neural=K_matrix(K_matrix(:,end-2)==3,1:end-3);
+% k_joint_trial_id=K_matrix(K_matrix(:,end-2)==3,1:end);
+% k_joint_trial=K_matrix(K_matrix(:,end-2)==3,end-1);
+% 
+% % Change to suit personal preferences
+% 
+% save('dati_mirco_15_11_400_k',"k_active_neural","k_active_trial_id","k_active_trial", ...
+%     "k_passive_neural","k_passive_trial_id","k_passive_trial", ...
+%     "k_joint_neural","k_joint_trial_id","k_joint_trial")
+% 
+% 
