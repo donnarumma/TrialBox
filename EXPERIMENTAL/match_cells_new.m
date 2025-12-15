@@ -1,3 +1,6 @@
+%  da cambiare f_pattern (riga 16) a seconda dei nomi dati alle sessioni
+%  da inserire le sessioni di interesse (progressivo) (riga 28,
+%  session_list)
 clear dir 
 clearvars
 clear functions
@@ -12,9 +15,9 @@ path_=pwd
 % path ASSOLUTO alla cartella
 %path_ = "C:\Users\loren\Desktop\USB_Content\AI_PhD_Neuro_CNR\Empirics\GIT_stuff\dati_Mirco\last_oct_25\SpikesExtracted";
 
-f_pattern = 'SpikesExtracted\all_0_50_frontal*.mat';
+f_pattern = 'SpikesExtracted\all_0_150_frontal*.mat';
 
-% QUI cambia tutto: usa il path assoluto
+% PAth Assoluto
 M_files = dir(fullfile(path_, f_pattern));
 
 disp("FILE TROVATI:");
@@ -23,8 +26,9 @@ disp({M_files.name});
 M_files = dir(f_pattern);
 % patern of files to be loaded
 %% extract and put in a structure the above specified sessions
-session_list=[22,25,33,35,36,38,42,43]
-
+session_list=[11,12,21, 22,23,24,25,27,28,30,32,33,34,35,36,37,38,39, 40, ...
+    41,42,43,44,45,46,47,48]
+% 
 all_sessions = cell(1, length(session_list));
 for k = 1:length(M_files)
     fullname = fullfile(M_files(k).folder, M_files(k).name);
@@ -63,7 +67,11 @@ all_dir  = [];
 for k = 1:numel(session_list)
     
     curr_sess = all_sessions{k};   
-    
+    all_n_id = curr_sess(1).All_N_Identity;
+
+    if size(unique(all_n_id, 'rows'),1) ~= size(all_n_id,1)
+    error("Duplicati nei neuroni! Sessione %d", curr_sess_id);
+    end
     if isempty(curr_sess)
         error("Sessione %d vuota: all_sessions{%d} = []", session_list(k), k);
     end
@@ -77,15 +85,17 @@ min_dir=min(all_dir)
 max_cond=max(all_cond)
 min_cond=min(all_cond)
 % tag direction-condition combo
+all_sessions_new = cell(size(all_sessions));
+
 for k=1:numel(session_list)
     curr_sess_id=session_list(k)
     curr_sess=all_sessions{k};
     all_n_id=curr_sess(1).All_N_Identity
 
     % matching neuroni
-    Good_K=GoodCells_K(GoodCells_K(:,1)==curr_sess_id,:);
-    Good_S=GoodCells_S(GoodCells_S(:,1)==curr_sess_id,:);
-   
+    Good_K=GoodCells_K(GoodCells_K(:,1)==curr_sess_id,:)
+    Good_S=GoodCells_S(GoodCells_S(:,1)==curr_sess_id,:)
+ 
     [~,~,b_k]=intersect(Good_K(:,2:3),  all_n_id,'rows')
     [~,~,b_s]=intersect(Good_S(:,2:3),  all_n_id,'rows')
 
@@ -111,7 +121,7 @@ end
 
 %% Generating S and K data matrix joining session
 all_tags = [];
-SS= {}
+
 for j = 1:numel(all_sessions_new)
     all_tags = [all_tags, [all_sessions_new{j}.tag]];
 end
@@ -134,41 +144,90 @@ for j = 1:numel(all_sessions_new)
             end
 end
 
-all_s = struct('trial_type_cond', [],'trial_type_dir',[],'tag_',[],'time_spikes',[], 'chamber_',[], 'S_Spikes', [], 'K_Spikes', [])
-prod=0
-for cc=1:max_cond
-        for  dd =1: max_dir
-            for tt=1:max_tag
-                S_s=[];
-                K_k=[];
-                prod=prod+1
-                for i =1:numel(all_sessions_new)
-                    sess=all_sessions_new{i};
-                    for j=1:numel(sess)
-                        mask_= (sess(j).trialTypeDir==dd) & (sess(j).tag==tt) & ...
-                        (sess(j).trialTypeCond==cc);            
-                        if mask_ 
-                        S_s=[S_s;sess(j).S_spikes];
-                        K_k=[K_k; sess(j).K_spikes]
-                 
-                        end
-                    end
-                   
-                
-                end
-                all_s(prod).S_Spikes=S_s
-                all_s(prod).K_Spikes=K_k;
-                all_s(prod).trial_type_cond=cc
-                all_ss(prod).trial_type_dir=dd;
-                all_s(prod).tag_=tt;
-       
+
+
+all_s = struct('trial_type_cond', [], 'trial_type_dir', [], 'tag_', [], ...
+               'time_spikes', [], 'chamber_', [], ...
+               'S_Spikes', [], 'K_Spikes', []);
+
+prod = 0;
+
+
+for cc = 1:max_cond
+    for dd = 1:max_dir
+        for tt = 1:max_tag
+
+            S_s = S_final{cc,dd,tt};
+            K_k = K_final{cc,dd,tt};
+
+            % salta combinazioni vuote
+            if isempty(S_s) && isempty(K_k)
+                continue
+            end
+
+            prod = prod + 1;
+
+            all_s(prod).trial_type_cond = cc;
+            all_s(prod).trial_type_dir  = dd;
+            all_s(prod).tag_            = tt;
+
+            all_s(prod).S_Spikes = S_s;
+            all_s(prod).K_Spikes = K_k;
+
+            % cami lasciati vuoti 
+            all_s(prod).time_spikes = [];
+            all_s(prod).chamber_    = [];
         end
     end
-end   
+end
+
+
+
+%%% filtrare per tag
+all_s_=all_s([all_s.tag_]<=8)
 
  
-save('all_Sessions.mat','all_s')
+save('all_Sessions.mat','all_s_')
 
+
+% all_s = struct('trial_type_cond', [],'trial_type_dir',[],'tag_',[],'time_spikes',[], 'chamber_',[], 'S_Spikes', [], 'K_Spikes', [])
+% prod=0
+% for cc=1:max_cond
+%         for  dd =1: max_dir
+%             for tt=1:max_tag
+% 
+%                 S_s=[];
+%                 K_k=[];
+% 
+%                 prod=prod+1
+%                 for i =1:numel(all_sessions_new)
+%                     sess=all_sessions_new{i};
+%                     for j=1:numel(sess)
+%                         mask_= (sess(j).trialTypeDir==dd) & (sess(j).tag==tt) & ...
+%                         (sess(j).trialTypeCond==cc);            
+%                         if mask_ 
+% 
+%                         S_s=[S_s;sess(j).S_spikes];
+%                         K_k=[K_k; sess(j).K_spikes]
+% 
+%                         end
+%                     end
+% 
+% 
+%                 end
+%                 % ONLY increment when data exists
+%                 if ~isempty(S_s) || ~isempty(K_k)
+%                     prod = prod + 1;
+%                     all_s(prod).S_Spikes = S_s;
+%                     all_s(prod).K_Spikes = K_k;
+%                     all_s(prod).trial_type_cond = cc;
+%                     all_s(prod).trial_type_dir  = dd;
+%                     all_s(prod).tag_ = tt;
+%                 end
+% 
+%         end
+%     end
+% end   
 
 % 
 % %%%%%% Matrices including Neural and Behavioral activity
