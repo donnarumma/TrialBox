@@ -1,0 +1,7 @@
+GoodCells_K e GoodCells_S
+sono due matrici contenenti l'identificativo delle cellule attive ("good cells") nel task da parte di K ed S, rispettivamente.
+Per cellule attive intendiamo quelle con almeno 4 spikes al secondo in almeno un'epoca del task.
+
+In particolare la prima colonna identifica la sessione in cui la cellula è stata registrata,
+la seconda colonna il canale (elettrodo) attivo in quella sessione e
+la terza colonna il tag della cellula.
