@@ -28,7 +28,7 @@ switch lower(method)
                 y_ = lag_Y{b,e};
                 yc = y_ - mean(y_);
 
-                % ---- GCV ----
+                % GCV 
                 gcv_scores = zeros(n_lambda,1);
                 for i = 1:n_lambda
                     lambda = lambdas(i);
@@ -63,7 +63,7 @@ switch lower(method)
         for b = 1:n_lags
             X_ = lag_X{b};
     
-            % ---- standardizzazione (fondamentale per kNN) ----
+            %  standardizzazione 
             Xs = zscore(X_);
     
             % precompute neighbors (escludendo self)
