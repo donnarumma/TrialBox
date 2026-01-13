@@ -4,28 +4,34 @@
 % PATH contenente i dati DATI SUA
 % CARTELLA ExtractSPIKES in TrialBox
 
-clear;
-close all
+function data_trials = ExtractAllSPIKES(params)
 
-[~,nn]=system('hostname'); nn=strtrim(nn);
-if strcmp(nn,'rk018610')
-    isonserver=true;
-else
-    isonserver=false;
+if nargin < 1 || isempty(params)
+    params = struct();
 end
 
-params      = getDefaultSPIKESparams;
+% default params
+defParams = getDefaultSPIKESparams;
 
-interval        = params.interval; 
+% merge params
+params = mergeParams(defParams, params);
+
+fprintf('\n');
+fprintf('================ SPIKES EXTRACTION PARAMETERS ================\n');
+fprintf('Chamber        : %s\n', params.chamber);
+fprintf('Time Interval  : [%g  %g] ms\n', params.interval(1), params.interval(2));
+fprintf('Mode Aligned   : %s\n', modeAlignToString(params.MODE_ALIGN));
+fprintf('Monkey         : %s\n', params.selMonkey);
+fprintf('N. Sessions    : %d\n', numel(params.session_list.(params.chamber)));
+fprintf('===============================================================\n\n');
+
+interval        = params.interval; % [0,500] ms
 selMonkey       = params.selMonkey;
-session_list    = params.session_list;
+session_list    = params.session_list.(params.chamber);
 MODE_ALIGN      = params.MODE_ALIGN;
 
-% Name of Saved data
-name        = 'AllFrontal';
+% VARIABLES_monkey_joint_action;
 
-
-VARIABLES_monkey_joint_action;
 for n_sess = 1:length(session_list)
     session_name = session_list{n_sess};
     try
@@ -48,14 +54,14 @@ for n_sess = 1:length(session_list)
     DataSpike = getSolo_K_ConditionTrials(DataSpike,Trials);
     DataSpike = getAreaTrials(DataSpike,Trials);
     DataSpike = getGoodNeurons(DataSpike,Trials);
-    % DataSpike=      getTuningSoloNeurons(S,Trials);
-    % DataSpike=     getTuningJointNeurons(S,Trials);
-    % DataSpike=       getTuningObsNeurons(S,Trials);
+    % DataSpike=    getTuningSoloNeurons(S,Trials);
+    % DataSpike=    getTuningJointNeurons(S,Trials);
+    % DataSpike=    getTuningObsNeurons(S,Trials);
     % DataSpike=    getTuningNoSoloNeurons(S,Trials);
-    % DataSpike=   getTuningNoJointNeurons(S,Trials);
-    % DataSpike=     getTuningNoObsNeurons(S,Trials);
+    % DataSpike=    getTuningNoJointNeurons(S,Trials);
+    % DataSpike=    getTuningNoObsNeurons(S,Trials);
     % if length(CELL_SELECTION)>1
-    %     DataSpike=          getTuningNeurons(S,Trials,CELL_SELECTION(2));
+    %     DataSpike=        getTuningNeurons(S,Trials,CELL_SELECTION(2));
     %     DataSpike=        getNoTuningNeurons(S,Trials,CELL_SELECTION(2));
     % end
     DataSpike = getTimeMovementOnsetTargetTrials(DataSpike,Trials); %% new entry
@@ -64,13 +70,13 @@ for n_sess = 1:length(session_list)
     end
     DataSpike = getTimeTargetTrials(DataSpike,Trials);
     %S=retuneSpikeWithTimeStamp1(S,Trials);
-    if MODE_ALIGN==TARGET_APPEARS_MODE
+    if MODE_ALIGN==1 %TARGET_APPEARS_MODE
         DataSpike = retuneSpikeWithTargetAppears(DataSpike,Trials);
-    elseif MODE_ALIGN==MOVEMENT_ONSET_MODE
+    elseif MODE_ALIGN==0 %MOVEMENT_ONSET_MODE
         DataSpike = retuneSpikeWithMovementOnset(DataSpike,Trials);
-    elseif MODE_ALIGN==MOVEMENT_ONSET_K_MODE
+    elseif MODE_ALIGN==2 %MOVEMENT_ONSET_K_MODE
         DataSpike = retuneSpikeWithMovementOnsetK(DataSpike,Trials);
-    elseif MODE_ALIGN==MOVEMENT_ONSET_S_MODE
+    elseif MODE_ALIGN==3 %MOVEMENT_ONSET_S_MODE
         DataSpike = retuneSpikeWithMovementOnsetS(DataSpike,Trials);
     end
 
@@ -99,27 +105,30 @@ for n_sess = 1:length(session_list)
 
     dataSession_trials                                 = conditionalligne(dataSession_trials);
     % saving single session data
-    save_path = fullfile(pwd, [name,filesep,'SpikesExtracted']);
+    dirSingle = params.singleDir_save;
+    save_path = fullfile(pwd, [dirSingle,filesep,'Single_SpikesExtracted',filesep,params.chamber]);
 
     if ~exist(save_path, 'dir')
         mkdir(save_path);
     end
+    
+    ch = dataSession_trials(1).chamber;
+    if iscell(ch)
+        ch = ch{1};
+    end
 
-    name_save = strcat(selMonkey,'_',num2str(interval(1)),'_', ...
-        num2str(interval(2)),'_',DataSpike.area, session_name);
-    save(fullfile(save_path, strcat(name_save,'.mat')), 'dataSession_trials');
+    name_save = sprintf('%s_%g_%g_%s_%s', ...
+                selMonkey, interval(1), interval(2), ch, session_name);
+save(fullfile(save_path, strcat(name_save,'.mat')), 'dataSession_trials');
 end
 
-f_pattern = [save_path, filesep,'all_',num2str(interval(1)),'_',num2str(interval(2)),'_frontal*.mat'];
+f_pattern = [save_path, filesep,'all_',num2str(interval(1)),'_',num2str(interval(2)),'_',params.chamber,'*.mat'];
 
 % Full path
 M_files = dir(f_pattern);
 
 disp("Files found:");
 disp({M_files.name});
-
-% MATCHING FILES
-M_files = dir(f_pattern);
 
 sess_temp = erase(session_list, 'SK');
 session_num = str2double(sess_temp);
@@ -131,7 +140,6 @@ for k = 1:length(M_files)
     fprintf('Loading %s\n', fullname);
 
     loaded = load(fullname);
-    data_trials_load = loaded.dataSession_trials;
     % Extract session number with a not found warning
     tokens = regexp(M_files(k).name, 'SK(\d+)H', 'tokens');
     if isempty(tokens)
@@ -187,21 +195,21 @@ for k = 1:numel(session_num)
 end
 
 max_dir     = max(all_dir);
-min_dir     = min(all_dir);
+% min_dir     = min(all_dir);
 max_cond    = max(all_cond);
-min_cond    = min(all_cond);
+% min_cond    = min(all_cond);
 % tag direction-condition
 dataessions_new = cell(size(dataessions));
-load('GoodCells_K.mat')
-load('GoodCells_S.mat')
+GK = load('GoodCells_K.mat');
+GS = load('GoodCells_S.mat');
 for k=1:numel(session_num)
     curr_sess_id    = session_num(k);
     curr_sess       = dataessions{k};
     all_n_id        = curr_sess(1).All_N_Identity;
 
     % matching neurons
-    Good_K          = GoodCells_K(GoodCells_K(:,1)==curr_sess_id,:);
-    Good_S          = GoodCells_S(GoodCells_S(:,1)==curr_sess_id,:);
+    Good_K          = GK.GoodCells_K(GK.GoodCells_K(:,1)==curr_sess_id,:);
+    Good_S          = GS.GoodCells_S(GS.GoodCells_S(:,1)==curr_sess_id,:);
 
     [~,~,intGood_k]       = intersect(Good_K(:,2:3),  all_n_id,'rows');
     [~,~,intGood_s]       = intersect(Good_S(:,2:3),  all_n_id,'rows');
@@ -212,8 +220,8 @@ for k=1:numel(session_num)
     for i = 1:N
         Spikes                                      = curr_sess(i).Spikes;
         cond                                        = curr_sess(i).trialTypeCond;
-        dir                                         = curr_sess(i).trialTypeDir;
-        tag                                         = (cond-1)*max_dir+dir;
+        direction                                   = curr_sess(i).trialTypeDir;
+        tag                                         = (cond-1)*max_dir+direction;
         combo_counter(tag)                          = combo_counter(tag)+1;
         curr_sess(i).tag                            = combo_counter(tag);
         curr_sess(i).S_spikes                       = Spikes(intGood_s,:);
@@ -245,7 +253,7 @@ for j = 1:numel(dataessions_new)
 end
 
 max_tag = max(all_tags);
-min_tag = min(all_tags);
+%min_tag = min(all_tags);
 
 S_final = cell(max_cond, max_dir, max_tag);
 K_final = cell(max_cond, max_dir, max_tag);
@@ -261,23 +269,23 @@ for j = 1:numel(dataessions_new)
     curr_sess = dataessions_new{j};
     for i = 1:numel(curr_sess)
         cond = curr_sess(i).trialTypeCond;
-        dir  = curr_sess(i).trialTypeDir;
+        direction  = curr_sess(i).trialTypeDir;
         tag  = curr_sess(i).tag;
-        
-        S_final{cond, dir, tag}             = [S_final{cond, dir, tag}; curr_sess(i).S_spikes];
-        K_final{cond, dir, tag}             = [K_final{cond, dir, tag}; curr_sess(i).K_spikes];
-        trialId_final{cond, dir, tag}       = [trialId_final{cond, dir, tag}; curr_sess(i).trialId];
-        trialSession_final{cond, dir, tag}  = [trialSession_final{cond, dir, tag}; {curr_sess(i).SessName}];
-        timeSpikes_final{cond, dir, tag}    = [timeSpikes_final{cond, dir, tag}; curr_sess(i).timeSpikes];
-        chamber_final{cond, dir, tag}       = [chamber_final{cond, dir, tag};{curr_sess(i).chamber}];
-        Neuron_final_S{cond, dir, tag}      = [Neuron_final_S{cond, dir, tag};curr_sess(i).Neuron_S];
-        Neuron_final_K{cond, dir, tag}      = [Neuron_final_K{cond, dir, tag};curr_sess(i).Neuron_K];
+
+        S_final{cond, direction, tag}             = [S_final{cond, direction, tag}; curr_sess(i).S_spikes];
+        K_final{cond, direction, tag}             = [K_final{cond, direction, tag}; curr_sess(i).K_spikes];
+        trialId_final{cond, direction, tag}       = [trialId_final{cond, direction, tag}; curr_sess(i).trialId];
+        trialSession_final{cond, direction, tag}  = [trialSession_final{cond, direction, tag}; {curr_sess(i).SessName}];
+        timeSpikes_final{cond, direction, tag}    = [timeSpikes_final{cond, direction, tag}; curr_sess(i).timeSpikes];
+        chamber_final{cond, direction, tag}       = [chamber_final{cond, direction, tag};{curr_sess(i).chamber}];
+        Neuron_final_S{cond, direction, tag}      = [Neuron_final_S{cond, direction, tag};curr_sess(i).Neuron_S];
+        Neuron_final_K{cond, direction, tag}      = [Neuron_final_K{cond, direction, tag};curr_sess(i).Neuron_K];
     end
 end
 
 data = struct( ...
-    'trialID',         [], ... 
-    'trialIdSession',  {}, ...  
+    'trialID',         [], ...
+    'trialIdSession',  {}, ...
     'timeSpikes',      [], ...
     'trialTypeCond',   [], ...
     'trialTypeDir',    [], ...
@@ -318,6 +326,34 @@ for cc = 1:max_cond
 end
 
 %% tag filtering
-data_trials = data([data.Tag]<=8);
+data_trials = data([data.Tag]<=8); 
+% Keep only the first 192 trials (8 per condition and direction). 
+% Any subsequent trials are discarded to ensure temporal alignment 
+% across all sessions, including those with missing data.
 
-save([name,'.mat'],'data_trials')
+saveDir = fullfile(params.dir_save, 'All_SpikesExtracted');
+if ~exist(saveDir,'dir')
+    mkdir(saveDir);
+end
+
+nameDataSave = params.selMonkey;
+saveName = sprintf('%s_%s_%g_%g.mat', ...
+    nameDataSave, params.chamber, interval(1), interval(2));
+
+save(fullfile(saveDir, saveName), 'data_trials');
+
+    function modeStr = modeAlignToString(MODE_ALIGN)
+        switch MODE_ALIGN
+            case 1
+                modeStr = 'Target ON';
+            case 0
+                modeStr = 'Movement Onset';
+            case 2
+                modeStr = '"K" Movement Onset';
+            case 3
+                modeStr = '"S" Movement Onset';
+            otherwise
+                modeStr = 'Unknown alignment mode';
+        end
+    end
+end
