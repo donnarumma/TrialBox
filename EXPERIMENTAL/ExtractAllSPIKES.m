@@ -1,4 +1,4 @@
-%% MAIN_ExtractAllSPIKES
+%% function data_trials = ExtractAllSPIKES(params)
 % copia della funzione S_translation di Donnarumma
 % LISTA DEI PATH NECESSARI:
 % PATH contenente i dati DATI SUA
