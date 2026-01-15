@@ -6,6 +6,6 @@ function   [data_dir]=getDataAudiobook()
 if contains(name, 'Ubuntu')
     data_dir = '/home/frosolone/HILARIOUS_Sound/Audiobook';
 else
-    data_dir = 'D:\main_scriptNSA\Older_and_Proof\Sound_pipeline\11_06\ERP_analysis\Audiobook';
+    data_dir = 'E:\Hilarious_Dubbing\Audiobook\';
 end
 end
