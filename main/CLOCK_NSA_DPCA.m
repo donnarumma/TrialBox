@@ -110,7 +110,9 @@ timeField                       = data_trials_class(1).(['time' par.pcaEncode.Ou
 istart                          = find(timeField>=-80,1);   % select -80  ms 
 iend                            = find(timeField>=250,1);   % select 250  ms
 par.plot_trajectory2D           = plot_trajectory2DParams;
-par.plot_trajectory2D.keep      = 9:16;                     % which conditions (e.g. obs)
+% par.plot_trajectory2D.keep      = 1:8;                     % which conditions (e.g.  Solo)
+% par.plot_trajectory2D.keep      = 9:16;                     % which conditions (e.g. obs)
+par.plot_trajectory2D.keep      = 17:24;                     % which conditions (e.g. Join)
 par.plot_trajectory2D.wd        = [3,4];                    % which components
 par.plot_trajectory2D.axlab     = 'x';
 par.plot_trajectory2D.cmaps     = cmaps;
