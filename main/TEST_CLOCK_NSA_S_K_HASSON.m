@@ -1,4 +1,4 @@
-% function CLOCK_NSA_DPCA
+% function TEST_CLOCK_S_K_HASSON
 % PCA Clock, see
 % Pezzulo, G., Donnarumma, F., Ferrari-Toniolo, S., Cisek, P., & Battaglia-Mayer, A. (2022). 
 % Shared population-level dynamics in monkey premotor cortex during solo action, joint action and action observation. 
@@ -192,7 +192,7 @@ config_.obs_subject             ='s';
 
 % use_neural indica se i dati neurali vengono utilizzati nella pipeline
 % (non necessariamente per la correlazione). 
-config_.use_neural      = false;
+config_.use_neural              = false;
 
 
 
@@ -221,13 +221,12 @@ A_struct=data_trials;
 B_struct=data_trials;
 
 for it=1:length(A_struct)
-    A_struct(it).Manifold=data_trials(it).dpca;
-    B_struct(it).Manifold=data_trials(it).dpca;
+    A_struct(it).Manifold=data_trials(it).dpca;   % S (y dimension)
+    B_struct(it).Manifold=data_trials(it).dpca;   % K (x dimension)
 end
-L_L_matrix = compute_LL_matrix(A_struct, B_struct, config_);  % AxB
+L_L_matrix = compute_LL_matrix(A_struct, B_struct, config_);  % row info A (S) x column info in B (K)
 
-L_L_matrix
-
+% LL_plot(LL_matrix, config);
 %% plot_scatterGradient
 data_trials_scatter             = data_trials;
 InField                         = par.pcaEncode.OutField;

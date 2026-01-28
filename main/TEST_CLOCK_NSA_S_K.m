@@ -1,4 +1,4 @@
-% function CLOCK_NSA_DPCA
+% function TEST_CLOCK_NSA_S_K
 % PCA Clock, see
 % Pezzulo, G., Donnarumma, F., Ferrari-Toniolo, S., Cisek, P., & Battaglia-Mayer, A. (2022). 
 % Shared population-level dynamics in monkey premotor cortex during solo action, joint action and action observation. 
@@ -7,8 +7,8 @@ clear;
 par.irng                        = 10;                  % for reproducibility
 binWidth                        = 20;
 kernSD                          = 30;
-monkey                          = 'K';                 % K precises        % RT slow
-% monkey                          = 'S';               % S seems noisier - % RT fast
+% monkey                          = 'K';                 % K precises        % RT slow
+monkey                          = 'S';               % S seems noisier - % RT fast
 rng(par.irng);
 %% Step 0. load data in raw format
 % nf = '~/DATA/SAPIENZA/PROCESSED/all_v5_translated_SK_SUA_t599_all_frontal.mat';                                 % combined sessions
@@ -24,7 +24,7 @@ for it=1:nTrials
     % data_trials(it).trialTypeDir= data_trials(it).trialType;         % T1-T8
     % data_trials(it).trialTypeCnd= data_trials(it).trialType2;        % joint | obs | solo 
     data_trials(it).trialType   = (data_trials(it).trialTypeCond-1)*8+data_trials(it).trialTypeDir;
-    data_trials(it).trialName   = SapienzaTypeString(data_trials(it).trialTypeCond,data_trials(it).trialTypeDir);
+    data_trials(it).trialName   = typeStringSK(data_trials(it).trialTypeCond,data_trials(it).trialTypeDir);
     data_trials(it).trialNameAll= data_trials(it).trialName;
     data_trials(it).train       = true;
     data_trials(it).valid       = false;
@@ -135,7 +135,7 @@ title (['monkey ' monkey ' (' t10 ')']);
 % remapTypes
 par.remapTypes                  = remapTypesParams;
 par.remapTypes.selection        = {  1:8  ,  9:16, 17:24 };
-par.remapTypes.names            = {'Joint', 'Obs', 'Solo'};
+par.remapTypes.names            = {'ACT S, OBS K' , 'OBS S, ACT  K', 'ACT S, ACT K'};%{'Joint', 'Obs', 'Solo'};
 data_trials_conds               = remapTypes(data_trials,par.remapTypes);
 % plot_Each_mean
 conditions_m                    = unique([data_trials_conds.trialType]);
@@ -220,8 +220,8 @@ A_struct=data_trials;
 B_struct=data_trials;
 
 for it=1:length(A_struct)
-    A_struct(it).Manifold=data_trials(it).dpca;
-    B_struct(it).Manifold=data_trials(it).dpca;
+    A_struct(it).Manifold=data_trials(it).dpca;         % S
+    B_struct(it).Manifold=data_trials(it).dpca;         % K
 end
 L_L_matrix = compute_LL_matrix(A_struct, B_struct, config_);  % AxB
 
