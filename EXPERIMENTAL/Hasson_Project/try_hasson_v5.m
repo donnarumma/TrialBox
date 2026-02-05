@@ -7,13 +7,15 @@
 %   lunghezza
 % - MAnifold: strutturato come i trials
 %
+%A_struct=K_Struct'
+%B_struct=S_Struct'
 
 % per far girare la funzione Hasson (compute_LL_matrix): 
 % intanto genero la struttura di configurazione cui passo tutte le info necessarie
 
 config_=struct;
 
-config_.corr_obj= "hat-hat"  % "manifold" | "hat-obs" | "hat-hat"
+config_.corr_obj= "manifold"  % "manifold" | "hat-obs" | "hat-hat"
     % a seconda degli oggetti che voglio correlare, scelgo
     % manifold: correli le manifold e basta
     % Negli altri due casi, si passa per un decoder per avere dei valori
@@ -39,12 +41,6 @@ config_.use_neural=1
             error("Unknown corr_obj");
     end
 
-% soggetti, direzione e condizione  (task)
-% soggetto attivo e passivo dipendono dalla condiz.
-config_.dir = [1]  % list of direction(s)
-config_.cond = [2] % condizione
-config_.active_subject='k' 
-config_.obs_subject='s'
 
  % parametri decoder (nei casi hat-obs e hat-hat, devo scegliere un
  % decoder per fare le correlazioni tra dati osservati e stimati)
@@ -72,7 +68,10 @@ end
 %   block_size - stride_abs
 % Il numero di blocchi è:
 %   n_blocchi = floor((trial_length - block_size) / stride_abs) + 1
-config_.trial_length= 195 % lunghezza dei trial (int Fix)
+% trial length (in bins)
+config_.trial_length= 164 % lunghezza dei trial (int Fix)
+% trial lenght timespan in ms 
+config_.time_length=500
 config_.block_size =  50  % dimensione dei blocchi (lag) (int < trial_length)
 config_.block_stride = 0.2  
 
@@ -101,6 +100,20 @@ if config_.sub_block_size == config_.block_size && config_.sub_block_stride ~= 1
              '(single average per block).']);
 end
 
+% soggetti, direzione e condizione  (task)
+% soggetto attivo e passivo dipendono dalla condiz.
+config_.dir = [1]  % list of direction(s)
+config_.cond = [1] % condizione
 
 
-L_L_matrix = compute_LL_matrix(A_struct, B_struct, config_);
+%%% Just notice that:
+% In compute_LL_matrix(Y_subject, X_subject, ...),
+% Y_subject maps to the ROWS (Y-axis) of the lag–lag matrix,
+% X_subject maps to the COLUMNS (X-axis) of the lag–lag matrix.
+Y_subject=S_Struct
+X_subject=K_Struct
+% define which subject 
+config_.y_subject='s' 
+config_.x_subject='k'
+L_L_matrix = compute_LL_matrix(Y_subject,X_subject, config_);
+LL_plot(L_L_matrix,config_)

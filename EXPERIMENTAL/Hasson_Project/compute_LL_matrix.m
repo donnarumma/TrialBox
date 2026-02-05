@@ -1,4 +1,4 @@
-function LL_matrix = compute_LL_matrix(A_struct, B_struct, config)
+function LL_matrix = compute_LL_matrix(X_struct, Y_struct, config)
 
 % defaults
 
@@ -16,15 +16,15 @@ assert(config.block_size < config.trial_length, ...
     end
 
 % filtering data
-[A_sel, B_sel]=filter_data(A_struct, B_struct, config)
+[X_sel, Y_sel]=filter_data(X_struct, Y_struct, config)
 
 % build lag structures
 if config.use_neural
-    [lag_manif_a, lag_manif_b, lag_n_a, lag_n_b] = ...
-        convert_to_lag_struct(A_sel, B_sel, config);
+    [lag_manif_X, lag_manif_Y, lag_n_X, lag_n_Y] = ...
+        convert_to_lag_struct(X_sel, Y_sel, config);
 else
-    [lag_manif_a, lag_manif_b] = ...
-        convert_to_lag_struct(A_sel, B_sel, config);
+    [lag_manif_X, lag_manif_Y] = ...
+        convert_to_lag_struct(X_sel, Y_sel, config);
 end
 
 %%  select objects to correlatie representation 
@@ -32,29 +32,27 @@ switch config.corr_obj
 
     case "manifold"
         % filter data according to direction and condition
-        LL_matrix=f_corr(lag_manif_a, lag_manif_b)
-        LL_plot(LL_matrix, config)
+        LL_matrix=f_corr(lag_manif_X, lag_manif_Y)
 
     case "hat-obs"
         % Predizioni
-        Y_hat_A = decoders(lag_manif_a, lag_n_a, config);
-        Y_hat_B = decoders(lag_manif_b, lag_n_b, config);
+        Y_hat_X = decoders(lag_manif_X, lag_n_X, config);
+        Y_hat_Y = decoders(lag_manif_Y, lag_n_Y, config);
         
         % Direzione A --> B
-        LL_AB = f_corr(Y_hat_A, lag_n_b);
+        LL_XY = f_corr(Y_hat_X, lag_n_Y);
         
         % Direzione B --> A
-        LL_BA = f_corr(Y_hat_B, lag_n_a);
+        LL_YX = f_corr(Y_hat_Y, lag_n_X);
         
         % Media simmetrica (come fanno Hasson e Zada nel paper)
-        LL_matrix = 0.5 * (LL_AB + LL_BA);
-        LL_plot(LL_matrix, config) 
+        LL_matrix = 0.5 * (LL_XY + LL_YX);
+         
 
     case "hat-hat" 
-       Y_hat_A = decoders(lag_manif_a, lag_n_a, config);
-       Y_hat_B = decoders(lag_manif_b, lag_n_b, config); 
-       LL_matrix =f_corr(Y_hat_A, Y_hat_B);
-       LL_plot(LL_matrix,config)
+       Y_hat_X = decoders(lag_manif_X, lag_n_X, config);
+       Y_hat_Y = decoders(lag_manif_Y, lag_n_Y, config); 
+       LL_matrix =f_corr(Y_hat_X, Y_hat_Y);
 
     otherwise
         error("Unknown corr_obj");
