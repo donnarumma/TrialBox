@@ -1,4 +1,4 @@
-% function CLOCK_NSA_DPCA
+% function TEST_CLOCK_S_K_HASSON
 % PCA Clock, see
 % Pezzulo, G., Donnarumma, F., Ferrari-Toniolo, S., Cisek, P., & Battaglia-Mayer, A. (2022). 
 % Shared population-level dynamics in monkey premotor cortex during solo action, joint action and action observation. 
@@ -7,28 +7,34 @@ clear;
 par.irng                        = 10;                  % for reproducibility
 binWidth                        = 20;
 kernSD                          = 30;
+monkey                          = 'K';                 % K precises        % RT slow
+% monkey                          = 'S';               % S seems noisier - % RT fast
 rng(par.irng);
 %% Step 0. load data in raw format
-nf = '~/DATA/SAPIENZA/PROCESSED/all_v5_translated_SK_SUA_t599_all_frontal.mat';                                 % combined sessions
+% nf = '~/DATA/SAPIENZA/PROCESSED/all_v5_translated_SK_SUA_t599_all_frontal.mat';                                 % combined sessions
+fprintf('load data_trials\n');
+nf = '~/tools/TrialBox/EXPERIMENTAL/all_Frontal_-200_500.mat';
 % nf = '~/DATA/SAPIENZA/PROCESSED/all_v5_translated_SK_SUA_t599_all_frequencies20_frontal.mat';                 % alrealdy smoothed % 
 % nf = '~/DATA/SAPIENZA/PROCESSED/all_v5_translated_SK_SUA_t599_all_means_frequencies20_cumulative_frontal';    % with mean trials per conditions as first trials 
-data_trials                     = load(nf);
-data_trials                     = data_trials.dat;
-Treset                          = -199;
+trials_file                     = load(nf);
+data_trials                     = trials_file.data_trials;
+Treset                          = 0;
 nTrials                         = length(data_trials);
 for it=1:nTrials
-    data_trials(it).trialTypeDir= data_trials(it).trialType;         % T1-T8
-    data_trials(it).trialTypeCnd= data_trials(it).trialType2;        % joint | obs | solo 
-    data_trials(it).trialType   = (data_trials(it).trialTypeCnd-1)*8+data_trials(it).trialTypeDir;
-    data_trials(it).trialName   = SapienzaTypeString(data_trials(it).trialTypeCnd,data_trials(it).trialTypeDir);
+    % data_trials(it).trialTypeDir= data_trials(it).trialType;         % T1-T8
+    % data_trials(it).trialTypeCnd= data_trials(it).trialType2;        % joint | obs | solo 
+    data_trials(it).trialType   = (data_trials(it).trialTypeCond-1)*8+data_trials(it).trialTypeDir;
+    data_trials(it).trialName   = SapienzaTypeString(data_trials(it).trialTypeCond,data_trials(it).trialTypeDir);
     data_trials(it).trialNameAll= data_trials(it).trialName;
     data_trials(it).train       = true;
     data_trials(it).valid       = false;
     data_trials(it).test        = false;
-    data_trials(it).timespikes  = (1:size(data_trials(it).spikes,2)) + Treset;
+    % data_trials(it).spikes      = data_trials(it).([monkey '_Spikes']);
+    data_trials(it).timespikes  = data_trials(it).timeSpikes(1,:);
 end
 
 %% Step 1. prepare data
+for mstr={'K','S'}
 signal_name                     = 'spikes';       % data savead are in 'spikes' field
 signal_process                  = 'dpca';        % data processed are in 'y' field
 % SmoothWindow (moving window smoothing)
@@ -110,9 +116,9 @@ timeField                       = data_trials_class(1).(['time' par.pcaEncode.Ou
 istart                          = find(timeField>=-80,1);   % select -80  ms 
 iend                            = find(timeField>=250,1);   % select 250  ms
 par.plot_trajectory2D           = plot_trajectory2DParams;
-% par.plot_trajectory2D.keep      = 1:8;                     % which conditions (e.g.  Solo)
+par.plot_trajectory2D.keep      = 1:8;                     % which conditions (e.g.  Solo)
 % par.plot_trajectory2D.keep      = 9:16;                     % which conditions (e.g. obs)
-par.plot_trajectory2D.keep      = 17:24;                     % which conditions (e.g. Join)
+par.plot_trajectory2D.keep      = 17:24;                     % which conditions (e.g. Joint)
 par.plot_trajectory2D.wd        = [3,4];                    % which components
 par.plot_trajectory2D.axlab     = 'x';
 par.plot_trajectory2D.cmaps     = cmaps;
@@ -123,7 +129,9 @@ par.plot_trajectory2D.istart    = istart;
 par.plot_trajectory2D.center    = i0;
 par.plot_trajectory2D.iend      = iend;
 hfg.plot_trajectory2D           = plot_trajectory2D(data_trials_class, par.plot_trajectory2D);
-
+t10                             = get(get(gca, 'Title'), 'String');
+title (['monkey ' monkey ' (' t10 ')']);
+% t                               = gca.Title.String;
 %% plot pcas dirs on conditions with plot_Each_mean - showing mean and confidence intervals
 % remapTypes
 par.remapTypes                  = remapTypesParams;
@@ -170,6 +178,55 @@ data_trials_means               = meanData(data_trials_conds,par.meanData);%
 %
 hfg.pcas                        = plot_EachDimVsTime(data_trials_means,par.plot_EachDimVsTime);
 
+%%
+config_                         = struct;
+
+config_.corr_obj                = "manifold";%"hat-hat"  % "manifold" | "hat-obs" | "hat-hat"
+
+% soggetti, direzione e condizione  (task)
+% soggetto attivo e passivo dipendono dalla condiz.
+config_.dir                     = [1];  % list of direction(s)
+config_.cond                    = [2]; % condizione
+config_.active_subject          ='k'; 
+config_.obs_subject             ='s';
+
+% use_neural indica se i dati neurali vengono utilizzati nella pipeline
+% (non necessariamente per la correlazione). 
+config_.use_neural              = false;
+
+
+
+% I tre parametri seguenti determinano il numero di blocchi (lag).
+% block_stride è una quota di block_size e definisce lo SHIFT del blocco:
+%   stride_abs = floor(block_stride * block_size)
+% L’overlap implicito è:
+%   block_size - stride_abs
+% Il numero di blocchi è:
+%   n_blocchi = floor((trial_length - block_size) / stride_abs) + 1
+config_.trial_length    =  34; % lunghezza dei trial (int Fix)
+config_.block_size      =  10;  % dimensione dei blocchi (lag) (int < trial_length)
+config_.block_stride    =  0.2;  
+
+% i due parametri successivi occorrono (Francesco docet) a determinare il
+% numero di trial permettendo una media degli stessi:
+% sub_block_size è la finestra temporale su cui si calcola la media locale.
+% sub_block_stride controlla lo shift tra sottoblocchi (overlap implicito).
+% Caso degenere:
+%   sub_block_size = block_size --> una sola osservazione per trial per blocco.
+%   per direzione 
+config_.sub_block_size      = 5;  % 
+config_.sub_block_stride    = 1;  % 
+
+A_struct=data_trials;
+B_struct=data_trials;
+
+for it=1:length(A_struct)
+    A_struct(it).Manifold=data_trials(it).dpca;   % S (y dimension)
+    B_struct(it).Manifold=data_trials(it).dpca;   % K (x dimension)
+end
+L_L_matrix = compute_LL_matrix(A_struct, B_struct, config_);  % row info A (S) x column info in B (K)
+
+% LL_plot(LL_matrix, config);
 %% plot_scatterGradient
 data_trials_scatter             = data_trials;
 InField                         = par.pcaEncode.OutField;

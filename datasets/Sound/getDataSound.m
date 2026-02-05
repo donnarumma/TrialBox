@@ -6,6 +6,6 @@ function   [data_dir]=getDataSound()
 if contains(name, 'Ubuntu')
     data_dir = '~/DATA/';
 else
-    data_dir = 'D:\Articolo_Sound_Enrico\SoundDataLoad';
+    data_dir = 'E:\Hilarious_Dubbing\Articolo_Sound_Enrico\SoundDataLoad\';
 end
 end
