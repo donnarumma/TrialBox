@@ -116,4 +116,4 @@ X_subject=K_Struct
 config_.y_subject='s' 
 config_.x_subject='k'
 L_L_matrix = compute_LL_matrix(Y_subject,X_subject, config_);
-LL_plot(L_L_matrix,config_)
+%LL_plot(L_L_matrix,config_)
