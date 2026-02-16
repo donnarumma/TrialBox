@@ -128,7 +128,7 @@ for i =1:config_.max_cond
         if ~exist(output_dir, 'dir')
             mkdir(output_dir);
         end
-        filename = sprintf('cond_%d_dir_%d.png', config_.cond, config_.dir);
+        filename = sprintf('cond_%d_dir_%d_MS.png', config_.cond, config_.dir);
         saveas(gcf, fullfile(output_dir, filename));
         %% Calcolo medie varie
         corr_matrix_ = L_L_matrix;
