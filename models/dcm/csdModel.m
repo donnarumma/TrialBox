@@ -35,6 +35,7 @@ catch
             A{1}  = tril(ones(nSo,nSo),-1);       % a forward connection
             A{2}  = triu(ones(nSo,nSo),+1);       % a backward connection
             A{3}  = sparse(nSo,nSo);              % lateral connections
+            M.description='OM1';
         case 2
             % iss inihibitory spiny stellate 
             % ip  inhibitory piramidals
@@ -43,47 +44,55 @@ catch
             A{1}  = ones(nSo,nSo)-eye(nSo);       % iss <-> iss
             A{2}  = ones(nSo,nSo)-eye(nSo);       %  ip <->  ip + ii <-> ii
             A{3}  = sparse(nSo,nSo);              % iss <-> iss + ip <-> ip + ii <-> ii -- empty 
+            M.description='OM2';
         case 3
             % only A{3} 
             A{1}  = sparse(nSo,nSo);
             A{2}  = sparse(nSo,nSo);
             A{3}  = ones(nSo,nSo)-eye(nSo);
+            M.description='OM3';
         case 4
             % only A{3} with autoconnections                
             A{1}  = sparse(nSo,nSo);
             A{2}  = sparse(nSo,nSo);
             A{3}  = ones(nSo,nSo);
+            M.description='OM4';
         case 5 
             % only B interactions
             A{1}  = sparse(nSo,nSo);
             A{2}  = sparse(nSo,nSo);
             A{3}  = sparse(nSo,nSo);
+            M.description='OM5';
         case 6
             % autoconnections A{3}
             A{1}  = sparse(nSo,nSo);
             A{2}  = sparse(nSo,nSo);
             A{3}  = eye(nSo,nSo);
+            M.description='OM6';
         case 7
             % autoconnections A + B
             A{1}  = eye(nSo,nSo);
             A{2}  = eye(nSo,nSo);
             A{3}  = eye(nSo,nSo);
+            M.description='OM7'; 
         case 8
             % connections A
             A{1}  = ones(nSo,nSo);
             A{2}  = ones(nSo,nSo);
             A{3}  = ones(nSo,nSo);
+            M.description='OM8';            
         case 9
             % all autoconnections
             A{1}  = ones(nSo,nSo)-eye(nSo);
             A{2}  = ones(nSo,nSo)-eye(nSo);
             A{3}  = ones(nSo,nSo)-eye(nSo);
+            M.description='OM9';
         case 10
             % autoconnections A + interactions B
             A{1}  = eye(nSo,nSo);
             A{2}  = eye(nSo,nSo);
             A{3}  = eye(nSo,nSo);
-    
+            M.description='OM10';
     end
     
     try

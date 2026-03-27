@@ -187,9 +187,6 @@ config_.corr_obj                = "manifold";%"hat-hat"  % "manifold" | "hat-obs
 % soggetto attivo e passivo dipendono dalla condiz.
 config_.dir                     = [1];  % list of direction(s)
 config_.cond                    = [2]; % condizione
-config_.active_subject          ='k'; 
-config_.obs_subject             ='s';
-
 % use_neural indica se i dati neurali vengono utilizzati nella pipeline
 % (non necessariamente per la correlazione). 
 config_.use_neural              = false;
@@ -225,6 +222,20 @@ for it=1:length(A_struct)
     B_struct(it).Manifold=data_trials(it).dpca;   % K (x dimension)
 end
 L_L_matrix = compute_LL_matrix(A_struct, B_struct, config_);  % row info A (S) x column info in B (K)
+
+
+% config_.active_subject          ='k'; 
+% config_.obs_subject             ='s';
+LL_plot(L_L)
+
+%%%% L1A1B, L1AL2B, ... LnAL1B
+%%%% L2AL1B
+
+%%%% LnAL1B
+
+
+%%%% L2AL1B
+%%%% L1AL1B L1AL2B
 
 % LL_plot(LL_matrix, config);
 %% plot_scatterGradient
