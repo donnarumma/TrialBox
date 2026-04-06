@@ -52,7 +52,7 @@ sim_fun         = str2func(M_CSD.IS);
 
 %% invert - see: spm_dcm_csd
 %--------------------------------------------------------------------------
-[Ep,Cp,Eh,~,~,~,~,F_History] = DONNARUMMA_spm_nlsi_GN(M_CSD,xU,xY);
+[Ep,Cp,Eh,F,~,~,~,F_History] = DONNARUMMA_spm_nlsi_GN(M_CSD,xU,xY);
 
 DCM.M        = M_CSD;             % Model ->
 DCM.Hz       = M_CSD.Hz;          % frequency
@@ -120,7 +120,10 @@ DCM.Chamber = data_trials(1).Chamber;
 DCM.xY.U    = [];
 DCM.xY.Hz   = M_CSD.Hz;
 DCM.xY.name={'monkey S'  'monkey K'};
-
+DCM.F      = F;                % Free Energy    
+if DCM.F ~= DCM.F_History(end)
+    warning('Free Energy history does not match final Free Energy value'); pause;
+end
 exectime=toc(texec); fprintf('| Time Elapsed: %.2f s\n',exectime);
 DCM.exectime=exectime;
 return
