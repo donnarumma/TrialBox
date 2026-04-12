@@ -1,190 +1,216 @@
-function   DCM=dcmJointModel(data_trials,par)
-% function DCM=dcmJointModel(data_trials,par)
-texec=tic; fprintf('Function: %s ',mfilename);
+function DCM = dcmJointModel(data_trials, pms, varargin)
+% dcmJointModel  Fit one joint-monkey DCM from trial-aligned spectral data.
+%
+% DCM = dcmJointModel(data_trials)
+% DCM = dcmJointModel(data_trials, pms)
+% DCM = dcmJointModel(data_trials, pms, 'Name', value, ...)
+%
+% PURPOSE
+%   Build the trial-by-condition design matrix used by SPM/DCM, create the
+%   corresponding CSD model structure through csdModel, run the variational
+%   inversion, and package the fitted session into one DCM struct.
+%
+% PARAMETERS
+%   Use dcmJointModelParams for defaults. Parameters can be provided as a
+%   pms struct, as name-value pairs, or both with precedence:
+%   defaults < pms struct < name-value pairs.
 
-% -> spm_csd_demo
-%% Extract a data session
-[~, Labels]         = getJointMonkeysLabels(1:24);
-isel                = par.isdemo; %getSelectionIndexes(1,1:3);
-InField             = par.InField;
-%%
-nTrials             = length(data_trials);
-xY.y                = cell(1,nTrials);
-xU.X                = nan(nTrials,length(Labels));
-for iTrial=1:nTrials
-    xY.y{iTrial}    = data_trials(iTrial).(InField);
-    xU.X(iTrial,:)  = data_trials(iTrial).klabels;
+executionTimer = tic;
+fprintf('Function: %s ', mfilename);
+
+if nargin < 2
+    pms = struct();
 end
-nConds              = size(xU.X,2);         % number of conditions
-nChannels           = size(xY.y{1},2);      % number of total channels
-try
-    nSources        = size(par.L,2);        % number of Areas
-catch
-    nSources        = nChannels;            % number of Areas are equal to channels
+
+pms = resolveFunctionParams(mfilename, pms, varargin{:});
+inputFieldName = char(string(pms.InField));
+
+assert(~isempty(data_trials), '%s received an empty data_trials array.', mfilename);
+assert(isfield(data_trials, inputFieldName), ...
+    '%s expected field %s in data_trials.', mfilename, inputFieldName);
+assert(isfield(data_trials, 'klabels'), ...
+    '%s expected field klabels in data_trials.', mfilename);
+
+[~, allConditionLabels] = getJointMonkeysLabels(1:24);
+selectedConditionIndices = pms.isdemo(:)';
+
+if isempty(selectedConditionIndices)
+    selectedConditionIndices = 1:numel(allConditionLabels);
 end
-%% test on subset of trials
-iTrials             = any(xU.X(:,isel),2);
-iConds              = sum(xU.X(iTrials,:))>0;
-xU.X                = xU.X(iTrials,iConds);
-xY.y                = xY.y(iTrials);
-Labels              = Labels(iConds);
-nConds              = size(xU.X,2);           % number of conditions
-%%
-xU.name             = Labels; 
 
-%% MODEL
-% M.IS = 'spm_csd_mtf'; % M.FS = 'spm_fs_csd'; % M.g  = 'spm_gx_erp'; % M.f  = 'spm_fx_lfp';
-if ~isempty(par.custom_model)
-    par.custom_model         =str2func(par.custom_model);
+if any(selectedConditionIndices < 1) || any(selectedConditionIndices > numel(allConditionLabels))
+    error('%s received invalid condition indices in pms.isdemo.', mfilename);
 end
-pms             = par;
-pms.nConditions = nConds;
-pms.nSources    = nSources;
-pms.nChannels   = nChannels;
-pms.whichmodel  = par.whichmodel;
-pms.customMode  = par.custom_model;
-pms.donlfp      = par.donlfp;
-pms.Hz          = par.Hz;
-pms.descrition  = par.description;
-M_CSD           = csdModel(pms);
-sim_fun         = str2func(M_CSD.IS);
-%%
 
-%% invert - see: spm_dcm_csd
-%--------------------------------------------------------------------------
-[Ep,Cp,Eh,F,~,~,~,F_History] = DONNARUMMA_spm_nlsi_GN(M_CSD,xU,xY);
+nInputTrials = numel(data_trials);
+xY = struct();
+xY.y = cell(1, nInputTrials);
+xU = struct();
+xU.X = nan(nInputTrials, numel(allConditionLabels));
 
-DCM.M        = M_CSD;             % Model ->
-DCM.Hz       = M_CSD.Hz;          % frequency
-%======================= RESULTS =======================
-DCM.Ep       = Ep;                % conditional expectation
-DCM.Cp       = Cp;                % conditional covariance
-DCM.Ce       = exp(-Eh);          % ReML error covariance
-% simulate learned spectral density 
-%=======================       RESPONSE      ==============================
-% [Hc, Hz] = spm_csd_mtf(Ep,M_CSD);
-Hc           = sim_fun(Ep,M_CSD,xU);% [Hs, Hz, dtf] = spm_csd_mtf(Ep,M_CSD,DCM.xU);
-DCM.Hc       = Hc;                  % conditional responses (y), channel space
-Ec           = spm_unvec(spm_vec(xY.y) - spm_vec(Hc),Hc);     % prediction error
-DCM.Rc       = Ec;                % conditional residuals (y), channel space
-%==========================================================================
-% predictions (source space - cf, a LFP from virtual electrode)
-%--------------------------------------------------------------------------
-if isfield(M_CSD,'U')
-    M_Sou        = rmfield(M_CSD,'U');
+for trialIndex = 1:nInputTrials
+    xY.y{trialIndex} = data_trials(trialIndex).(inputFieldName);
+    xU.X(trialIndex, :) = data_trials(trialIndex).klabels;
+end
+
+nChannels = size(xY.y{1}, 2);
+if ~isempty(pms.L)
+    nSources = size(pms.L, 2);
 else
-    M_Sou        = M_CSD;
+    nSources = nChannels;
 end
-M_Sou.dipfit.type= 'LFP';
 
-M_Sou.U      = 1; 
-qp           = Ep;
-qp.L         = M_Sou.pE.L;             % set virtual electrode gain to unity
-qp.b         = qp.b - 32;              % and suppress non-specific and
-qp.c         = qp.c - 32;              % specific channel noise
+selectedTrialMask = any(xU.X(:, selectedConditionIndices), 2);
+selectedConditionMask = sum(xU.X(selectedTrialMask, :), 1) > 0;
 
-[Hs, ~, dtf] = spm_csd_mtf(qp,M_Sou,xU);
-[ccf, pst]   = spm_csd2ccf(Hs,M_CSD.Hz);
-[coh, fsd]   = spm_csd2coh(Hs,M_CSD.Hz);
-DCM.dtf      = dtf;               % directed transfer functions (source space)
-DCM.ccf      = ccf;               % cross  covariance functions (source space)
-DCM.coh      = coh;               % cross  coherence  functions (source space)
-DCM.fsd      = fsd;               % specific delay functions (source space)
-DCM.pst      = pst;               % peristimulus time
-DCM.Hs       = Hs;                % conditional responses (y), source space
-%==========================================================================
-%===================   spm_large_dcm_reduce   =============================
-T       = full(spm_vec(M_CSD.pE));
-sw      = warning('off','SPM:negativeVariance');
-Pp      = spm_unvec(1 - spm_Ncdf(T,abs(spm_vec(Ep)),diag(Cp)),Ep);
-Vp      = spm_unvec(full(diag(Cp)),Ep);
-warning(sw);
-DCM.Pp       = Pp;                % conditional probability
-DCM.Vp       = Vp;                % conditional variances
-%==========================================================================
-                    %
-DCM.F_History=F_History;
+xU.X = xU.X(selectedTrialMask, selectedConditionMask);
+xY.y = xY.y(selectedTrialMask);
+selectedDataTrials = data_trials(selectedTrialMask);
+selectedConditionLabels = allConditionLabels(selectedConditionMask);
+xU.name = selectedConditionLabels;
 
-% DCM.A   = M_CSD.pE.A;
-% DCM.B   = M_CSD.pE.B;
-% DCM.C   = M_CSD.pE.C;
-
-LFP         = cell(1,nTrials);
-for iTrial=1:nTrials
-    LFP{iTrial}=data_trials(iTrial).LFP';
+if isempty(selectedDataTrials)
+    error('%s did not find any trial matching the selected condition indices.', mfilename);
 end
-DCM.xU      = xU;
-DCM.xY.csd  = xY.y;
-DCM.xY.lfp  = LFP;
-DCM.Chamber = data_trials(1).Chamber;
-DCM.xY.U    = [];
-DCM.xY.Hz   = M_CSD.Hz;
-DCM.xY.name={'monkey S'  'monkey K'};
-DCM.F      = F;                % Free Energy    
-if DCM.F ~= DCM.F_History(end)
-    warning('Free Energy history does not match final Free Energy value'); pause;
+
+nConditions = size(xU.X, 2);
+
+modelBuilderPms = pms;
+modelBuilderPms.nConditions = nConditions;
+modelBuilderPms.nSources = nSources;
+modelBuilderPms.nChannels = nChannels;
+modelBuilderPms.whichmodel = pms.whichmodel;
+modelBuilderPms.customMode = local_resolve_custom_model(pms.custom_model);
+modelBuilderPms.donlfp = pms.donlfp;
+modelBuilderPms.Hz = pms.Hz;
+modelBuilderPms.description = pms.description;
+
+M_CSD = csdModel(modelBuilderPms);
+spectralPredictionFunction = str2func(M_CSD.IS);
+
+[posteriorMean, posteriorCovariance, logNoisePrecision, freeEnergy, ~, ~, ~, freeEnergyHistory] = ...
+    DONNARUMMA_spm_nlsi_GN(M_CSD, xU, xY);
+
+DCM = struct();
+DCM.M = M_CSD;
+DCM.Hz = M_CSD.Hz;
+DCM.Ep = posteriorMean;
+DCM.Cp = posteriorCovariance;
+DCM.Ce = exp(-logNoisePrecision);
+
+predictedChannelCsd = spectralPredictionFunction(posteriorMean, M_CSD, xU);
+DCM.Hc = predictedChannelCsd;
+DCM.Rc = spm_unvec(spm_vec(xY.y) - spm_vec(predictedChannelCsd), predictedChannelCsd);
+
+sourceSpaceModel = local_build_source_space_model(M_CSD);
+sourceSpacePosterior = posteriorMean;
+sourceSpacePosterior.L = sourceSpaceModel.pE.L;
+sourceSpacePosterior.b = sourceSpacePosterior.b - 32;
+sourceSpacePosterior.c = sourceSpacePosterior.c - 32;
+
+[predictedSourceCsd, ~, directedTransferFunctions] = spm_csd_mtf(sourceSpacePosterior, sourceSpaceModel, xU);
+[crossCovarianceFunctions, peristimulusTime] = spm_csd2ccf(predictedSourceCsd, M_CSD.Hz);
+[coherenceFunctions, frequencySpecificDelay] = spm_csd2coh(predictedSourceCsd, M_CSD.Hz);
+
+DCM.dtf = directedTransferFunctions;
+DCM.ccf = crossCovarianceFunctions;
+DCM.coh = coherenceFunctions;
+DCM.fsd = frequencySpecificDelay;
+DCM.pst = peristimulusTime;
+DCM.Hs = predictedSourceCsd;
+
+priorVector = full(spm_vec(M_CSD.pE));
+warningState = warning('off', 'SPM:negativeVariance');
+DCM.Pp = spm_unvec(1 - spm_Ncdf(priorVector, abs(spm_vec(posteriorMean)), diag(posteriorCovariance)), posteriorMean);
+DCM.Vp = spm_unvec(full(diag(posteriorCovariance)), posteriorMean);
+warning(warningState);
+
+DCM.F_History = freeEnergyHistory;
+DCM.xU = xU;
+DCM.xY = struct();
+DCM.xY.csd = xY.y;
+DCM.xY.lfp = local_collect_lfp_trials(selectedDataTrials);
+DCM.xY.U = [];
+DCM.xY.Hz = M_CSD.Hz;
+DCM.xY.name = local_resolve_channel_names(nChannels);
+DCM.Chamber = selectedDataTrials(1).Chamber;
+DCM.F = freeEnergy;
+DCM.selectedTrialMask = selectedTrialMask;
+DCM.selectedConditionMask = selectedConditionMask;
+DCM.par = pms;
+
+if abs(DCM.F - DCM.F_History(end)) > max(eps(abs(DCM.F)), eps(abs(DCM.F_History(end))))
+    warning('%s final Free Energy does not match the last history element.', mfilename);
 end
-exectime=toc(texec); fprintf('| Time Elapsed: %.2f s\n',exectime);
-DCM.exectime=exectime;
-return
-nf          = ['LFP_M' num2str(whichmodel) '_' session_name add];
-fn =[save_dir nf];
-fprintf('Saving %s\n',fn);
-DCM.nf=nf;
-DCM.fn=fn;
-DCM.par=par;
-save(fn,'DCM');
 
-
-for iTrial=1:length(DCM.xY.csd)
-    fprintf('Trial %g\n',iTrial);
-    trialError(iTrial)=computeError(DCM.xY.csd{iTrial},Hc{iTrial});
-    disp(trialError(iTrial));
+executionTime = toc(executionTimer);
+fprintf('| Time Elapsed: %.2f s\n', executionTime);
+DCM.exectime = executionTime;
 end
-DCM.trialError = trialError;
 
-if ifserver 
+
+function customModelHandle = local_resolve_custom_model(customModelSpec)
+if isempty(customModelSpec)
+    customModelHandle = [];
     return;
-else
-    DCM_RESULTS_LFP_KS(DCM)
-    %tentativePlots(DCM);
 end
-return
 
-params.hfig = [];
-hCSD=DONNARUMMA_plotCSD(M_CSD.Hz,DCM.Hc{iTrial},DCM.xY.y{iTrial},params);
-
-params.hfig=[];
-hF=DONNARUMMA_plotFreeEnergy(DCM.F_History,params);   
-
-params.hfig=[]; P_TRUE=[];
-hEp=plot_conditionalExpectation(DCM.Ep,P_TRUE,params);
-
-CM.A=DCM.Ep.A;
-CM.C=DCM.Ep.C;
-if ~isempty
-    AT.A=P_TRUE.A;
-    AT.C=P_TRUE.C;
-else
-    AT=[];
+if isa(customModelSpec, 'function_handle')
+    customModelHandle = customModelSpec;
+    return;
 end
-params.hfig=[];
-hEpA=plot_conditionalExpectation(CM,AT,params);
+
+if isstring(customModelSpec)
+    if strlength(customModelSpec) == 0
+        customModelHandle = [];
+        return;
+    end
+    customModelSpec = char(customModelSpec);
+end
+
+if ischar(customModelSpec)
+    if isempty(strtrim(customModelSpec))
+        customModelHandle = [];
+        return;
+    end
+    customModelHandle = str2func(customModelSpec);
+    return;
+end
+
+error('%s expected custom_model to be empty, char, string, or function handle.', mfilename);
+end
 
 
-%%
-plot_spm_dcm_csd_results(DCM,'Coupling (A)',figure);
-plot_spm_dcm_csd_results(DCM,'spectral data',figure);  
-plot_spm_dcm_csd_results(DCM,'Coupling (B)',figure);
-plot_spm_dcm_csd_results(DCM,'Coupling (C)',figure);
-plot_spm_dcm_csd_results(DCM,'trial-specific effects',figure);
-plot_spm_dcm_csd_results(DCM,'Input',figure);
-plot_spm_dcm_csd_results(DCM,'Transfer functions',figure);
-plot_spm_dcm_csd_results(DCM,'Cross-spectra (sources)',figure)
-plot_spm_dcm_csd_results(DCM,'Cross-spectra (channels)',figure)
-plot_spm_dcm_csd_results(DCM,'Coherence (sources)',figure)
-plot_spm_dcm_csd_results(DCM,'Coherence (channels)',figure)
-plot_spm_dcm_csd_results(DCM,'Covariance (sources)',figure)
-plot_spm_dcm_csd_results(DCM,'Covariance (channels)',figure)
-% plot_spm_dcm_csd_results(DCM,'Dipoles',figure);
-%%
+function sourceSpaceModel = local_build_source_space_model(M_CSD)
+if isfield(M_CSD, 'U')
+    sourceSpaceModel = rmfield(M_CSD, 'U');
+else
+    sourceSpaceModel = M_CSD;
+end
+
+sourceSpaceModel.dipfit.type = 'LFP';
+sourceSpaceModel.U = 1;
+end
+
+
+function lfpTrials = local_collect_lfp_trials(data_trials)
+nTrials = numel(data_trials);
+lfpTrials = cell(1, nTrials);
+
+for trialIndex = 1:nTrials
+    lfpTrials{trialIndex} = data_trials(trialIndex).LFP';
+end
+end
+
+
+function channelNames = local_resolve_channel_names(nChannels)
+if nChannels == 2
+    channelNames = {'monkey S', 'monkey K'};
+    return;
+end
+
+channelNames = cell(1, nChannels);
+for channelIndex = 1:nChannels
+    channelNames{channelIndex} = sprintf('channel %d', channelIndex);
+end
+end
