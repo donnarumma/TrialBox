@@ -46,6 +46,10 @@ if  ~isempty(PDF_dir) & ~isempty(pdf_file)
     [~,outnf]   = latexCompile_ImageDirectory(PDF_dir,texparams);
     %% rename and move compiled pdf file
     fprintf('Compiled %s\n',pdf_file)
+    if ~isfile(outnf)
+        error('hfigPrint:LatexCompileFailed', ...
+            'LaTeX did not create the compiled PDF: %s', outnf);
+    end
     movefile(outnf,pdf_file);
 end
 return

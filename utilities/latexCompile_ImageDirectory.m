@@ -15,7 +15,7 @@ end
 imgfiles        = dir([source_dir SEP '*.' file_type]);
 nFiles          = length(imgfiles);
 
-s=sprintf('\\documentclass[english]{article}\n\\usepackage[T1]{fontenc}\n\\usepackage[latin9]{inputenc}\n\\usepackage{caption}\n\\usepackage{float}\n\\usepackage{graphicx}\n\\usepackage{babel}\n\\usepackage{subcaption}\n\\extrafloats{200}\n\\maxdeadcycles=200\n\\usepackage{epstopdf}\n\\usepackage{comment}\n\\begin{document}\n');
+s=sprintf('\\documentclass[english]{article}\n\\usepackage[T1]{fontenc}\n\\usepackage[latin9]{inputenc}\n\\usepackage{caption}\n\\usepackage{float}\n\\usepackage{graphicx}\n\\usepackage{babel}\n\\usepackage{subcaption}\n\\extrafloats{200}\n\\maxdeadcycles=200\n\\usepackage{epstopdf}\n\\begin{document}\n');
 
 %% loop 
 
