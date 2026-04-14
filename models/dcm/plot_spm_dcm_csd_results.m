@@ -297,7 +297,7 @@ case{lower('trial-specific effects')}
     cmaps=lines(nu);
     %% end DONNARUMMA
     % spm_dcm_csd_results(DCM,'trial-specific effects');
-    %----------------------------------------------------------------------
+    %---------------------------Coupling (B)-------------------------------------------
     for i = 1:ns
         for j = 1:ns
  

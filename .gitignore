@@ -116,6 +116,9 @@ __pypackages__/
 celerybeat-schedule
 celerybeat.pid
 
+# Local Codex marker
+.codex
+
 # SageMath parsed files
 *.sage.py
 

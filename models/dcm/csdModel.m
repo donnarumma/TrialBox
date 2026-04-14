@@ -8,6 +8,7 @@ donlfp      = par.donlfp;
 mstep       = par.mstep;
 isdebug     = par.isdebug;
 Nmax        = par.Nmax;
+stateEquationFunction = getOption(par,'stateEquationFunction','model_spm_fx_lfp');
 % function M_CSD=csdModel(nConditions,nSources,nChannels,whichmodel,customMode,donlfp)
 % Ntrials: number of trials
 
@@ -121,7 +122,8 @@ else
     [pE,pC]     = donnarumma_spm_lfp_priors(A,B,C);        % neuronal priors
 end
 [pE,pC]     = spm_ssr_priors(pE,pC);        % spectral priors
-[pE,pC]     = spm_L_priors(nSo,pE,pC);      % spatial  priors
+dipfitSpec  = struct('type','LFP','model','LFP','Ns',nSo,'Nc',nCh);
+[pE,pC]     = spm_L_priors(dipfitSpec,pE,pC);      % spatial  priors
 if ~isempty(customMode)
     [pE,pC]     = customMode(pE,pC,par);    % load custom priors
 end
@@ -131,17 +133,45 @@ pE.b        = pE.b - 16;
 pE.c        = pE.c - 16;
 % create LFP model
 %--------------------------------------------------------------------------
-M.dipfit.type = 'LFP';
+% Standard DCM/CSD pipeline in SPM:
+%   1) DONNARUMMA_spm_nlsi_GN composes M.IS and M.FS as
+%      predicted_features = M.FS(M.IS(P,M,U), M)
+%   2) M.IS = spm_csd_mtf builds condition-specific CSD predictions:
+%      - spm_gen_Q applies between-condition effects in U.X to P.B
+%        and therefore expects one P.B{i} per column of U.X
+%      - spm_dcm_mtf linearises the neural model around steady state
+%      - channel noise is then added in sensor space
+%   3) M.f = model_spm_fx_lfp defines the neuronal state equations
+%   4) M.g = spm_gx_erp maps hidden states to sensor space
+%   5) M.FS = spm_fs_csd converts the predicted CSD into the feature vector
+%      actually used by the variational inversion
+%
+% These hooks are standard in the DCM-for-CSD framework; we collect them in
+% one place so the model definition is easier to read and customise.
+% To use the hybrid neural/trajectory model, pass for example:
+%   par.stateEquationFunction = 'model_spm_fx_lfp_traj2d';
+%   par.traj2d = struct(...);
+% or for the crossed four-source variant:
+%   par.stateEquationFunction = 'model_spm_fx_lfp_traj2d_crossed';
+%   par.crossedTraj2d = struct(...);
+dcmCsdHooks = getStandardDcmCsdHooks();
+dcmCsdHooks.stateEquationFunction = stateEquationFunction;
 
-M.IS        = 'spm_csd_mtf';
-M.FS        = 'spm_fs_csd';
-M.g         = 'spm_gx_erp';
+M.dipfit = dipfitSpec;
+M.architecture = struct();
+M.architecture.A = A;
+M.architecture.B = B;
+M.architecture.C = C;
+
+M.IS        = dcmCsdHooks.predictionFunction;        % build predicted CSDs
+M.FS        = dcmCsdHooks.featureSelectionFunction;  % convert CSDs into inversion features
+M.g         = dcmCsdHooks.observerFunction;          % map hidden states to sensor space
 %% alternative neural models
 %% see -> spm_fx_cmc_tfm_gen    ( 8 neurons)  A{4} see slides - spm12/toolbox/NVC
 %% see -> spm_fx_lfp            (13 neurons)
 %% see -> spm_fx_fmri           ( 8 cells - BOLD)
 %% see -> spm_fx_erp            ( 9 neurons)
-M.f         = 'model_spm_fx_lfp';
+M.f         = dcmCsdHooks.stateEquationFunction;     % define neuronal state equations
 M.x         = sparse(nSo,13);     
 M.n         = nSo*13;
 M.pE        = pE;
@@ -163,5 +193,32 @@ end
 M.mstep     = mstep;
 M.isdebug   = isdebug;
 M.Nmax      = Nmax;
+M.dcmCsdHooks = dcmCsdHooks;
+if isfield(par,'traj2d')
+    M.traj2d = par.traj2d;
+end
+if isfield(par,'crossedTraj2d')
+    M.crossedTraj2d = par.crossedTraj2d;
+end
 
 M_CSD       = M;
+
+
+function dcmCsdHooks = getStandardDcmCsdHooks()
+dcmCsdHooks = struct();
+dcmCsdHooks.predictionFunction          = 'spm_csd_mtf';        % M.IS - build predicted CSDs
+dcmCsdHooks.featureSelectionFunction    = 'spm_fs_csd';         % M.FS - convert predicted CSDs into inversion features
+dcmCsdHooks.observerFunction            = 'spm_gx_erp';         % M.g  - map hidden states to sensor space
+dcmCsdHooks.stateEquationFunction       = 'model_spm_fx_lfp';   % M.f  - define neuronal state equations
+end
+
+
+function optionValue = getOption(optionStruct, optionName, defaultValue)
+if isfield(optionStruct, optionName)
+    optionValue = optionStruct.(optionName);
+else
+    optionValue = defaultValue;
+end
+end
+
+end
