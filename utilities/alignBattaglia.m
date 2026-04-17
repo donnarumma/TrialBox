@@ -6,7 +6,7 @@ InField    = par.InField;
 OutField   = par.OutField;
 
 xfld     = 'time';
-xfld_old = 'oldTime';
+xfld_old = 'originalTime';
 
 for iTr = 1:length(data_trials)
 
