@@ -47,8 +47,11 @@ if  ~isempty(PDF_dir) & ~isempty(pdf_file)
     %% rename and move compiled pdf file
     fprintf('Compiled %s\n',pdf_file)
     if ~isfile(outnf)
-        error('hfigPrint:LatexCompileFailed', ...
-            'LaTeX did not create the compiled PDF: %s', outnf);
+        warning('hfigPrint:LatexCompileSkipped', ...
+            ['LaTeX compilation was requested, but the compiled PDF was not created. ' ...
+             'If latexmk/LaTeX is not installed on this system, this warning can be ignored. ' ...
+             'Expected output: %s'], outnf);
+        return;
     end
     movefile(outnf,pdf_file);
 end
