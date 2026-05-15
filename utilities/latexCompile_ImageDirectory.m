@@ -75,7 +75,7 @@ fclose(ltxfileid);
 curdir   = cd;
 cd (ltx_dir);
 % latex command -> system(latexmk -pdf -shell-escape -synctex=1 namefile.tex');
-comm     = ['latexmk -pdf -shell-escape -synctex=1 ' ltxfilename];
+comm     = ['latexmk -pdf -shell-escape -synctex=1 "' ltxfilename '"'];
 fprintf('executing %s\n',comm);
 system(comm);
 cd(curdir);
