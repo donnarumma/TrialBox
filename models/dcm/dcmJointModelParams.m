@@ -20,6 +20,8 @@ function par = dcmJointModelParams(parSource)
 %   A                     : baseline architecture matrices.
 %   B                     : modulatory architecture matrices.
 %   C                     : driving-input architecture matrix.
+%   forwardMask           : optional physical link mask used by custom state
+%                           equations when B can enable non-baseline links.
 %   L                     : observation gain matrix for source/channel mismatch.
 %   description           : model label saved in the fitted DCM.
 %   stateEquationFunction : state equation assigned to M.f.
@@ -40,6 +42,7 @@ par.Hz = (1:64)';
 par.A = [];
 par.B = [];
 par.C = [];
+par.forwardMask = [];
 par.L = [];
 par.description = '';
 par.stateEquationFunction = 'model_spm_fx_lfp';

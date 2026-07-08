@@ -162,6 +162,9 @@ M.architecture = struct();
 M.architecture.A = A;
 M.architecture.B = B;
 M.architecture.C = C;
+if isfield(par, 'forwardMask') && ~isempty(par.forwardMask)
+    M.architecture.forwardMask = par.forwardMask;
+end
 
 M.IS        = dcmCsdHooks.predictionFunction;        % build predicted CSDs
 M.FS        = dcmCsdHooks.featureSelectionFunction;  % convert CSDs into inversion features
