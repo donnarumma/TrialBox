@@ -1,6 +1,6 @@
 function [Jxy_S, Jxy_K] = JxyMatrix(Result)
     monkey_names = {'S', 'K'};
-    fields_to_extract = {'exit_time', 'angular_error', 'is_correct','CMT'};
+    fields_to_extract = {'exit_time', 'angular_error','angular_error_magnitude' 'DIRECTIONangular_error' 'is_correct','CMT'};
     data_out = struct();
 
     for sj = 1:length(monkey_names)

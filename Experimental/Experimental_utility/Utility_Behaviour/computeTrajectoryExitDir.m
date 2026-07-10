@@ -67,6 +67,9 @@ for s = 1:n_sessions
                             info.angular_error = mod((angle_real_deg - angle_target_deg) + 180, 360) - 180;
                             % sector1 = mod(round(-(angle_rad - pi/2) / (pi/4)), 8);
 
+                            info.angular_error_magnitude = abs(info.angular_error);
+                            info.DIRECTIONangular_error = sign(info.angular_error);
+
                             sector = mod(floor((angle_relative + pi/8) / (pi/4)), 8);
 
                             if sector == 0, sector = 8; end

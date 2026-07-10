@@ -28,21 +28,14 @@ for dirIdx = 1:num_dir
         % SESSIONE K: SoloK(2) vs JointK(3)
         vK2_raw = data_K(nsess).(inField)(2).(dirName);
         vJK3_raw = data_K(nsess).(inField)(3).(dirName);
-        
-        % Medie con abs per angular_error
-        if strcmp(inField, 'angular_error')
-            S1vsJS3_sess_means(nsess,1) = mean(abs(vS1_raw));
-            S1vsJS3_sess_means(nsess,2) = mean(abs(vJS3_raw));
-            K2vsJK3_sess_means(nsess,1) = mean(abs(vK2_raw));
-            K2vsJK3_sess_means(nsess,2) = mean(abs(vJK3_raw));
-        else
-            S1vsJS3_sess_means(nsess,1) = mean(vS1_raw);
-            S1vsJS3_sess_means(nsess,2) = mean(vJS3_raw);
-            K2vsJK3_sess_means(nsess,1) = mean(vK2_raw);
-            K2vsJK3_sess_means(nsess,2) = mean(vJK3_raw);
-        end
+
+        S1vsJS3_sess_means(nsess,1) = mean(vS1_raw);
+        S1vsJS3_sess_means(nsess,2) = mean(vJS3_raw);
+        K2vsJK3_sess_means(nsess,1) = mean(vK2_raw);
+        K2vsJK3_sess_means(nsess,2) = mean(vJK3_raw);
+
     end
-    
+
     % --- S: SoloS vs JointS ---
     mS1  = mean(S1vsJS3_sess_means(:,1));
     mJS3 = mean(S1vsJS3_sess_means(:,2));

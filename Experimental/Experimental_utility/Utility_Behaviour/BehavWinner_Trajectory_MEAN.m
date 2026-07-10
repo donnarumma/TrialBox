@@ -31,18 +31,12 @@ for dirIdx = 1:num_dir
         vJS3_raw = data_S(nsess).(inField)(3).(dirName);
         vJK3_raw = data_K(nsess).(inField)(3).(dirName);
         
-        % Calcolo media sessione (con gestione abs per angular_error)
-        if strcmp(inField, 'angular_error')
-            S1_sess_means(nsess)  = mean(abs(vS1_raw));
-            K2_sess_means(nsess)  = mean(abs(vK2_raw));
-            JS3_sess_means(nsess) = mean(abs(vJS3_raw));
-            JK3_sess_means(nsess) = mean(abs(vJK3_raw));
-        else
-            S1_sess_means(nsess)  = mean(vS1_raw);
-            K2_sess_means(nsess)  = mean(vK2_raw);
-            JS3_sess_means(nsess) = mean(vJS3_raw);
-            JK3_sess_means(nsess) = mean(vJK3_raw);
-        end
+        % Calcolo media sessione
+        S1_sess_means(nsess)  = mean(vS1_raw);
+        K2_sess_means(nsess)  = mean(vK2_raw);
+        JS3_sess_means(nsess) = mean(vJS3_raw);
+        JK3_sess_means(nsess) = mean(vJK3_raw);
+
     end
     
     % --- DETERMINAZIONE VINCITORE (Logica Funzione 2) ---

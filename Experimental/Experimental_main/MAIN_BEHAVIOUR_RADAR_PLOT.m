@@ -91,10 +91,10 @@ frac  = 0.15;  % 15% of max
 
 %% AE
 [~, ~, AE] = extractBehavDeltas(Jxy_S, Jxy_K, 'angular_error');
-AE_SoloK  = mean(abs(AE.K.Solo),  'omitnan')';
-AE_SoloS  = mean(abs(AE.S.Solo),  'omitnan')';
-AE_JointK = mean(abs(AE.K.Joint), 'omitnan')';
-AE_JointS = mean(abs(AE.S.Joint), 'omitnan')';
+AE_SoloK  = mean(AE.K.Solo,  'omitnan')';
+AE_SoloS  = mean(AE.S.Solo,  'omitnan')';
+AE_JointK = mean(AE.K.Joint, 'omitnan')';
+AE_JointS = mean(AE.S.Joint, 'omitnan')';
 
 maxAE = max([AE_SoloS;
              AE_SoloK;
@@ -107,7 +107,24 @@ minAE = min([AE_SoloS;
              AE_JointS;
              AE_JointK], [], 'omitnan');
 minAE       = minAE - deltaAE;
+%% AE_abs
+[~, ~, AE_abs] = extractBehavDeltas(Jxy_S, Jxy_K, 'angular_error_magnitude');
+AE_abs_SoloK  = mean(abs(AE_abs.K.Solo),  'omitnan')';
+AE_abs_SoloS  = mean(abs(AE_abs.S.Solo),  'omitnan')';
+AE_abs_JointK = mean(abs(AE_abs.K.Joint), 'omitnan')';
+AE_abs_JointS = mean(abs(AE_abs.S.Joint), 'omitnan')';
 
+maxAE_abs = max([AE_abs_SoloS;
+             AE_abs_SoloK;
+             AE_abs_JointS;
+             AE_abs_JointK], [], 'omitnan');
+deltaAE_abs     = frac * maxAE_abs;
+maxAE_abs       = maxAE_abs + deltaAE_abs;
+minAE_abs = min([AE_abs_SoloS;
+             AE_abs_SoloK;
+             AE_abs_JointS;
+             AE_abs_JointK], [], 'omitnan');
+minAE_abs       = minAE_abs - deltaAE_abs;
 %% ExT
 [~, ~, ExT] = extractBehavDeltas(Jxy_S, Jxy_K, 'exit_time');
 ExT_SoloK   = 1000*mean(ExT.K.Solo, 'omitnan')';
@@ -223,7 +240,23 @@ par.RadPlot.p_vals       = Data.Behav.Jxy_TabSoloMeanAE.pvalue';
 par.RadPlot.maxValue     = maxAE;
 par.RadPlot.minValue     = minAE;
 RadPlot(AE_SoloS', AE_SoloK', par.RadPlot)
-
+% ========================= AE_abs =========================
+par.RadPlot.save_dir = fullfile(ttestSaveDir,'AE_abs','Single');
+par.RadPlot.unitMeasure  = '°';
+par.RadPlot.figureName   = SOLO_FIG;
+par.RadPlot.cond_names1  = {'Act S'};
+par.RadPlot.cond_names2  = {'Act K'};
+par.RadPlot.InField      = 'AE';
+par.RadPlot.color1       = Palette.color.ActS;
+par.RadPlot.color2       = Palette.color.ActK;
+par.RadPlot.lineStyle1   = LS_ACT;
+par.RadPlot.lineStyle2   = LS_ACT;
+par.RadPlot.legendNames  = {{'Monkey S','AE_abs','Act S'}, ...
+                            {'Monkey K','AE_abs','Act K'}};
+par.RadPlot.p_vals       = Data.Behav.Jxy_TabSoloMeanAE_abs.pvalue';
+par.RadPlot.maxValue     = maxAE_abs;
+par.RadPlot.minValue     = minAE_abs;
+RadPlot(AE_abs_SoloS', AE_abs_SoloK', par.RadPlot)
 % ========================= ExT =========================
 par.RadPlot.save_dir     = fullfile(ttestSaveDir,'ExT','Single');
 par.RadPlot.unitMeasure  = 'ms';
@@ -359,6 +392,26 @@ par.RadPlot.p_vals       = Data.Behav.Jxy_TabJointMeanAE.pvalue';
 par.RadPlot.maxValue     = maxAE;
 par.RadPlot.minValue     = minAE;
 RadPlot(AE_JointS', AE_JointK', par.RadPlot)
+
+% ========================= AE_abs =========================
+par.RadPlot.save_dir     = fullfile(ttestSaveDir,'AE_abs','Single');
+par.RadPlot.unitMeasure  = '°';
+par.RadPlot.figureName   = JOINT_FIG;
+par.RadPlot.cond_names1  = {'Joint S'};
+par.RadPlot.cond_names2  = {'Joint K'};
+par.RadPlot.InField      = 'AE_abs';
+
+par.RadPlot.color1       = Palette.color.JointS;
+par.RadPlot.color2       = Palette.color.JointK;
+par.RadPlot.lineStyle1   = LS_JOINT;
+par.RadPlot.lineStyle2   = LS_JOINT;
+
+par.RadPlot.legendNames  = {{'Monkey S','AE_abs','Joint S'}, ...
+                            {'Monkey K','AE_abs','Joint K'}};
+par.RadPlot.p_vals       = Data.Behav.Jxy_TabJointMeanAE_abs.pvalue';
+par.RadPlot.maxValue     = maxAE_abs;
+par.RadPlot.minValue     = minAE_abs;
+RadPlot(AE_abs_JointS', AE_abs_JointK', par.RadPlot)
 
 % ========================= ExT =========================
 par.RadPlot.save_dir     = fullfile(ttestSaveDir,'ExT','Single');
@@ -523,6 +576,44 @@ par.RadPlotOwn.maxValue      = maxAE;
 par.RadPlotOwn.minValue      = minAE;
 RadPlotOwn(AE_SoloK', AE_JointK', par.RadPlotOwn)
 
+% ========================= AE_abs =========================
+par.RadPlotOwn.save_dir      = fullfile(ttestSaveDir,'AE_abs','Single');
+par.RadPlotOwn.unitMeasure  = '°';
+par.RadPlotOwn.InField       = 'AE_abs';
+
+par.RadPlotOwn.figureName    = 'ActS_JointS';
+par.RadPlotOwn.cond_names1   = {'Act S'};
+par.RadPlotOwn.cond_names2   = {'Joint S'};
+par.RadPlotOwn.color1        = Palette.color.ActS;
+par.RadPlotOwn.color2        = Palette.color.JointS;
+par.RadPlotOwn.lineStyle1    = LS_ACT;
+par.RadPlotOwn.lineStyle2    = LS_JOINT;
+
+par.RadPlotOwn.legendNames   = {{'Monkey S','AE_abs','Act S'}, ...
+                                {'Monkey S','AE_abs','Joint S'}};
+par.RadPlotOwn.p_vals        = Data.Behav.Jxy_TabMeanAE_abs_S.pvalue';
+par.RadPlotOwn.maxValue      = maxAE_abs;
+par.RadPlotOwn.minValue      = minAE_abs;
+RadPlotOwn(AE_abs_SoloS', AE_abs_JointS', par.RadPlotOwn)
+
+par.RadPlotOwn.save_dir      = fullfile(ttestSaveDir,'AE_abs','Single');
+par.RadPlotOwn.unitMeasure  = '°';
+par.RadPlotOwn.InField       = 'AE_abs';
+
+par.RadPlotOwn.figureName    = 'ActK_JointK';
+par.RadPlotOwn.cond_names1   = {'Act K'};
+par.RadPlotOwn.cond_names2   = {'Joint K'};
+par.RadPlotOwn.color1        = Palette.color.ActK;
+par.RadPlotOwn.color2        = Palette.color.JointK;
+par.RadPlotOwn.lineStyle1    = LS_ACT;
+par.RadPlotOwn.lineStyle2    = LS_JOINT;
+
+par.RadPlotOwn.legendNames   = {{'Monkey K','AE_abs','Act K'}, ...
+                                {'Monkey K','AE_abs','Joint K'}};
+par.RadPlotOwn.p_vals        = Data.Behav.Jxy_TabMeanAE_abs_K.pvalue';
+par.RadPlotOwn.maxValue      = maxAE_abs;
+par.RadPlotOwn.minValue      = minAE_abs;
+RadPlotOwn(AE_abs_SoloK', AE_abs_JointK', par.RadPlotOwn)
 % ========================= ExT =========================
 par.RadPlotOwn.save_dir      = fullfile(ttestSaveDir,'ExT','Single');
 par.RadPlotOwn.unitMeasure   = 'ms';
@@ -771,6 +862,32 @@ par.RadMultiplePlot.legendNames   = {...
 par.RadMultiplePlot.maxValue      = maxAE;
 par.RadMultiplePlot.minValue      = minAE;
 RadMultiplePlot(AE_SoloS', AE_JointS', AE_SoloK', AE_JointK', par.RadMultiplePlot);
+
+% ========================= AE_abs =========================
+par.RadMultiplePlot.save_dir      = fullfile(ttestSaveDir,'AE_abs','Multiple');
+par.RadMultiplePlot.InField       = 'AE_abs';
+par.RadMultiplePlot.unitMeasure   = '°';
+par.RadMultiplePlot.figureName    = 'ActS_JointS_ActK_JointK';
+par.RadMultiplePlot.cond_names1   = {'Act S'};
+par.RadMultiplePlot.cond_names2   = {'Joint S'};
+par.RadMultiplePlot.cond_names3   = {'Act K'};
+par.RadMultiplePlot.cond_names4   = {'Joint K'};
+par.RadMultiplePlot.color1        = Palette.color.ActS;
+par.RadMultiplePlot.color2        = Palette.color.JointS;
+par.RadMultiplePlot.color3        = Palette.color.ActK;
+par.RadMultiplePlot.color4        = Palette.color.JointK;
+par.RadMultiplePlot.lineStyle1    = LS_ACT;
+par.RadMultiplePlot.lineStyle2    = LS_JOINT;
+par.RadMultiplePlot.lineStyle3    = LS_ACT;
+par.RadMultiplePlot.lineStyle4    = LS_JOINT;
+par.RadMultiplePlot.legendNames   = {...
+    {'Monkey S','AE_abs','Act S'}, ...
+    {'Monkey S','AE_abs','Joint S'}, ...
+    {'Monkey K','AE_abs','Act K'}, ...
+    {'Monkey K','AE_abs','Joint K'}};
+par.RadMultiplePlot.maxValue      = maxAE_abs;
+par.RadMultiplePlot.minValue      = minAE_abs;
+RadMultiplePlot(AE_abs_SoloS', AE_abs_JointS', AE_abs_SoloK', AE_abs_JointK', par.RadMultiplePlot);
 
 % ========================= ExT =========================
 par.RadMultiplePlot.save_dir      = fullfile(ttestSaveDir,'ExT','Multiple');

@@ -49,13 +49,9 @@ for dirIdx = 1:num_dir
         sdS1_v(nsess) = std(angS1);   sdK2_v(nsess) = std(angK2);
         sdS3_v(nsess) = std(angJS3);  sdK3_v(nsess) = std(angJK3);
 
-        if strcmp(inField, 'angular_error')
-            valS1 = mean(abs(vS1_raw)); valK2 = mean(abs(vK2_raw));
-            valJS3 = mean(abs(vJS3_raw)); valJK3 = mean(abs(vJK3_raw));
-        else
-            valS1 = mean(vS1_raw); valK2 = mean(vK2_raw);
-            valJS3 = mean(vJS3_raw); valJK3 = mean(vJK3_raw);
-        end
+        valS1 = mean(vS1_raw); valK2 = mean(vK2_raw);
+        valJS3 = mean(vJS3_raw); valJK3 = mean(vJK3_raw);
+
 
         % Assegnazione Wins
         if strcmp(inField, 'ExitCorr')
