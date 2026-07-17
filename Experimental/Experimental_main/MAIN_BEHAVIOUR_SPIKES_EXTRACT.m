@@ -5,18 +5,27 @@
 % across all selected sessions.
 %
 % Main outputs:
-%   - RT
-%   - ST
-%   - PV
-%   - PVT
+%   - Reaction Time (RT)
+%   - Execution Time (ST)
+%   - Peak Velocity (PV)
+%   - Peak Velocity Time (PVT)
 %   - Trajectory metrics
+%   - Inter-Cursor Distance (ICD)
+%
+% For each metric, the script computes:
+%   - Session-wise values
+%   - Direction-wise values
+%   - Population mean and variability statistics
 %
 % Output:
-%   Data.Behav structure saved as MAT file.
+%   Data.Behav structure saved as MAT file, containing:
+%       - RT, ST, PV, PVT results
+%       - Trajectory analyses
+%       - ICD analyses
+%       - Session-level and population-level statistics
 %
 % Author: Mirco Frosolone
-% Date: 2026-07-06
-%
+% Date: 2026-07-16
 
 clear; close all;
 par.irng = 10;
@@ -56,8 +65,8 @@ params.chamber = 'Frontal';
 
 
 directory_save  = 'BEHAVIOUR_DATA';
-file_name       = ['Behaviour_',params.chamber,'_TotalSessionsData_',...
-    num2str(interval(1)),'_',erase(num2str(interval(2)),"."),'.mat'];
+file_name       = ['Behaviour_',upper(params.chamber),'_TotalSessionsData_',...
+    num2str(interval(1)),'_',erase(num2str(interval(2)),"."),'s.mat'];
 
 fprintf('\n');
 fprintf('================ BEHAVIOUR SPIKES EXTRACTION PARAMETERS ================\n');
@@ -77,6 +86,8 @@ PV_session          = struct();
 PVT_session         = struct();
 ST_session          = struct();
 Jxy_session         = struct();
+ICD_session         = struct();
+ICD_extractedParams = struct();
 
 for idsess = 1:numel(session_list)
 
@@ -175,6 +186,17 @@ for idsess = 1:numel(session_list)
             lenM(cd,ndir)                           = length(data_trials(Condition{cd,ndir}));
         end
     end
+    %% ICD
+    [ICD_trials, M_stats]                   = ICD_trace(data_trials);
+    ICD_stats                               = ICD_statsEval(ICD_trials);
+
+    ICD_session(idsess).session             = session_list{idsess};
+    ICD_session(idsess).cond                = ICD_extractSession(ICD_stats.trial);
+
+    ICD_extractedParams(idsess).session     = session_list{idsess};
+    ICD_extractedParams(idsess).ICD_trials  = ICD_trials;
+    ICD_extractedParams(idsess).stats       = ICD_stats;
+    ICD_extractedParams(idsess).M_stats     = M_stats;
 
     %% Trajectory Error
     par.TrajXYextrat4eval.num_cond          = num_cond;
@@ -234,6 +256,25 @@ for idsess = 1:numel(session_list)
     ST_session(idsess).session              = session_list{idsess};
     ST_session(idsess).cond                 = ST_tot;
 end
+
+%% ICD ANALYSIS
+par.meanSessionDirICD.SessName = session_list;
+par.meanSessionDirICD.num_cond = num_cond;
+par.meanSessionDirICD.num_dir  = num_dir;
+par.meanSessionDirICD.millisec = false;
+% MAX
+par.meanSessionDirICD.metric   = 'max';
+[ICDmax_sessionMEAN, ICDmax_sessionSTD] = ...
+    meanSessionDirICD(ICD_session, par.meanSessionDirICD);
+% MEAN
+par.meanSessionDirICD.metric   = 'mean';
+[ICDmean_sessionMEAN, ICDmean_sessionSTD] = ...
+    meanSessionDirICD(ICD_session, par.meanSessionDirICD);
+% AUC
+par.meanSessionDirICD.metric   = 'AUC';
+[ICDauc_sessionMEAN, ICDauc_sessionSTD] = ...
+    meanSessionDirICD(ICD_session, par.meanSessionDirICD);
+
 %% Trajectory parameters
 par.computeTrajectoryExitDir.r_dim = 1.81;
 Jxy_Result = computeTrajectoryExitDir(Jxy_session,par.computeTrajectoryExitDir);
@@ -351,6 +392,9 @@ RT_total                    = matrixArrange(RT_SessionMEAN,par.matrixArrange);
 ST_total                    = matrixArrange(ST_sessionMEAN,par.matrixArrange);
 PV_total                    = matrixArrange(PV_sessionMEAN,par.matrixArrange);
 PVT_total                   = matrixArrange(PVT_sessionMEAN,par.matrixArrange);
+ICDmax_total                = matrixArrangeICD(ICDmax_sessionMEAN,  par.matrixArrange);
+ICDmean_total               = matrixArrangeICD(ICDmean_sessionMEAN, par.matrixArrange);
+ICDauc_total                = matrixArrangeICD(ICDauc_sessionMEAN,  par.matrixArrange);
 
 % total mean
 par.meanOutEval.num_cond                                 = num_cond;
@@ -359,19 +403,37 @@ par.meanOutEval.num_dir                                  = num_dir;
 [ST_total_Mean,~,ST_total_SE,STplot_maxY]                = meanOutEval(ST_total,par.meanOutEval);
 [PV_total_Mean,~,PV_total_SE,PV_total_maxY]              = meanOutEval(PV_total,par.meanOutEval);
 [PVT_total_Mean,~,PVT_total_SE,PVT_total_maxY]           = meanOutEval(PVT_total,par.meanOutEval);
-
+[ICDmax_total_Mean, ICDmax_total_Std, ICDmax_total_SE,  ~]   = meanOutEvalICD(ICDmax_total, par.meanOutEval);
+[ICDmean_total_Mean, ICDmean_total_Std, ICDmean_total_SE, ~] = meanOutEvalICD(ICDmean_total, par.meanOutEval);
+[ICDauc_total_Mean, ICDauc_total_Std, ICDauc_total_SE, ~]    = meanOutEvalICD(ICDauc_total, par.meanOutEval);
 %% Build output structure
-Data.Behav.Jxy_S        = Jxy_S;
-Data.Behav.Jxy_K        = Jxy_K;
-Data.Behav.RT_total     = RT_total;
-Data.Behav.PV_total     = PV_total;
-Data.Behav.PVT_total    = PVT_total;
-Data.Behav.ST_total     = ST_total;
-Data.Behav.Jxy_session  = Jxy_session;
-Data.Behav.RT_session   = RT_session;
-Data.Behav.PV_session   = PV_session;
-Data.Behav.PVT_session  = PVT_session;
-Data.Behav.ST_session   = ST_session;
+Data.Behav.Jxy_S                = Jxy_S;
+Data.Behav.Jxy_K                = Jxy_K;
+Data.Behav.RT_total             = RT_total;
+Data.Behav.PV_total             = PV_total;
+Data.Behav.PVT_total            = PVT_total;
+Data.Behav.ST_total             = ST_total;
+Data.Behav.Jxy_session          = Jxy_session;
+Data.Behav.RT_session           = RT_session;
+Data.Behav.PV_session           = PV_session;
+Data.Behav.PVT_session          = PVT_session;
+Data.Behav.ST_session           = ST_session;
+Data.Behav.ICD_session          = ICD_session;
+Data.Behav.ICD_extractedParams  = ICD_extractedParams;
+Data.Behav.ICDmax_total         = ICDmax_total;
+Data.Behav.ICDmean_total        = ICDmean_total;
+Data.Behav.ICDauc_total         = ICDauc_total;
+Data.Behav.ICDmax_total_Mean    = ICDmax_total_Mean;
+Data.Behav.ICDmean_total_Mean   = ICDmean_total_Mean;
+Data.Behav.ICDauc_total_Mean    = ICDauc_total_Mean;
+
+Data.Behav.ICDmax_total_STD     = ICDmax_total_Std;
+Data.Behav.ICDmean_total_STD    = ICDmean_total_Std;
+Data.Behav.ICDauc_total_STD     = ICDauc_total_Std;
+
+Data.Behav.ICDmax_total_SE      = ICDmax_total_SE;
+Data.Behav.ICDmean_total_SE     = ICDmean_total_SE;
+Data.Behav.ICDauc_total_SE      = ICDauc_total_SE;
 %% Tab
 Data.Behav.Jxy_TabSoloAE    = Jxy_TabSoloAE;
 Data.Behav.Jxy_TabJointAE   = Jxy_TabJointAE;

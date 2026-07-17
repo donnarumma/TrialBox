@@ -54,9 +54,11 @@ function behaviour = extractBehaviourSUA(session_name,pms)
 %           ExT
 %           EC
 %           CMT
-%
+%           ICDmax
+%           ICDmean
+%           ICDauc
 % Author: Mirco Frosolone
-% Created: 2026-07-10
+% Created: 2026-07-16
 % DEPENDENCIES
 % -------------------------------------------------------------------------
 % getClassInfo
@@ -201,6 +203,9 @@ data_trials = findSKdirection(data_SUA);
 num_dir         = 8; % number of direction
 num_cond        = 3; % number of conditions: 1-SoloS 2-SoloK 3-Joint S-K
 
+% ICD
+[ICD_trials, ~] = ICD_trace(data_trials);
+ICD_all         = ICD_statsEval(ICD_trials);
 
 Condition = cell(num_cond,num_dir);
 for cd=1:num_cond
@@ -283,5 +288,6 @@ behaviour = build24BehaviourStruct(PVT, behaviour);
 behaviour = build24BehaviourStruct(CMT, behaviour);
 behaviour = build24BehaviourStruct(EC, behaviour);
 behaviour = build24BehaviourStruct(ExT, behaviour);
-
+% ICD
+behaviour.ICD = build24BehaviourICDStruct(ICD_all);
 

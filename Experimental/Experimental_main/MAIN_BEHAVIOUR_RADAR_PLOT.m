@@ -38,13 +38,10 @@ set(0,'DefaultFigureVisible','off');
 params = struct();
 params.chamber = 'Frontal';
 
-behavFile = sprintf( ...
+behavFile = fullfile('D:\NEW_MainScript_DCM\BEHAVIOUR_DATA\',sprintf( ...
     'Behaviour_%s_TotalSessionsData_0_05s.mat', ...
-    upper(params.chamber));
+    upper(params.chamber)));
 
-icdFile = sprintf( ...
-    'ICD_%s_MovOn_200.mat', ...
-    upper(params.chamber));
 switch lower(params.chamber)
 
     case 'frontal'
@@ -66,8 +63,6 @@ save_dir = fullfile( ...
 
 S   = load(behavFile);
 Data = S.Data;
-
-icd = load(icdFile);
 
 %% Palette
 S = load('Palette.mat');
@@ -1055,9 +1050,9 @@ RadMultiplePlot(PVT_SoloS', PVT_JointS', PVT_SoloK',PVT_JointK', par.RadMultiple
 %% =========================================================================
 %% ICD
 %% =========================================================================
-ICDmax  = icd.Data.Behav.ICDmax_total_Mean;
-ICDmean = icd.Data.Behav.ICDmean_total_Mean;
-ICDauc  = icd.Data.Behav.ICDauc_total_Mean;
+ICDmax  = Data.Behav.ICDmax_total_Mean;
+ICDmean = Data.Behav.ICDmean_total_Mean;
+ICDauc  = Data.Behav.ICDauc_total_Mean;
 
 ICDmax_Joint   = ICDmax(3,:);
 ICDmean_Joint  = ICDmean(3,:);
