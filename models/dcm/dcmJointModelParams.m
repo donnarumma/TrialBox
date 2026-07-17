@@ -14,6 +14,8 @@ function par = dcmJointModelParams(parSource)
 %   InField               : trial field used as spectral input, usually CSD.
 %   donlfp                : whether to use the custom LFP priors.
 %   isdemo                : selected direction-condition indices.
+%   conditionCollapsedInputs : collapse selected direction-condition inputs
+%                           into one input per task condition.
 %   S_PRIORS              : reserved hook for monkey S priors.
 %   K_PRIORS              : reserved hook for monkey K priors.
 %   Hz                    : frequency axis used by the model.
@@ -36,6 +38,7 @@ par.custom_model = [];
 par.InField = 'CSD';
 par.donlfp = false;
 par.isdemo = 1:24;
+par.conditionCollapsedInputs = false;
 par.S_PRIORS = [];
 par.K_PRIORS = [];
 par.Hz = (1:64)';

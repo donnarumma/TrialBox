@@ -69,6 +69,10 @@ selectedDataTrials = data_trials(selectedTrialMask);
 selectedConditionLabels = allConditionLabels(selectedConditionMask);
 xU.name = selectedConditionLabels;
 
+if isfield(pms, 'conditionCollapsedInputs') && logical(pms.conditionCollapsedInputs)
+    [xU.X, xU.name] = local_collapse_inputs_by_condition(xU.X, xU.name);
+end
+
 if isempty(selectedDataTrials)
     error('%s did not find any trial matching the selected condition indices.', mfilename);
 end
@@ -146,6 +150,49 @@ end
 executionTime = toc(executionTimer);
 fprintf('| Time Elapsed: %.2f s\n', executionTime);
 DCM.exectime = executionTime;
+end
+
+
+function [collapsedDesign, collapsedLabels] = local_collapse_inputs_by_condition(designMatrix, conditionLabels)
+conditionGroups = {'Act', 'Obs', 'Joint'};
+conditionDisplayLabels = {'ACT S, OBS K', 'OBS S, ACT K', 'ACT S, ACT K'};
+labelGroups = cell(numel(conditionLabels), 1);
+
+for labelCounter = 1:numel(conditionLabels)
+    labelGroups{labelCounter} = local_condition_label_to_group(conditionLabels{labelCounter});
+end
+
+collapsedDesign = zeros(size(designMatrix, 1), 0);
+collapsedLabels = cell(0, 1);
+
+for conditionCounter = 1:numel(conditionGroups)
+    matchingColumns = strcmp(labelGroups, conditionGroups{conditionCounter});
+    if ~any(matchingColumns)
+        continue;
+    end
+
+    collapsedDesign(:, end + 1) = double(any(designMatrix(:, matchingColumns) ~= 0, 2)); %#ok<AGROW>
+    collapsedLabels{end + 1, 1} = conditionDisplayLabels{conditionCounter}; %#ok<AGROW>
+end
+
+if isempty(collapsedLabels)
+    error('%s could not collapse condition inputs: no known condition labels were found.', mfilename);
+end
+end
+
+
+function conditionGroup = local_condition_label_to_group(conditionLabel)
+labelText = upper(string(conditionLabel));
+
+if contains(labelText, 'ACT S') && contains(labelText, 'OBS K')
+    conditionGroup = 'Act';
+elseif contains(labelText, 'OBS S') && contains(labelText, 'ACT K')
+    conditionGroup = 'Obs';
+elseif contains(labelText, 'ACT S') && contains(labelText, 'ACT K')
+    conditionGroup = 'Joint';
+else
+    conditionGroup = 'Unknown';
+end
 end
 
 
